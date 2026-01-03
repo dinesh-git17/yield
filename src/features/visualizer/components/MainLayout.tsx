@@ -91,7 +91,7 @@ export function MainLayout({ sidebar, canvas, codePanel }: MainLayoutProps) {
         <motion.aside
           layout
           variants={panelVariants.slideFromRight}
-          className="border-border-subtle bg-surface max-md:hidden flex flex-col border-l"
+          className="border-border-subtle bg-surface max-md:hidden flex flex-col overflow-hidden border-l"
         >
           {codePanel}
         </motion.aside>

@@ -75,6 +75,14 @@ export function useSortingController(
   const arrayRef = useRef<number[]>([...initialValues]);
   const iteratorRef = useRef<Generator<SortStep, void, unknown> | null>(null);
   const totalStepsRef = useRef(0);
+  const completionTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
+
+  const clearCompletionTimeouts = useCallback(() => {
+    for (const timeout of completionTimeoutsRef.current) {
+      clearTimeout(timeout);
+    }
+    completionTimeoutsRef.current = [];
+  }, []);
 
   const initializeIterator = useCallback(() => {
     arrayRef.current = [...initialValues];
@@ -85,6 +93,31 @@ export function useSortingController(
   useEffect(() => {
     initializeIterator();
   }, [initializeIterator]);
+
+  // Cleanup completion timeouts on unmount
+  useEffect(() => {
+    return () => {
+      clearCompletionTimeouts();
+    };
+  }, [clearCompletionTimeouts]);
+
+  const COMPLETION_WAVE_DELAY_MS = 50;
+
+  const runCompletionSequence = useCallback(
+    (barCount: number) => {
+      clearCompletionTimeouts();
+
+      for (let i = 0; i < barCount; i++) {
+        const timeout = setTimeout(() => {
+          setBars((prevBars) =>
+            prevBars.map((bar, index) => (index === i ? { ...bar, state: "sorted" as const } : bar))
+          );
+        }, i * COMPLETION_WAVE_DELAY_MS);
+        completionTimeoutsRef.current.push(timeout);
+      }
+    },
+    [clearCompletionTimeouts]
+  );
 
   const applyStep = useCallback((step: SortStep, newSortedIndices: Set<number>) => {
     setBars((prevBars) => {
@@ -136,7 +169,10 @@ export function useSortingController(
 
     if (result.done) {
       setStatus("complete");
-      setBars((prevBars) => prevBars.map((bar) => ({ ...bar, state: "sorted" as const })));
+      // Reset all bars to idle before the wave
+      setBars((prevBars) => prevBars.map((bar) => ({ ...bar, state: "idle" as const })));
+      // Trigger the dopamine wave effect
+      runCompletionSequence(arrayRef.current.length);
       return false;
     }
 
@@ -157,7 +193,7 @@ export function useSortingController(
     }
 
     return true;
-  }, [applyStep, sortedIndices]);
+  }, [applyStep, sortedIndices, runCompletionSequence]);
 
   useEffect(() => {
     if (status !== "playing") return;
@@ -198,6 +234,7 @@ export function useSortingController(
   }, [status, initializeIterator, processNextStep]);
 
   const reset = useCallback(() => {
+    clearCompletionTimeouts();
     setStatus("idle");
     setCurrentStepIndex(0);
     setCurrentStepType(null);
@@ -205,10 +242,11 @@ export function useSortingController(
     setSortedIndices(new Set());
     setBars(createBarsFromValues(initialValues));
     initializeIterator();
-  }, [initialValues, initializeIterator]);
+  }, [initialValues, initializeIterator, clearCompletionTimeouts]);
 
   const resetWithValues = useCallback(
     (newValues: number[]) => {
+      clearCompletionTimeouts();
       setStatus("idle");
       setCurrentStepIndex(0);
       setCurrentStepType(null);
@@ -218,7 +256,7 @@ export function useSortingController(
       arrayRef.current = [...newValues];
       iteratorRef.current = getAlgorithmGenerator(algorithm, arrayRef.current);
     },
-    [algorithm]
+    [algorithm, clearCompletionTimeouts]
   );
 
   const updateSpeed = useCallback((newSpeed: number) => {
