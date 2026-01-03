@@ -22,7 +22,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "biome check --write"
+      "biome check --write",
+      "node scripts/attribution-guard.cjs"
     ],
     "*.json": [
       "biome check --write"
