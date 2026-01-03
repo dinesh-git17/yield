@@ -5,7 +5,7 @@ import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { motion } from "framer-motion";
 import { memo, useCallback, useMemo } from "react";
 import { SPRING_PRESETS } from "@/lib/motion";
-import { CONFIG, type PlaybackSpeedMultiplier, useYieldStore } from "@/lib/store";
+import { type PlaybackSpeedMultiplier, SORTING_CONFIG, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { AlgorithmWheel } from "./AlgorithmWheel";
 
@@ -41,8 +41,8 @@ export const ControlBar = memo(function ControlBar({ className }: ControlBarProp
       if (sliderValue !== undefined) {
         // Map slider [0-100] to array size [5-50]
         const size = Math.round(
-          CONFIG.ARRAY_SIZE_MIN +
-            (sliderValue / 100) * (CONFIG.ARRAY_SIZE_MAX - CONFIG.ARRAY_SIZE_MIN)
+          SORTING_CONFIG.ARRAY_SIZE_MIN +
+            (sliderValue / 100) * (SORTING_CONFIG.ARRAY_SIZE_MAX - SORTING_CONFIG.ARRAY_SIZE_MIN)
         );
         setArraySize(size);
       }
@@ -53,7 +53,9 @@ export const ControlBar = memo(function ControlBar({ className }: ControlBarProp
   // Convert array size back to slider value [0-100]
   const sliderValue = useMemo(() => {
     return (
-      ((arraySize - CONFIG.ARRAY_SIZE_MIN) / (CONFIG.ARRAY_SIZE_MAX - CONFIG.ARRAY_SIZE_MIN)) * 100
+      ((arraySize - SORTING_CONFIG.ARRAY_SIZE_MIN) /
+        (SORTING_CONFIG.ARRAY_SIZE_MAX - SORTING_CONFIG.ARRAY_SIZE_MIN)) *
+      100
     );
   }, [arraySize]);
 

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { memo, useCallback } from "react";
 import { ALGO_METADATA } from "@/features/algorithms";
 import { SPRING_PRESETS } from "@/lib/motion";
-import { type AlgorithmType, useYieldStore } from "@/lib/store";
+import { type SortingAlgorithmType, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export interface AlgorithmWheelProps {
@@ -15,7 +15,7 @@ export interface AlgorithmWheelProps {
  * Ordered list of algorithms for the wheel.
  * Order: O(n²) basics → O(n²) variants → O(n log n) advanced
  */
-const ALGORITHM_ORDER: AlgorithmType[] = [
+const ALGORITHM_ORDER: SortingAlgorithmType[] = [
   "bubble",
   "selection",
   "insertion",
@@ -34,8 +34,8 @@ const CONTAINER_WIDTH = ITEM_WIDTH * 3;
  * Items slide into position when selection changes.
  */
 export const AlgorithmWheel = memo(function AlgorithmWheel({ className }: AlgorithmWheelProps) {
-  const currentAlgorithm = useYieldStore((state) => state.algorithm);
-  const setAlgorithm = useYieldStore((state) => state.setAlgorithm);
+  const currentAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
+  const setSortingAlgorithm = useYieldStore((state) => state.setSortingAlgorithm);
 
   const currentIndex = ALGORITHM_ORDER.indexOf(currentAlgorithm);
   const total = ALGORITHM_ORDER.length;
@@ -46,10 +46,10 @@ export const AlgorithmWheel = memo(function AlgorithmWheel({ className }: Algori
       const newIndex = (((currentIndex + offset) % total) + total) % total;
       const newAlgo = ALGORITHM_ORDER[newIndex];
       if (newAlgo) {
-        setAlgorithm(newAlgo);
+        setSortingAlgorithm(newAlgo);
       }
     },
-    [currentIndex, total, setAlgorithm]
+    [currentIndex, total, setSortingAlgorithm]
   );
 
   return (
@@ -90,7 +90,7 @@ export const AlgorithmWheel = memo(function AlgorithmWheel({ className }: Algori
 });
 
 interface TabItemProps {
-  algorithm: AlgorithmType;
+  algorithm: SortingAlgorithmType;
   relativePosition: number;
   isActive: boolean;
   isVisible: boolean;

@@ -109,11 +109,11 @@ function SortingProviderReady({
   initialValues: number[];
 }) {
   const arraySize = useYieldStore((state) => state.arraySize);
-  const algorithm = useYieldStore((state) => state.algorithm);
+  const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
-  const controller = useSortingController(initialValues, algorithm);
+  const controller = useSortingController(initialValues, sortingAlgorithm);
   const prevArraySizeRef = useRef(arraySize);
-  const prevAlgorithmRef = useRef(algorithm);
+  const prevAlgorithmRef = useRef(sortingAlgorithm);
 
   // Handle array size changes smoothly without remounting
   useEffect(() => {
@@ -126,12 +126,12 @@ function SortingProviderReady({
 
   // Handle algorithm changes - reset with new shuffled array
   useEffect(() => {
-    if (prevAlgorithmRef.current !== algorithm) {
+    if (prevAlgorithmRef.current !== sortingAlgorithm) {
       const newValues = generateShuffledValues(arraySize);
       controller.resetWithValues(newValues);
-      prevAlgorithmRef.current = algorithm;
+      prevAlgorithmRef.current = sortingAlgorithm;
     }
-  }, [algorithm, arraySize, controller.resetWithValues]);
+  }, [sortingAlgorithm, arraySize, controller.resetWithValues]);
 
   // Sync store's playback speed to controller
   useEffect(() => {

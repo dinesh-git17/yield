@@ -18,12 +18,12 @@ const LINE_HEIGHT_PX = 28;
 
 export function CodePanel({ className }: CodePanelProps) {
   const { currentStepType, status } = useSorting();
-  const algorithm = useYieldStore((state) => state.algorithm);
+  const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
   const [isCopied, setIsCopied] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get algorithm metadata dynamically
-  const metadata = useMemo(() => getAlgorithmMetadata(algorithm), [algorithm]);
+  const metadata = useMemo(() => getAlgorithmMetadata(sortingAlgorithm), [sortingAlgorithm]);
   const { code: codeLines, lineMapping } = metadata;
 
   const highlightedLine = currentStepType ? (lineMapping[currentStepType] ?? null) : null;
@@ -84,7 +84,7 @@ export function CodePanel({ className }: CodePanelProps) {
             {codeLines.map((line, lineNumber) => (
               <CodeLine
                 // biome-ignore lint/suspicious/noArrayIndexKey: Code lines are static per algorithm and don't reorder
-                key={`${algorithm}-${lineNumber}`}
+                key={`${sortingAlgorithm}-${lineNumber}`}
                 line={line}
                 lineNumber={lineNumber}
                 isHighlighted={lineNumber === highlightedLine}

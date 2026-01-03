@@ -45,8 +45,8 @@ const MODAL_VARIANTS = {
 } as const;
 
 function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
-  const algorithm = useYieldStore((state) => state.algorithm);
-  const metadata = getAlgorithmMetadata(algorithm);
+  const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
+  const metadata = getAlgorithmMetadata(sortingAlgorithm);
 
   // Close on escape key
   useEffect(() => {
@@ -161,7 +161,9 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
 
               {/* Comparison hint */}
               <div className="rounded-lg border border-white/5 bg-white/5 p-3">
-                <p className="text-muted text-xs leading-relaxed">{getComparisonHint(algorithm)}</p>
+                <p className="text-muted text-xs leading-relaxed">
+                  {getComparisonHint(sortingAlgorithm)}
+                </p>
               </div>
             </div>
           </motion.div>

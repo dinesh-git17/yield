@@ -1,4 +1,4 @@
-import type { AlgorithmType } from "@/lib/store";
+import type { SortingAlgorithmType } from "@/lib/store";
 import type { SortStep } from "./sorting";
 
 /**
@@ -36,7 +36,7 @@ export interface AlgorithmMetadata {
  * Algorithm metadata registry.
  * Each algorithm has its code representation and line mappings for sync.
  */
-export const ALGO_METADATA: Record<AlgorithmType, AlgorithmMetadata> = {
+export const ALGO_METADATA: Record<SortingAlgorithmType, AlgorithmMetadata> = {
   bubble: {
     label: "Bubble Sort",
     complexity: "O(n²)",
@@ -354,6 +354,6 @@ export const ALGO_METADATA: Record<AlgorithmType, AlgorithmMetadata> = {
  * Get metadata for a specific algorithm.
  * Falls back to bubble sort if algorithm not found.
  */
-export function getAlgorithmMetadata(algorithm: AlgorithmType): AlgorithmMetadata {
+export function getAlgorithmMetadata(algorithm: SortingAlgorithmType): AlgorithmMetadata {
   return ALGO_METADATA[algorithm] ?? ALGO_METADATA.bubble;
 }
