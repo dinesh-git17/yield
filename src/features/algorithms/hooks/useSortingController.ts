@@ -1,8 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { bubbleSort, type SortStep } from "@/features/algorithms/sorting";
+import { bubbleSort, type SortStep, selectionSort } from "@/features/algorithms/sorting";
 import type { BarState } from "@/features/visualizer/components/SortingBar";
+import type { AlgorithmType } from "@/lib/store";
+
+/**
+ * Returns the appropriate sorting algorithm generator for the given type.
+ */
+function getAlgorithmGenerator(
+  algorithm: AlgorithmType,
+  arr: number[]
+): Generator<SortStep, void, unknown> {
+  switch (algorithm) {
+    case "selection":
+      return selectionSort(arr);
+    default:
+      // Quick sort not yet implemented, falls back to bubble
+      return bubbleSort(arr);
+  }
+}
 
 export type PlaybackStatus = "idle" | "playing" | "paused" | "complete";
 
@@ -28,6 +45,7 @@ export interface SortingControllerActions {
   pause: () => void;
   nextStep: () => void;
   reset: () => void;
+  resetWithValues: (newValues: number[]) => void;
   setSpeed: (speed: number) => void;
 }
 
@@ -43,7 +61,10 @@ function createBarsFromValues(values: number[]): BarData[] {
   }));
 }
 
-export function useSortingController(initialValues: number[]): UseSortingControllerReturn {
+export function useSortingController(
+  initialValues: number[],
+  algorithm: AlgorithmType = "bubble"
+): UseSortingControllerReturn {
   const [bars, setBars] = useState<BarData[]>(() => createBarsFromValues(initialValues));
   const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -57,9 +78,9 @@ export function useSortingController(initialValues: number[]): UseSortingControl
 
   const initializeIterator = useCallback(() => {
     arrayRef.current = [...initialValues];
-    iteratorRef.current = bubbleSort(arrayRef.current);
+    iteratorRef.current = getAlgorithmGenerator(algorithm, arrayRef.current);
     setSortedIndices(new Set());
-  }, [initialValues]);
+  }, [initialValues, algorithm]);
 
   useEffect(() => {
     initializeIterator();
@@ -83,6 +104,12 @@ export function useSortingController(initialValues: number[]): UseSortingControl
           }
           if (index === j) {
             return { ...bar, value: newValJ, state: "swapping" as const };
+          }
+        }
+
+        if (step.type === "scanning") {
+          if (index === step.index) {
+            return { ...bar, state: "scanning" as const };
           }
         }
 
@@ -180,6 +207,20 @@ export function useSortingController(initialValues: number[]): UseSortingControl
     initializeIterator();
   }, [initialValues, initializeIterator]);
 
+  const resetWithValues = useCallback(
+    (newValues: number[]) => {
+      setStatus("idle");
+      setCurrentStepIndex(0);
+      setCurrentStepType(null);
+      totalStepsRef.current = 0;
+      setSortedIndices(new Set());
+      setBars(createBarsFromValues(newValues));
+      arrayRef.current = [...newValues];
+      iteratorRef.current = getAlgorithmGenerator(algorithm, arrayRef.current);
+    },
+    [algorithm]
+  );
+
   const updateSpeed = useCallback((newSpeed: number) => {
     setSpeed(newSpeed);
   }, []);
@@ -195,6 +236,7 @@ export function useSortingController(initialValues: number[]): UseSortingControl
     pause,
     nextStep,
     reset,
+    resetWithValues,
     setSpeed: updateSpeed,
   };
 }

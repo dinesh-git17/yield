@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import { ChevronsLeft } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
+import { type AlgorithmType, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
 
@@ -12,8 +13,23 @@ export interface SidebarProps {
   onCollapse?: () => void;
 }
 
+const SORTING_ALGORITHMS: { id: AlgorithmType; label: string; enabled: boolean }[] = [
+  { id: "bubble", label: "Bubble Sort", enabled: true },
+  { id: "selection", label: "Selection Sort", enabled: true },
+  { id: "quick", label: "Quick Sort", enabled: false },
+];
+
 export function Sidebar({ className, onCollapse }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const currentAlgorithm = useYieldStore((state) => state.algorithm);
+  const setAlgorithm = useYieldStore((state) => state.setAlgorithm);
+
+  const handleAlgorithmSelect = useCallback(
+    (algo: AlgorithmType) => {
+      setAlgorithm(algo);
+    },
+    [setAlgorithm]
+  );
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -89,40 +105,24 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
         </div>
 
         <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
-          <SidebarItem
-            id="algo-bubble"
-            label="Bubble Sort"
-            isActive
-            hoveredItem={hoveredItem}
-            onHover={setHoveredItem}
-          />
-          <SidebarItem
-            id="algo-quick"
-            label="Quick Sort"
-            disabled
-            hoveredItem={hoveredItem}
-            onHover={setHoveredItem}
-          />
-          <SidebarItem
-            id="algo-merge"
-            label="Merge Sort"
-            disabled
-            hoveredItem={hoveredItem}
-            onHover={setHoveredItem}
-          />
-          <SidebarItem
-            id="algo-heap"
-            label="Heap Sort"
-            disabled
-            hoveredItem={hoveredItem}
-            onHover={setHoveredItem}
-          />
+          {SORTING_ALGORITHMS.map((algo) => (
+            <SidebarItem
+              key={algo.id}
+              id={`algo-${algo.id}`}
+              label={algo.label}
+              isActive={currentAlgorithm === algo.id}
+              disabled={!algo.enabled}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => algo.enabled && handleAlgorithmSelect(algo.id)}
+            />
+          ))}
         </SidebarGroup>
       </nav>
 
       {/* Footer */}
       <div className="border-border-subtle border-t p-3">
-        <div className="text-muted text-xs">Phase 1: Vertical Slice</div>
+        <div className="text-muted text-xs">Phase 2: Interactivity</div>
       </div>
     </div>
   );
@@ -145,20 +145,30 @@ interface SidebarItemProps {
   disabled?: boolean;
   hoveredItem: string | null;
   onHover: (id: string | null) => void;
+  onClick?: () => void;
 }
 
-function SidebarItem({ id, label, isActive, disabled, hoveredItem, onHover }: SidebarItemProps) {
+function SidebarItem({
+  id,
+  label,
+  isActive,
+  disabled,
+  hoveredItem,
+  onHover,
+  onClick,
+}: SidebarItemProps) {
   const isHovered = hoveredItem === id && !disabled && !isActive;
 
   return (
     <button
       type="button"
       disabled={disabled}
+      onClick={onClick}
       onMouseEnter={() => !disabled && onHover(id)}
       className={cn(
         "relative flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm transition-colors",
         isActive && "text-accent",
-        !isActive && !disabled && "text-primary",
+        !isActive && !disabled && "text-primary hover:text-accent",
         disabled && "text-muted cursor-not-allowed opacity-50"
       )}
     >

@@ -9,9 +9,10 @@ import { SPRING_PRESETS } from "@/lib/motion";
  * - idle: Default state, not currently being operated on
  * - comparing: Currently being compared with another element
  * - swapping: Currently being swapped with another element
+ * - scanning: Current minimum element being tracked (Selection Sort)
  * - sorted: Has reached its final sorted position
  */
-export type BarState = "idle" | "comparing" | "swapping" | "sorted";
+export type BarState = "idle" | "comparing" | "swapping" | "scanning" | "sorted";
 
 export interface SortingBarProps {
   /** The numeric value this bar represents */
@@ -32,6 +33,7 @@ const STATE_LABELS: Record<BarState, string> = {
   idle: "",
   comparing: "Comparing",
   swapping: "Swapping",
+  scanning: "Current minimum",
   sorted: "Sorted",
 };
 
@@ -43,6 +45,7 @@ const STATE_COLORS_HEX: Record<BarState, string> = {
   idle: "#a1a1aa",
   comparing: "#f59e0b",
   swapping: "#8b5cf6",
+  scanning: "#3b82f6", // Electric Blue
   sorted: "#10b981",
 };
 
@@ -63,7 +66,7 @@ function SortingBarComponent({
     ? `Value ${value}, Index ${index}, ${stateLabel}`
     : `Value ${value}, Index ${index}`;
 
-  const isActive = state === "comparing" || state === "swapping";
+  const isActive = state === "comparing" || state === "swapping" || state === "scanning";
   const isFastMode = speed < FAST_SPEED_THRESHOLD;
 
   const animateProps = useMemo(() => {
