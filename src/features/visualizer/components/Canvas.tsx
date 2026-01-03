@@ -1,17 +1,65 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { type BarState, SortingBar } from "./SortingBar";
 
 export interface CanvasProps {
   className?: string;
 }
 
-const PLACEHOLDER_HEIGHTS = [
-  67, 23, 89, 45, 12, 78, 34, 56, 91, 38, 72, 19, 84, 41, 63, 27, 95, 52, 76, 31, 88, 14, 59, 43,
-  81, 25, 70, 36, 93, 48,
-];
+interface BarItem {
+  id: string;
+  value: number;
+  state: BarState;
+}
+
+const BAR_COUNT = 50;
+const MIN_HEIGHT = 5;
+const MAX_HEIGHT = 100;
+
+function generateOrderedValues(count: number): number[] {
+  const values: number[] = [];
+  const step = (MAX_HEIGHT - MIN_HEIGHT) / (count - 1);
+  for (let i = 0; i < count; i++) {
+    values.push(Math.round(MIN_HEIGHT + step * i));
+  }
+  return values;
+}
+
+function createBarsFromValues(values: number[]): BarItem[] {
+  return values.map((value, index) => ({
+    id: `bar-${index}`,
+    value,
+    state: "idle" as const,
+  }));
+}
+
+function shuffleArray(arr: number[]): number[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = result[i];
+    const jVal = result[j];
+    if (temp !== undefined && jVal !== undefined) {
+      result[i] = jVal;
+      result[j] = temp;
+    }
+  }
+  return result;
+}
+
+const INITIAL_VALUES = generateOrderedValues(BAR_COUNT);
+const INITIAL_BARS = createBarsFromValues(INITIAL_VALUES);
 
 export function Canvas({ className }: CanvasProps) {
+  const [bars, setBars] = useState<BarItem[]>(INITIAL_BARS);
+
+  useEffect(() => {
+    const shuffled = shuffleArray(INITIAL_VALUES);
+    setBars(createBarsFromValues(shuffled));
+  }, []);
+
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header Bar */}
@@ -33,23 +81,16 @@ export function Canvas({ className }: CanvasProps) {
 
       {/* Visualization Area */}
       <div className="relative flex flex-1 items-end justify-center overflow-hidden p-8">
-        {/* Placeholder bars for visual feedback */}
-        <div className="flex h-full w-full max-w-4xl items-end justify-center gap-1">
-          {PLACEHOLDER_HEIGHTS.map((height) => (
-            <div
-              key={height}
-              className="bg-accent/30 w-3 rounded-t-sm transition-all duration-300"
-              style={{ height: `${height}%` }}
+        <div className="flex h-full w-full max-w-4xl items-end justify-center gap-0.5">
+          {bars.map((bar, index) => (
+            <SortingBar
+              key={bar.id}
+              value={bar.value}
+              index={index}
+              heightPercent={bar.value}
+              state={bar.state}
             />
           ))}
-        </div>
-
-        {/* Empty state overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-muted mb-2 text-sm">Bubble Sort Visualization</div>
-            <div className="text-muted/60 text-xs">Click Play to start the animation</div>
-          </div>
         </div>
       </div>
 
