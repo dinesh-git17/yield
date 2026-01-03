@@ -83,7 +83,8 @@ export function CodePanel({ className }: CodePanelProps) {
             </AnimatePresence>
             {codeLines.map((line, lineNumber) => (
               <CodeLine
-                key={`${algorithm}:${line || `empty-${lineNumber}`}`}
+                // biome-ignore lint/suspicious/noArrayIndexKey: Code lines are static per algorithm and don't reorder
+                key={`${algorithm}-${lineNumber}`}
                 line={line}
                 lineNumber={lineNumber}
                 isHighlighted={lineNumber === highlightedLine}
