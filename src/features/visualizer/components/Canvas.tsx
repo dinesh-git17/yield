@@ -1,5 +1,8 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
+import { Pause, Play, RotateCcw, StepForward } from "lucide-react";
+import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { useSorting } from "../context";
 import { SortingBar } from "./SortingBar";
@@ -9,7 +12,8 @@ export interface CanvasProps {
 }
 
 export function Canvas({ className }: CanvasProps) {
-  const { bars, status, currentStepIndex, play, pause, nextStep, reset, isReady } = useSorting();
+  const { bars, status, currentStepIndex, speed, play, pause, nextStep, reset, isReady } =
+    useSorting();
 
   if (!isReady) {
     return (
@@ -17,9 +21,14 @@ export function Canvas({ className }: CanvasProps) {
         <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
           <div className="flex items-center gap-3">
             <h1 className="text-primary text-sm font-medium">Bubble Sort</h1>
-            <span className="bg-accent-muted text-accent rounded-full px-2 py-0.5 text-xs font-medium">
+            <motion.span
+              variants={badgeVariants}
+              initial="hidden"
+              animate="visible"
+              className="bg-accent-muted text-accent rounded-full px-2 py-0.5 text-xs font-medium"
+            >
               O(n²)
-            </span>
+            </motion.span>
           </div>
         </header>
         <div className="flex flex-1 items-center justify-center">
@@ -38,20 +47,34 @@ export function Canvas({ className }: CanvasProps) {
       <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div className="flex items-center gap-3">
           <h1 className="text-primary text-sm font-medium">Bubble Sort</h1>
-          <span className="bg-accent-muted text-accent rounded-full px-2 py-0.5 text-xs font-medium">
+          <motion.span
+            variants={badgeVariants}
+            initial="hidden"
+            animate="visible"
+            className="bg-accent-muted text-accent rounded-full px-2 py-0.5 text-xs font-medium"
+          >
             O(n²)
-          </span>
+          </motion.span>
         </div>
 
         {/* Playback Controls */}
         <div className="flex items-center gap-2">
-          <ControlButton label="Reset" onClick={reset} disabled={status === "idle"} />
-          <ControlButton label="Step" onClick={nextStep} disabled={isComplete} />
           <ControlButton
-            label={isPlaying ? "Pause" : "Play"}
+            label="Reset"
+            icon={<RotateCcw className="h-3.5 w-3.5" />}
+            onClick={reset}
+            disabled={status === "idle"}
+          />
+          <ControlButton
+            label="Step"
+            icon={<StepForward className="h-3.5 w-3.5" />}
+            onClick={nextStep}
+            disabled={isComplete}
+          />
+          <PlayPauseButton
+            isPlaying={isPlaying}
             onClick={isPlaying ? pause : play}
             disabled={isComplete}
-            isPrimary
           />
         </div>
       </header>
@@ -66,6 +89,8 @@ export function Canvas({ className }: CanvasProps) {
               index={index}
               heightPercent={bar.value}
               state={bar.state}
+              isComplete={isComplete}
+              speed={speed}
             />
           ))}
         </div>
@@ -84,27 +109,76 @@ export function Canvas({ className }: CanvasProps) {
 
 interface ControlButtonProps {
   label: string;
+  icon: React.ReactNode;
   onClick: () => void;
-  isPrimary?: boolean;
   disabled?: boolean;
 }
 
-function ControlButton({ label, onClick, isPrimary, disabled }: ControlButtonProps) {
+function ControlButton({ label, icon, onClick, disabled }: ControlButtonProps) {
+  const interactionProps = disabled
+    ? {}
+    : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };
+
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
       disabled={disabled}
+      {...interactionProps}
+      animate={{ opacity: disabled ? 0.5 : 1 }}
+      transition={SPRING_PRESETS.snappy}
       className={cn(
-        "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+        "bg-surface-elevated border-border text-primary flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium",
         "focus-visible:ring-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-        isPrimary
-          ? "bg-accent hover:bg-accent/90 text-white disabled:bg-accent/50"
-          : "bg-surface-elevated border-border text-primary hover:bg-border/50 border disabled:opacity-50",
         disabled && "cursor-not-allowed"
       )}
+      aria-label={label}
     >
+      {icon}
       {label}
-    </button>
+    </motion.button>
+  );
+}
+
+interface PlayPauseButtonProps {
+  isPlaying: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps) {
+  const interactionProps = disabled
+    ? {}
+    : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      {...interactionProps}
+      animate={{ opacity: disabled ? 0.5 : 1 }}
+      transition={SPRING_PRESETS.snappy}
+      className={cn(
+        "bg-accent flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-white",
+        "focus-visible:ring-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        disabled && "cursor-not-allowed"
+      )}
+      aria-label={isPlaying ? "Pause" : "Play"}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={isPlaying ? "pause" : "play"}
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.5, opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="flex items-center"
+        >
+          {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+        </motion.span>
+      </AnimatePresence>
+      {isPlaying ? "Pause" : "Play"}
+    </motion.button>
   );
 }
