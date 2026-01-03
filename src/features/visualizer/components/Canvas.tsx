@@ -2,7 +2,10 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Pause, Play, RotateCcw, StepForward } from "lucide-react";
+import { getAlgorithmMetadata } from "@/features/algorithms";
+import { ControlBar } from "@/features/controls";
 import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
+import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useSorting } from "../context";
 import { SortingBar } from "./SortingBar";
@@ -14,20 +17,24 @@ export interface CanvasProps {
 export function Canvas({ className }: CanvasProps) {
   const { bars, status, currentStepIndex, speed, play, pause, nextStep, reset, isReady } =
     useSorting();
+  const algorithm = useYieldStore((state) => state.algorithm);
+  const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
+
+  const algorithmInfo = getAlgorithmMetadata(algorithm);
 
   if (!isReady) {
     return (
       <div className={cn("flex h-full flex-col", className)}>
         <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-primary text-sm font-medium">Bubble Sort</h1>
+            <h1 className="text-primary text-sm font-medium">{algorithmInfo.label}</h1>
             <motion.span
               variants={badgeVariants}
               initial="hidden"
               animate="visible"
               className="bg-accent-muted text-accent rounded-full px-2 py-0.5 text-xs font-medium"
             >
-              O(n²)
+              {algorithmInfo.complexity}
             </motion.span>
           </div>
         </header>
@@ -46,14 +53,15 @@ export function Canvas({ className }: CanvasProps) {
       {/* Header Bar */}
       <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">Bubble Sort</h1>
+          <h1 className="text-primary text-sm font-medium">{algorithmInfo.label}</h1>
           <motion.span
+            key={algorithm}
             variants={badgeVariants}
             initial="hidden"
             animate="visible"
             className="bg-accent-muted text-accent rounded-full px-2 py-0.5 text-xs font-medium"
           >
-            O(n²)
+            {algorithmInfo.complexity}
           </motion.span>
         </div>
 
@@ -80,7 +88,7 @@ export function Canvas({ className }: CanvasProps) {
       </header>
 
       {/* Visualization Area */}
-      <div className="bg-dot-pattern relative flex flex-1 items-end justify-center overflow-hidden p-8">
+      <div className="bg-dot-pattern relative flex flex-1 items-end justify-center overflow-hidden p-8 pb-24">
         <div className="flex h-full w-full max-w-4xl items-end justify-center gap-1 border-b border-border/50">
           {bars.map((bar, index) => (
             <SortingBar
@@ -94,15 +102,20 @@ export function Canvas({ className }: CanvasProps) {
             />
           ))}
         </div>
-      </div>
 
-      {/* Footer Status Bar */}
-      <footer className="border-border-subtle bg-surface flex h-10 shrink-0 items-center justify-between border-t px-4">
-        <div className="text-muted text-xs">
-          Step: {currentStepIndex} {isComplete && "(Complete)"}
+        {/* Floating Control Bar */}
+        <div className="absolute inset-x-0 bottom-4 flex justify-center">
+          <ControlBar />
         </div>
-        <div className="text-muted text-xs">Speed: 1x</div>
-      </footer>
+
+        {/* Status Overlay */}
+        <div className="absolute top-4 left-4 flex items-center gap-3">
+          <span className="text-muted text-xs">
+            Step: {currentStepIndex} {isComplete && "(Complete)"}
+          </span>
+          <span className="text-muted text-xs">Speed: {playbackSpeed}x</span>
+        </div>
+      </div>
     </div>
   );
 }

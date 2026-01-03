@@ -2,68 +2,36 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Clipboard } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getAlgorithmMetadata, STEP_TYPE_LABELS } from "@/features/algorithms";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
+import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { type StepType, useSorting } from "../context";
+import { useSorting } from "../context";
 
 export interface CodePanelProps {
   className?: string;
 }
-
-/**
- * Maps algorithm step types to their corresponding line indices in the code display.
- * These indices correspond to the yield statements in BUBBLE_SORT_LINES.
- */
-const STEP_TYPE_TO_LINE: Record<NonNullable<StepType>, number> = {
-  compare: 6,
-  swap: 11,
-  sorted: 15,
-};
-
-const BUBBLE_SORT_LINES = [
-  "function* bubbleSort(arr) {",
-  "  const n = arr.length;",
-  "",
-  "  for (let i = 0; i < n - 1; i++) {",
-  "    for (let j = 0; j < n - i - 1; j++) {",
-  "      // Compare adjacent elements",
-  "      yield { type: 'compare', indices: [j, j + 1] };",
-  "",
-  "      if (arr[j] > arr[j + 1]) {",
-  "        // Swap elements",
-  "        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];",
-  "        yield { type: 'swap', indices: [j, j + 1] };",
-  "      }",
-  "    }",
-  "    // Mark element as sorted",
-  "    yield { type: 'sorted', index: n - i - 1 };",
-  "  }",
-  "",
-  "  yield { type: 'sorted', index: 0 };",
-  "}",
-];
-
-const STEP_TYPE_LABELS: Record<NonNullable<StepType>, string> = {
-  compare: "Comparing elements",
-  swap: "Swapping elements",
-  sorted: "Marking as sorted",
-};
 
 const COPY_FEEDBACK_DURATION = 2000;
 const LINE_HEIGHT_PX = 28;
 
 export function CodePanel({ className }: CodePanelProps) {
   const { currentStepType, status } = useSorting();
+  const algorithm = useYieldStore((state) => state.algorithm);
   const [isCopied, setIsCopied] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const highlightedLine = currentStepType ? STEP_TYPE_TO_LINE[currentStepType] : null;
+  // Get algorithm metadata dynamically
+  const metadata = useMemo(() => getAlgorithmMetadata(algorithm), [algorithm]);
+  const { code: codeLines, lineMapping } = metadata;
+
+  const highlightedLine = currentStepType ? (lineMapping[currentStepType] ?? null) : null;
   const stepLabel = currentStepType ? STEP_TYPE_LABELS[currentStepType] : null;
   const displayLine = highlightedLine !== null ? highlightedLine + 1 : null;
 
   const handleCopy = useCallback(async () => {
-    const code = BUBBLE_SORT_LINES.join("\n");
+    const code = codeLines.join("\n");
     await navigator.clipboard.writeText(code);
 
     setIsCopied(true);
@@ -74,7 +42,7 @@ export function CodePanel({ className }: CodePanelProps) {
     copyTimeoutRef.current = setTimeout(() => {
       setIsCopied(false);
     }, COPY_FEEDBACK_DURATION);
-  }, []);
+  }, [codeLines]);
 
   useEffect(() => {
     return () => {
@@ -113,9 +81,9 @@ export function CodePanel({ className }: CodePanelProps) {
                 />
               )}
             </AnimatePresence>
-            {BUBBLE_SORT_LINES.map((line, lineNumber) => (
+            {codeLines.map((line, lineNumber) => (
               <CodeLine
-                key={line || `empty-${lineNumber}`}
+                key={`${algorithm}:${line || `empty-${lineNumber}`}`}
                 line={line}
                 lineNumber={lineNumber}
                 isHighlighted={lineNumber === highlightedLine}
