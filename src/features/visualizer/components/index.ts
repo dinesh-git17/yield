@@ -4,6 +4,8 @@ export type { CanvasProps } from "./Canvas";
 export { Canvas } from "./Canvas";
 export type { CodePanelProps } from "./CodePanel";
 export { CodePanel } from "./CodePanel";
+export type { LogoProps } from "./Logo";
+export { Logo } from "./Logo";
 export type { MainLayoutProps } from "./MainLayout";
 export { MainLayout } from "./MainLayout";
 export type { SidebarProps } from "./Sidebar";
