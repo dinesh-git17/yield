@@ -4,21 +4,28 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   aStar,
   bfs,
+  bidirectionalAStar,
   dfs,
   dijkstra,
+  floodFill,
+  getHeuristic,
+  greedyBestFirst,
+  type HeuristicFunction,
   type PathfindingContext,
   type PathfindingStep,
+  randomWalk,
   toKey,
 } from "@/features/algorithms/pathfinding";
 import type { NodeState } from "@/features/visualizer/components/pathfinding/GridNode";
-import type { PathfindingAlgorithmType } from "@/lib/store";
+import type { HeuristicType, PathfindingAlgorithmType } from "@/lib/store";
 
 /**
  * Returns the appropriate pathfinding algorithm generator for the given type.
  */
 function getAlgorithmGenerator(
   algorithm: PathfindingAlgorithmType,
-  context: PathfindingContext
+  context: PathfindingContext,
+  heuristic: HeuristicFunction
 ): Generator<PathfindingStep, void, unknown> {
   switch (algorithm) {
     case "dfs":
@@ -26,7 +33,15 @@ function getAlgorithmGenerator(
     case "dijkstra":
       return dijkstra(context);
     case "astar":
-      return aStar(context);
+      return aStar(context, heuristic);
+    case "greedy":
+      return greedyBestFirst(context, heuristic);
+    case "bidirectional":
+      return bidirectionalAStar(context, heuristic);
+    case "random":
+      return randomWalk(context);
+    case "flood":
+      return floodFill(context);
     default:
       return bfs(context);
   }
@@ -84,7 +99,8 @@ const PATH_ANIMATION_DELAY_MS = 30;
 
 export function usePathfindingController(
   context: PathfindingContext,
-  algorithm: PathfindingAlgorithmType = "bfs"
+  algorithm: PathfindingAlgorithmType = "bfs",
+  heuristicType: HeuristicType = "manhattan"
 ): UsePathfindingControllerReturn {
   const [nodeStates, setNodeStates] = useState<Map<string, NodeVisualization>>(new Map());
   const [maxDistance, setMaxDistance] = useState(0);
@@ -106,13 +122,15 @@ export function usePathfindingController(
     pathTimeoutsRef.current = [];
   }, []);
 
+  const heuristic = getHeuristic(heuristicType);
+
   const initializeIterator = useCallback(() => {
-    iteratorRef.current = getAlgorithmGenerator(algorithm, context);
+    iteratorRef.current = getAlgorithmGenerator(algorithm, context, heuristic);
     currentNodeRef.current = null;
     maxDistanceRef.current = 0;
     setMaxDistance(0);
     setPathFound(null);
-  }, [context, algorithm]);
+  }, [context, algorithm, heuristic]);
 
   // Re-initialize when context or algorithm changes
   // initializeIterator depends on context and algorithm, so changes propagate through it
