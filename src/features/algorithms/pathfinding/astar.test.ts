@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { aStar } from "./astar";
 import { bfs } from "./bfs";
 import { dijkstra } from "./dijkstra";
-import type { PathfindingContext } from "./types";
+import type { PathfindingContext, PathfindingStep } from "./types";
 
 /**
  * Helper to collect all steps from a generator.
  */
 function collectSteps(
   context: PathfindingContext,
-  algorithm: (ctx: PathfindingContext) => Generator
-) {
-  const steps = [];
+  algorithm: (ctx: PathfindingContext) => Generator<PathfindingStep, void, unknown>
+): PathfindingStep[] {
+  const steps: PathfindingStep[] = [];
   for (const step of algorithm(context)) {
     steps.push(step);
   }
@@ -143,7 +143,7 @@ describe("aStar", () => {
       const earlyVisit = visitSteps[0];
       const lateVisit = visitSteps[visitSteps.length - 1];
 
-      if (earlyVisit?.type === "visit" && lateVisit?.type === "visit") {
+      if (earlyVisit && lateVisit) {
         // Late visits should generally have higher distance (closer to goal)
         expect(lateVisit.distance).toBeGreaterThanOrEqual(earlyVisit.distance);
       }
