@@ -1,5 +1,10 @@
-export type { SortingContextValue, SortingProviderProps } from "../context";
-export { SortingProvider, useSorting } from "../context";
+export type {
+  PathfindingContextValue,
+  PathfindingProviderProps,
+  SortingContextValue,
+  SortingProviderProps,
+} from "../context";
+export { PathfindingProvider, SortingProvider, usePathfinding, useSorting } from "../context";
 export type { CanvasProps } from "./Canvas";
 export { Canvas } from "./Canvas";
 export type { CodePanelProps } from "./CodePanel";

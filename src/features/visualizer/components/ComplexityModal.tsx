@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CircleX, Clock, HardDrive } from "lucide-react";
-import { memo, useCallback, useEffect } from "react";
+import { CircleX, Clock, HardDrive, Route } from "lucide-react";
+import { memo, useCallback, useEffect, useMemo } from "react";
 import { getAlgorithmMetadata } from "@/features/algorithms";
+import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
 import { buttonInteraction } from "@/lib/motion";
 import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -45,8 +46,35 @@ const MODAL_VARIANTS = {
 } as const;
 
 function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
+  const mode = useYieldStore((state) => state.mode);
   const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
-  const metadata = getAlgorithmMetadata(sortingAlgorithm);
+  const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
+
+  const { label, description, complexity, spaceComplexity, hint, extras } = useMemo(() => {
+    if (mode === "sorting") {
+      const meta = getAlgorithmMetadata(sortingAlgorithm);
+      return {
+        label: meta.label,
+        description: meta.description,
+        complexity: meta.complexity,
+        spaceComplexity: meta.spaceComplexity,
+        hint: getSortingComparisonHint(sortingAlgorithm),
+        extras: null,
+      };
+    }
+    const meta = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
+    return {
+      label: meta.label,
+      description: meta.description,
+      complexity: meta.complexity,
+      spaceComplexity: meta.spaceComplexity,
+      hint: getPathfindingComparisonHint(pathfindingAlgorithm),
+      extras: {
+        guaranteesShortestPath: meta.guaranteesShortestPath,
+        visualPattern: meta.visualPattern,
+      },
+    };
+  }, [mode, sortingAlgorithm, pathfindingAlgorithm]);
 
   // Close on escape key
   useEffect(() => {
@@ -121,7 +149,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <h2 id="complexity-modal-title" className="text-primary text-lg font-semibold">
-                {metadata.label}
+                {label}
               </h2>
 
               <motion.button
@@ -139,31 +167,47 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
             {/* Content */}
             <div className="space-y-6 p-6">
               {/* Description */}
-              <p className="text-primary/80 text-sm leading-relaxed">{metadata.description}</p>
+              <p className="text-primary/80 text-sm leading-relaxed">{description}</p>
+
+              {/* Pathfinding extras */}
+              {extras && (
+                <div className="flex items-center gap-3">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                      extras.guaranteesShortestPath
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-amber-500/20 text-amber-400"
+                    )}
+                  >
+                    <Route className="h-3 w-3" />
+                    {extras.guaranteesShortestPath ? "Shortest Path" : "No Guarantee"}
+                  </span>
+                  <span className="text-muted text-xs">{extras.visualPattern}</span>
+                </div>
+              )}
 
               {/* Complexity Cards */}
               <div className="grid grid-cols-2 gap-4">
                 <ComplexityCard
                   icon={<Clock className="h-4 w-4" />}
                   label="Time Complexity"
-                  value={metadata.complexity}
-                  description={getTimeDescription(metadata.complexity)}
-                  variant={getComplexityVariant(metadata.complexity)}
+                  value={complexity}
+                  description={getTimeDescription(complexity, mode)}
+                  variant={getComplexityVariant(complexity)}
                 />
                 <ComplexityCard
                   icon={<HardDrive className="h-4 w-4" />}
                   label="Space Complexity"
-                  value={metadata.spaceComplexity}
-                  description={getSpaceDescription(metadata.spaceComplexity)}
-                  variant={getComplexityVariant(metadata.spaceComplexity)}
+                  value={spaceComplexity}
+                  description={getSpaceDescription(spaceComplexity, mode)}
+                  variant={getComplexityVariant(spaceComplexity)}
                 />
               </div>
 
               {/* Comparison hint */}
               <div className="rounded-lg border border-white/5 bg-white/5 p-3">
-                <p className="text-muted text-xs leading-relaxed">
-                  {getComparisonHint(sortingAlgorithm)}
-                </p>
+                <p className="text-muted text-xs leading-relaxed">{hint}</p>
               </div>
             </div>
           </motion.div>
@@ -230,7 +274,16 @@ function getComplexityVariant(complexity: string): ComplexityCardProps["variant"
   return "fair";
 }
 
-function getTimeDescription(complexity: string): string {
+function getTimeDescription(complexity: string, mode: "sorting" | "pathfinding"): string {
+  if (mode === "pathfinding") {
+    if (complexity.includes("V + E")) {
+      return "Visits each vertex and edge once. Scales linearly with graph size.";
+    }
+    if (complexity.includes("log V")) {
+      return "Priority queue operations add logarithmic factor per vertex.";
+    }
+    return "Execution time depends on graph structure.";
+  }
   if (complexity === "O(n²)") {
     return "Performance degrades quickly as input size grows. Suitable for small datasets.";
   }
@@ -240,7 +293,13 @@ function getTimeDescription(complexity: string): string {
   return "Execution time varies with input.";
 }
 
-function getSpaceDescription(complexity: string): string {
+function getSpaceDescription(complexity: string, mode: "sorting" | "pathfinding"): string {
+  if (mode === "pathfinding") {
+    if (complexity === "O(V)") {
+      return "Stores visited nodes and parent pointers proportional to vertices.";
+    }
+    return "Memory usage depends on graph structure.";
+  }
   if (complexity === "O(1)") {
     return "Constant memory. Sorts in-place without extra allocation.";
   }
@@ -253,16 +312,37 @@ function getSpaceDescription(complexity: string): string {
   return "Memory usage varies with input.";
 }
 
-function getComparisonHint(algorithm: string): string {
+function getSortingComparisonHint(algorithm: string): string {
   switch (algorithm) {
     case "bubble":
       return "Bubble Sort is simple to understand but inefficient. Consider Quick Sort or Merge Sort for larger datasets.";
     case "selection":
       return "Selection Sort minimizes swaps but still has O(n²) comparisons. Better than Bubble Sort for write-heavy storage.";
+    case "insertion":
+      return "Insertion Sort is efficient for small or nearly sorted arrays. Used as base case in hybrid sorts.";
+    case "gnome":
+      return "Gnome Sort is conceptually simple but inefficient. Similar to Insertion Sort without nested loops.";
     case "quick":
       return "Quick Sort is often the fastest in practice due to cache efficiency, despite O(n²) worst-case.";
     case "merge":
       return "Merge Sort guarantees O(n log n) but requires extra memory. Preferred when stability matters.";
+    case "heap":
+      return "Heap Sort has consistent O(n log n) performance and sorts in-place. Good for memory-constrained systems.";
+    default:
+      return "Compare different algorithms to understand their trade-offs.";
+  }
+}
+
+function getPathfindingComparisonHint(algorithm: string): string {
+  switch (algorithm) {
+    case "bfs":
+      return "BFS guarantees shortest path in unweighted graphs. Uses more memory than DFS due to queue storage.";
+    case "dfs":
+      return "DFS uses less memory but doesn't guarantee shortest path. Good for maze exploration and cycle detection.";
+    case "dijkstra":
+      return "Dijkstra handles weighted edges and guarantees optimal paths. A* is faster for point-to-point with good heuristics.";
+    case "astar":
+      return "A* uses heuristics to guide search toward the goal. Optimal when heuristic is admissible (never overestimates).";
     default:
       return "Compare different algorithms to understand their trade-offs.";
   }

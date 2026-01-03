@@ -10,12 +10,13 @@ import {
   SkipForward,
   Trash2,
 } from "lucide-react";
-import { useCallback, useMemo } from "react";
-import { usePathfindingController } from "@/features/algorithms/hooks";
+import { useCallback } from "react";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
+import { PathfindingControlBar } from "@/features/controls";
 import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { type PathfindingAlgorithmType, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { usePathfinding } from "../context";
 import { Grid } from "./pathfinding";
 
 export interface PathfindingStageProps {
@@ -29,24 +30,11 @@ export interface PathfindingStageProps {
 export function PathfindingStage({ className }: PathfindingStageProps) {
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
   const gridConfig = useYieldStore((state) => state.gridConfig);
-  const nodeState = useYieldStore((state) => state.nodeState);
   const clearWalls = useYieldStore((state) => state.clearWalls);
   const resetNodeState = useYieldStore((state) => state.resetNodeState);
 
-  // Build pathfinding context from store state
-  const context = useMemo(
-    () => ({
-      rows: gridConfig.rows,
-      cols: gridConfig.cols,
-      start: nodeState.start,
-      end: nodeState.end,
-      walls: nodeState.walls,
-    }),
-    [gridConfig, nodeState]
-  );
-
-  // Use the pathfinding controller
-  const controller = usePathfindingController(context, pathfindingAlgorithm);
+  // Use the pathfinding controller from context
+  const controller = usePathfinding();
 
   // Get algorithm metadata
   const metadata = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
@@ -128,7 +116,12 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
           />
         </motion.div>
 
-        {/* Instructions Overlay */}
+        {/* Floating Control Bar */}
+        <div className="absolute inset-x-0 bottom-16 z-30 flex justify-center">
+          <PathfindingControlBar />
+        </div>
+
+        {/* Instructions Legend */}
         <div className="absolute bottom-4 left-4 flex items-center gap-4">
           <span className="text-muted text-xs">
             <span className="bg-emerald-500 mr-1.5 inline-block h-2.5 w-2.5 rounded-sm" />
@@ -156,6 +149,23 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
             Path
           </span>
         </div>
+
+        {/* Interaction Hint */}
+        <AnimatePresence>
+          {isIdle && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-4 right-4"
+            >
+              <span className="text-muted/60 text-xs">
+                Click and drag to draw walls · Drag start/end to reposition
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Status Overlay */}
         <StatusOverlay

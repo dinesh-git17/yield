@@ -2,6 +2,7 @@ import {
   Canvas,
   CodePanel,
   MainLayout,
+  PathfindingProvider,
   Sidebar,
   SortingProvider,
 } from "@/features/visualizer/components";
@@ -9,7 +10,9 @@ import {
 export default function Home() {
   return (
     <SortingProvider>
-      <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+      <PathfindingProvider>
+        <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+      </PathfindingProvider>
     </SortingProvider>
   );
 }
