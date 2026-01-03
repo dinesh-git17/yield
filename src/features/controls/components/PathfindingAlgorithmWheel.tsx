@@ -2,40 +2,32 @@
 
 import { motion } from "framer-motion";
 import { memo, useCallback } from "react";
-import { ALGO_METADATA } from "@/features/algorithms";
+import { PATHFINDING_ALGO_METADATA } from "@/features/algorithms/pathfinding";
 import { SPRING_PRESETS } from "@/lib/motion";
-import { type SortingAlgorithmType, useYieldStore } from "@/lib/store";
+import { type PathfindingAlgorithmType, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-export interface AlgorithmWheelProps {
+export interface PathfindingAlgorithmWheelProps {
   className?: string;
 }
 
 /**
- * Ordered list of algorithms for the wheel.
- * Order: O(n²) basics → O(n²) variants → O(n log n) advanced
+ * Ordered list of pathfinding algorithms for the wheel.
  */
-const ALGORITHM_ORDER: SortingAlgorithmType[] = [
-  "bubble",
-  "selection",
-  "insertion",
-  "gnome",
-  "quick",
-  "merge",
-  "heap",
-];
+const ALGORITHM_ORDER: PathfindingAlgorithmType[] = ["bfs", "dfs", "dijkstra", "astar"];
 
 const ITEM_WIDTH = 72;
 const CONTAINER_WIDTH = ITEM_WIDTH * 3;
 
 /**
- * Infinite tab-style algorithm selector (Apple alarm picker style).
+ * Infinite tab-style pathfinding algorithm selector.
  * Selected algorithm is always centered with neighbors on both sides.
- * Items slide into position when selection changes.
  */
-export const AlgorithmWheel = memo(function AlgorithmWheel({ className }: AlgorithmWheelProps) {
-  const currentAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
-  const setSortingAlgorithm = useYieldStore((state) => state.setSortingAlgorithm);
+export const PathfindingAlgorithmWheel = memo(function PathfindingAlgorithmWheel({
+  className,
+}: PathfindingAlgorithmWheelProps) {
+  const currentAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
+  const setPathfindingAlgorithm = useYieldStore((state) => state.setPathfindingAlgorithm);
 
   const currentIndex = ALGORITHM_ORDER.indexOf(currentAlgorithm);
   const total = ALGORITHM_ORDER.length;
@@ -46,10 +38,10 @@ export const AlgorithmWheel = memo(function AlgorithmWheel({ className }: Algori
       const newIndex = (((currentIndex + offset) % total) + total) % total;
       const newAlgo = ALGORITHM_ORDER[newIndex];
       if (newAlgo) {
-        setSortingAlgorithm(newAlgo);
+        setPathfindingAlgorithm(newAlgo);
       }
     },
-    [currentIndex, total, setSortingAlgorithm]
+    [currentIndex, total, setPathfindingAlgorithm]
   );
 
   return (
@@ -57,7 +49,7 @@ export const AlgorithmWheel = memo(function AlgorithmWheel({ className }: Algori
       className={cn("relative flex items-center overflow-hidden", className)}
       style={{ width: CONTAINER_WIDTH, height: 28 }}
       role="listbox"
-      aria-label="Algorithm selector"
+      aria-label="Pathfinding algorithm selector"
     >
       {ALGORITHM_ORDER.map((algo, index) => {
         // Calculate position relative to current selection with wrapping
@@ -90,7 +82,7 @@ export const AlgorithmWheel = memo(function AlgorithmWheel({ className }: Algori
 });
 
 interface TabItemProps {
-  algorithm: SortingAlgorithmType;
+  algorithm: PathfindingAlgorithmType;
   relativePosition: number;
   isActive: boolean;
   isVisible: boolean;
@@ -104,8 +96,8 @@ const TabItem = memo(function TabItem({
   isVisible,
   onClick,
 }: TabItemProps) {
-  const metadata = ALGO_METADATA[algorithm];
-  const label = metadata.label.replace(" Sort", "");
+  const metadata = PATHFINDING_ALGO_METADATA[algorithm];
+  const label = metadata.shortLabel;
 
   // Calculate x position: center of container + relative offset
   const centerOffset = (CONTAINER_WIDTH - ITEM_WIDTH) / 2;
@@ -124,7 +116,7 @@ const TabItem = memo(function TabItem({
       className={cn(
         "absolute left-0 top-0 flex h-full shrink-0 items-center justify-center",
         "cursor-pointer focus:outline-none",
-        "focus-visible:ring-accent focus-visible:ring-2 focus-visible:ring-offset-2",
+        "focus-visible:ring-cyan-500 focus-visible:ring-2 focus-visible:ring-offset-2",
         !isActive && isVisible && "hover:opacity-70"
       )}
       role="option"
@@ -136,15 +128,15 @@ const TabItem = memo(function TabItem({
       {/* Active tab background indicator */}
       {isActive && (
         <motion.span
-          layoutId="algorithm-tab-indicator"
-          className="bg-accent/15 border-accent/30 absolute inset-0 rounded-md border"
+          layoutId="pathfinding-algorithm-tab-indicator"
+          className="bg-cyan-500/15 border-cyan-500/30 absolute inset-0 rounded-md border"
           transition={SPRING_PRESETS.snappy}
         />
       )}
       <span
         className={cn(
           "relative z-10 text-xs font-medium whitespace-nowrap",
-          isActive ? "text-accent" : "text-muted"
+          isActive ? "text-cyan-400" : "text-muted"
         )}
       >
         {label}

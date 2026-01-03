@@ -4,10 +4,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Clipboard } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAlgorithmMetadata, STEP_TYPE_LABELS } from "@/features/algorithms";
+import {
+  getPathfindingAlgorithmMetadata,
+  PATHFINDING_STEP_LABELS,
+} from "@/features/algorithms/pathfinding";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { useSorting } from "../context";
+import { usePathfinding, useSorting } from "../context";
 
 export interface CodePanelProps {
   className?: string;
@@ -17,17 +21,51 @@ const COPY_FEEDBACK_DURATION = 2000;
 const LINE_HEIGHT_PX = 28;
 
 export function CodePanel({ className }: CodePanelProps) {
-  const { currentStepType, status } = useSorting();
-  const algorithm = useYieldStore((state) => state.algorithm);
+  const mode = useYieldStore((state) => state.mode);
+  const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
+  const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
+
+  // Get context values based on mode
+  const sortingContext = useSorting();
+  const pathfindingContext = usePathfinding();
+
   const [isCopied, setIsCopied] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get algorithm metadata dynamically
-  const metadata = useMemo(() => getAlgorithmMetadata(algorithm), [algorithm]);
-  const { code: codeLines, lineMapping } = metadata;
+  // Derive mode-specific values
+  const { status, codeLines, stepLabel, algorithmKey, highlightedLine } = useMemo(() => {
+    if (mode === "sorting") {
+      const metadata = getAlgorithmMetadata(sortingAlgorithm);
+      const stepType = sortingContext.currentStepType;
+      const lineIndex = stepType ? (metadata.lineMapping[stepType] ?? null) : null;
+      return {
+        status: sortingContext.status,
+        codeLines: metadata.code,
+        stepLabel: stepType ? STEP_TYPE_LABELS[stepType] : null,
+        algorithmKey: sortingAlgorithm,
+        highlightedLine: lineIndex,
+      };
+    }
+    const metadata = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
+    const stepType = pathfindingContext.currentStepType;
+    const lineIndex = stepType ? (metadata.lineMapping[stepType] ?? null) : null;
+    return {
+      status: pathfindingContext.status,
+      codeLines: metadata.code,
+      stepLabel: stepType ? PATHFINDING_STEP_LABELS[stepType] : null,
+      algorithmKey: pathfindingAlgorithm,
+      highlightedLine: lineIndex,
+    };
+  }, [
+    mode,
+    sortingAlgorithm,
+    pathfindingAlgorithm,
+    sortingContext.currentStepType,
+    sortingContext.status,
+    pathfindingContext.currentStepType,
+    pathfindingContext.status,
+  ]);
 
-  const highlightedLine = currentStepType ? (lineMapping[currentStepType] ?? null) : null;
-  const stepLabel = currentStepType ? STEP_TYPE_LABELS[currentStepType] : null;
   const displayLine = highlightedLine !== null ? highlightedLine + 1 : null;
 
   const handleCopy = useCallback(async () => {
@@ -67,9 +105,9 @@ export function CodePanel({ className }: CodePanelProps) {
       <div className="flex-1 overflow-auto">
         <pre className="font-mono text-[13px] leading-7 py-6">
           <code className="relative block">
-            {/* Single persistent highlight that animates position */}
+            {/* Single persistent highlight that animates position (sorting only) */}
             <AnimatePresence>
-              {highlightedLine !== null && (
+              {mode === "sorting" && highlightedLine !== null && (
                 <motion.div
                   className="bg-accent-muted pointer-events-none absolute left-0 right-0 z-0"
                   style={{ height: LINE_HEIGHT_PX }}
@@ -84,10 +122,10 @@ export function CodePanel({ className }: CodePanelProps) {
             {codeLines.map((line, lineNumber) => (
               <CodeLine
                 // biome-ignore lint/suspicious/noArrayIndexKey: Code lines are static per algorithm and don't reorder
-                key={`${algorithm}-${lineNumber}`}
+                key={`${algorithmKey}-${lineNumber}`}
                 line={line}
                 lineNumber={lineNumber}
-                isHighlighted={lineNumber === highlightedLine}
+                isHighlighted={mode === "sorting" && lineNumber === highlightedLine}
               />
             ))}
           </code>
@@ -97,12 +135,22 @@ export function CodePanel({ className }: CodePanelProps) {
       {/* Footer */}
       <footer className="border-border-subtle flex h-10 shrink-0 items-center border-t px-6">
         <span className="text-muted text-xs">
-          {status === "idle" && "Ready to start"}
-          {status === "complete" && "Sorting complete"}
-          {(status === "playing" || status === "paused") &&
-            displayLine &&
-            stepLabel &&
-            `Line ${displayLine}: ${stepLabel}`}
+          {mode === "sorting" ? (
+            <>
+              {status === "idle" && "Ready to start"}
+              {status === "complete" && "Sorting complete"}
+              {(status === "playing" || status === "paused") &&
+                displayLine &&
+                stepLabel &&
+                `Line ${displayLine}: ${stepLabel}`}
+            </>
+          ) : (
+            <>
+              {status === "idle" && "Ready to visualize"}
+              {status === "complete" && "Pathfinding complete"}
+              {(status === "playing" || status === "paused") && "Visualizing..."}
+            </>
+          )}
         </span>
       </footer>
     </div>

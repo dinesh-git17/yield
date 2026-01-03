@@ -4,7 +4,12 @@ import { motion } from "framer-motion";
 import { BadgeHelp, ChevronsLeft } from "lucide-react";
 import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
-import { type AlgorithmType, useYieldStore } from "@/lib/store";
+import {
+  type PathfindingAlgorithmType,
+  type SortingAlgorithmType,
+  useYieldStore,
+  type VisualizerMode,
+} from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ComplexityModal } from "./ComplexityModal";
 import { Logo } from "./Logo";
@@ -14,7 +19,7 @@ export interface SidebarProps {
   onCollapse?: () => void;
 }
 
-const SORTING_ALGORITHMS: { id: AlgorithmType; label: string; enabled: boolean }[] = [
+const SORTING_ALGORITHMS: { id: SortingAlgorithmType; label: string; enabled: boolean }[] = [
   { id: "bubble", label: "Bubble Sort", enabled: true },
   { id: "selection", label: "Selection Sort", enabled: true },
   { id: "insertion", label: "Insertion Sort", enabled: true },
@@ -24,17 +29,47 @@ const SORTING_ALGORITHMS: { id: AlgorithmType; label: string; enabled: boolean }
   { id: "heap", label: "Heap Sort", enabled: true },
 ];
 
+const PATHFINDING_ALGORITHMS: {
+  id: PathfindingAlgorithmType;
+  label: string;
+  enabled: boolean;
+}[] = [
+  { id: "bfs", label: "Breadth-First Search", enabled: true },
+  { id: "dfs", label: "Depth-First Search", enabled: true },
+  { id: "dijkstra", label: "Dijkstra's Algorithm", enabled: true },
+  { id: "astar", label: "A* Search", enabled: true },
+];
+
 export function Sidebar({ className, onCollapse }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
-  const currentAlgorithm = useYieldStore((state) => state.algorithm);
-  const setAlgorithm = useYieldStore((state) => state.setAlgorithm);
 
-  const handleAlgorithmSelect = useCallback(
-    (algo: AlgorithmType) => {
-      setAlgorithm(algo);
+  const mode = useYieldStore((state) => state.mode);
+  const setMode = useYieldStore((state) => state.setMode);
+  const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
+  const setSortingAlgorithm = useYieldStore((state) => state.setSortingAlgorithm);
+  const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
+  const setPathfindingAlgorithm = useYieldStore((state) => state.setPathfindingAlgorithm);
+
+  const handleModeSelect = useCallback(
+    (newMode: VisualizerMode) => {
+      setMode(newMode);
     },
-    [setAlgorithm]
+    [setMode]
+  );
+
+  const handleSortingAlgorithmSelect = useCallback(
+    (algo: SortingAlgorithmType) => {
+      setSortingAlgorithm(algo);
+    },
+    [setSortingAlgorithm]
+  );
+
+  const handlePathfindingAlgorithmSelect = useCallback(
+    (algo: PathfindingAlgorithmType) => {
+      setPathfindingAlgorithm(algo);
+    },
+    [setPathfindingAlgorithm]
   );
 
   const openComplexityModal = useCallback(() => {
@@ -83,16 +118,18 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
           <SidebarItem
             id="cat-sorting"
             label="Sorting"
-            isActive
+            isActive={mode === "sorting"}
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
+            onClick={() => handleModeSelect("sorting")}
           />
           <SidebarItem
             id="cat-pathfinding"
             label="Pathfinding"
-            disabled
+            isActive={mode === "pathfinding"}
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
+            onClick={() => handleModeSelect("pathfinding")}
           />
           <SidebarItem
             id="cat-trees"
@@ -113,50 +150,99 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
         <div className="border-border-subtle my-4 border-t" />
 
         {/* Sorting Algorithms List */}
-        <div className="mb-2">
-          <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
-            Sorting
-          </span>
-        </div>
+        {mode === "sorting" && (
+          <>
+            <div className="mb-2">
+              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
+                Sorting
+              </span>
+            </div>
 
-        <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
-          {SORTING_ALGORITHMS.map((algo) => (
-            <SidebarItem
-              key={algo.id}
-              id={`algo-${algo.id}`}
-              label={algo.label}
-              isActive={currentAlgorithm === algo.id}
-              disabled={!algo.enabled}
-              hoveredItem={hoveredItem}
-              onHover={setHoveredItem}
-              onClick={() => algo.enabled && handleAlgorithmSelect(algo.id)}
-            />
-          ))}
-        </SidebarGroup>
+            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+              {SORTING_ALGORITHMS.map((algo) => (
+                <SidebarItem
+                  key={algo.id}
+                  id={`algo-${algo.id}`}
+                  label={algo.label}
+                  isActive={sortingAlgorithm === algo.id}
+                  disabled={!algo.enabled}
+                  hoveredItem={hoveredItem}
+                  onHover={setHoveredItem}
+                  onClick={() => algo.enabled && handleSortingAlgorithmSelect(algo.id)}
+                />
+              ))}
+            </SidebarGroup>
 
-        <div className="border-border-subtle my-4 border-t" />
+            <div className="border-border-subtle my-4 border-t" />
 
-        {/* Complexity Trigger */}
-        <motion.button
-          type="button"
-          onClick={openComplexityModal}
-          whileHover={buttonInteraction.hover}
-          whileTap={buttonInteraction.tap}
-          className={cn(
-            "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-            "border border-white/10 bg-white/5 backdrop-blur-sm",
-            "text-primary hover:bg-white/10 transition-colors",
-            "dark:border-white/5 dark:bg-black/20"
-          )}
-        >
-          <BadgeHelp className="h-4 w-4 text-violet-400" />
-          <span className="text-sm font-medium">Complexity</span>
-        </motion.button>
+            {/* Complexity Trigger */}
+            <motion.button
+              type="button"
+              onClick={openComplexityModal}
+              whileHover={buttonInteraction.hover}
+              whileTap={buttonInteraction.tap}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                "border border-white/10 bg-white/5 backdrop-blur-sm",
+                "text-primary hover:bg-white/10 transition-colors",
+                "dark:border-white/5 dark:bg-black/20"
+              )}
+            >
+              <BadgeHelp className="h-4 w-4 text-violet-400" />
+              <span className="text-sm font-medium">Complexity</span>
+            </motion.button>
+          </>
+        )}
+
+        {/* Pathfinding Algorithms List */}
+        {mode === "pathfinding" && (
+          <>
+            <div className="mb-2">
+              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
+                Pathfinding
+              </span>
+            </div>
+
+            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+              {PATHFINDING_ALGORITHMS.map((algo) => (
+                <SidebarItem
+                  key={algo.id}
+                  id={`algo-${algo.id}`}
+                  label={algo.label}
+                  isActive={pathfindingAlgorithm === algo.id}
+                  disabled={!algo.enabled}
+                  hoveredItem={hoveredItem}
+                  onHover={setHoveredItem}
+                  onClick={() => algo.enabled && handlePathfindingAlgorithmSelect(algo.id)}
+                />
+              ))}
+            </SidebarGroup>
+
+            <div className="border-border-subtle my-4 border-t" />
+
+            {/* Complexity Trigger */}
+            <motion.button
+              type="button"
+              onClick={openComplexityModal}
+              whileHover={buttonInteraction.hover}
+              whileTap={buttonInteraction.tap}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                "border border-white/10 bg-white/5 backdrop-blur-sm",
+                "text-primary hover:bg-white/10 transition-colors",
+                "dark:border-white/5 dark:bg-black/20"
+              )}
+            >
+              <BadgeHelp className="h-4 w-4 text-cyan-400" />
+              <span className="text-sm font-medium">Complexity</span>
+            </motion.button>
+          </>
+        )}
       </nav>
 
       {/* Footer */}
       <div className="border-border-subtle border-t p-3">
-        <div className="text-muted text-xs">Phase 3.5: Tactile Menu</div>
+        <div className="text-muted text-xs">Phase 4: Pathfinding</div>
       </div>
 
       {/* Complexity Modal */}

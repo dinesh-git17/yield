@@ -12,13 +12,13 @@ import {
   selectionSort,
 } from "@/features/algorithms/sorting";
 import type { BarState } from "@/features/visualizer/components/SortingBar";
-import type { AlgorithmType } from "@/lib/store";
+import type { SortingAlgorithmType } from "@/lib/store";
 
 /**
  * Returns the appropriate sorting algorithm generator for the given type.
  */
 function getAlgorithmGenerator(
-  algorithm: AlgorithmType,
+  algorithm: SortingAlgorithmType,
   arr: number[]
 ): Generator<SortStep, void, unknown> {
   switch (algorithm) {
@@ -81,7 +81,7 @@ function createBarsFromValues(values: number[]): BarData[] {
 
 export function useSortingController(
   initialValues: number[],
-  algorithm: AlgorithmType = "bubble"
+  algorithm: SortingAlgorithmType = "bubble"
 ): UseSortingControllerReturn {
   const [bars, setBars] = useState<BarData[]>(() => createBarsFromValues(initialValues));
   const [status, setStatus] = useState<PlaybackStatus>("idle");
