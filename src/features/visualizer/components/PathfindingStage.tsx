@@ -1,10 +1,20 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Pause, Play, RotateCcw, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Pause,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Trash2,
+} from "lucide-react";
+import { useCallback, useMemo } from "react";
+import { usePathfindingController } from "@/features/algorithms/hooks";
+import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
 import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
-import { useYieldStore } from "@/lib/store";
+import { type PathfindingAlgorithmType, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Grid } from "./pathfinding";
 
@@ -13,58 +23,55 @@ export interface PathfindingStageProps {
 }
 
 /**
- * Algorithm display labels.
- */
-const ALGORITHM_LABELS: Record<string, string> = {
-  bfs: "Breadth-First Search",
-  dfs: "Depth-First Search",
-  dijkstra: "Dijkstra's Algorithm",
-  astar: "A* Search",
-};
-
-/**
  * Pathfinding visualization stage.
  * Renders the interactive grid, playback controls, and algorithm info.
  */
 export function PathfindingStage({ className }: PathfindingStageProps) {
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
   const gridConfig = useYieldStore((state) => state.gridConfig);
+  const nodeState = useYieldStore((state) => state.nodeState);
   const clearWalls = useYieldStore((state) => state.clearWalls);
   const resetNodeState = useYieldStore((state) => state.resetNodeState);
 
-  // Playback state (will be connected to pathfinding controller in Story 4.4)
-  const [status, setStatus] = useState<"idle" | "playing" | "paused" | "complete">("idle");
+  // Build pathfinding context from store state
+  const context = useMemo(
+    () => ({
+      rows: gridConfig.rows,
+      cols: gridConfig.cols,
+      start: nodeState.start,
+      end: nodeState.end,
+      walls: nodeState.walls,
+    }),
+    [gridConfig, nodeState]
+  );
 
-  const algorithmLabel = ALGORITHM_LABELS[pathfindingAlgorithm] ?? "Pathfinding";
+  // Use the pathfinding controller
+  const controller = usePathfindingController(context, pathfindingAlgorithm);
 
-  const handlePlay = useCallback(() => {
-    // TODO: Implement in Story 4.4
-    setStatus("playing");
-  }, []);
-
-  const handlePause = useCallback(() => {
-    setStatus("paused");
-  }, []);
+  // Get algorithm metadata
+  const metadata = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
 
   const handleClearWalls = useCallback(() => {
+    controller.reset();
     clearWalls();
-  }, [clearWalls]);
+  }, [controller, clearWalls]);
 
   const handleResetAll = useCallback(() => {
-    setStatus("idle");
+    controller.reset();
     resetNodeState();
-  }, [resetNodeState]);
+  }, [controller, resetNodeState]);
 
-  const isPlaying = status === "playing";
-  const isComplete = status === "complete";
-  const isLocked = status === "playing";
+  const isPlaying = controller.status === "playing";
+  const isComplete = controller.status === "complete";
+  const isIdle = controller.status === "idle";
+  const isLocked = controller.status === "playing" || controller.status === "complete";
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header Bar */}
       <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">{algorithmLabel}</h1>
+          <h1 className="text-primary text-sm font-medium">{metadata.label}</h1>
           <motion.span
             key={pathfindingAlgorithm}
             variants={badgeVariants}
@@ -74,10 +81,19 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
           >
             {gridConfig.rows} x {gridConfig.cols}
           </motion.span>
+          {metadata.guaranteesShortestPath && (
+            <span className="text-emerald-400 text-xs">Shortest Path</span>
+          )}
         </div>
 
         {/* Playback Controls */}
         <div className="flex items-center gap-2">
+          <ControlButton
+            label="Step"
+            icon={<SkipForward className="h-3.5 w-3.5" />}
+            onClick={controller.nextStep}
+            disabled={isComplete}
+          />
           <ControlButton
             label="Clear Walls"
             icon={<Trash2 className="h-3.5 w-3.5" />}
@@ -88,11 +104,11 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
             label="Reset"
             icon={<RotateCcw className="h-3.5 w-3.5" />}
             onClick={handleResetAll}
-            disabled={status === "idle"}
+            disabled={isIdle}
           />
           <PlayPauseButton
             isPlaying={isPlaying}
-            onClick={isPlaying ? handlePause : handlePlay}
+            onClick={isPlaying ? controller.pause : controller.play}
             disabled={isComplete}
           />
         </div>
@@ -105,31 +121,104 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
           animate={{ opacity: 1, scale: 1 }}
           transition={SPRING_PRESETS.entrance}
         >
-          <Grid isLocked={isLocked} />
+          <Grid
+            visualizationState={controller.nodeStates}
+            maxDistance={controller.maxDistance}
+            isLocked={isLocked}
+          />
         </motion.div>
 
         {/* Instructions Overlay */}
         <div className="absolute bottom-4 left-4 flex items-center gap-4">
           <span className="text-muted text-xs">
             <span className="bg-emerald-500 mr-1.5 inline-block h-2.5 w-2.5 rounded-sm" />
-            Drag to move start
+            Start
           </span>
           <span className="text-muted text-xs">
             <span className="bg-rose-500 mr-1.5 inline-block h-2.5 w-2.5 rounded-sm" />
-            Drag to move end
+            End
           </span>
           <span className="text-muted text-xs">
             <span className="bg-slate-700 mr-1.5 inline-block h-2.5 w-2.5 rounded-sm" />
-            Click & drag to draw walls
+            Wall
+          </span>
+          <span className="text-muted text-xs">
+            <span
+              className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm"
+              style={{
+                background: "linear-gradient(to right, hsl(180, 70%, 55%), hsl(260, 85%, 40%))",
+              }}
+            />
+            Visited (heat map)
+          </span>
+          <span className="text-muted text-xs">
+            <span className="bg-amber-400 mr-1.5 inline-block h-2.5 w-2.5 rounded-sm" />
+            Path
           </span>
         </div>
 
         {/* Status Overlay */}
-        <div className="absolute top-4 left-4 flex items-center gap-3">
-          <span className="text-muted text-xs">
-            Status: {status.charAt(0).toUpperCase() + status.slice(1)}
-          </span>
-        </div>
+        <StatusOverlay
+          status={controller.status}
+          pathFound={controller.pathFound}
+          stepCount={controller.currentStepIndex}
+          algorithm={pathfindingAlgorithm}
+        />
+      </div>
+    </div>
+  );
+}
+
+interface StatusOverlayProps {
+  status: "idle" | "playing" | "paused" | "complete";
+  pathFound: boolean | null;
+  stepCount: number;
+  algorithm: PathfindingAlgorithmType;
+}
+
+function StatusOverlay({ status, pathFound, stepCount, algorithm }: StatusOverlayProps) {
+  const metadata = getPathfindingAlgorithmMetadata(algorithm);
+
+  return (
+    <div className="absolute top-4 left-4 flex flex-col gap-2">
+      <div className="flex items-center gap-3">
+        <span className="text-muted text-xs">
+          Status: {status.charAt(0).toUpperCase() + status.slice(1)}
+        </span>
+        {stepCount > 0 && <span className="text-muted text-xs">Steps: {stepCount}</span>}
+      </div>
+
+      {/* Path result indicator */}
+      <AnimatePresence>
+        {status === "complete" && pathFound !== null && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={cn(
+              "flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium",
+              pathFound ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+            )}
+          >
+            {pathFound ? (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Path found!
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-3.5 w-3.5" />
+                No path exists
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Algorithm info */}
+      <div className="flex items-center gap-2">
+        <span className="text-muted/60 text-[10px]">Pattern: {metadata.visualPattern}</span>
+        <span className="text-muted/60 text-[10px]">Time: {metadata.complexity}</span>
       </div>
     </div>
   );

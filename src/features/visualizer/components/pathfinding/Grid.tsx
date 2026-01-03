@@ -1,14 +1,17 @@
 "use client";
 
 import { memo, useCallback, useMemo, useRef } from "react";
+import type { NodeVisualization } from "@/features/algorithms/hooks";
 import { coordToKey, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { GridNode, type NodeState } from "./GridNode";
 
 export interface GridProps {
   className?: string;
-  /** Node states from algorithm visualization (visited, path, current) */
-  visualizationState?: Map<string, NodeState>;
+  /** Node visualization states from algorithm (includes state and optional distance) */
+  visualizationState?: Map<string, NodeVisualization>;
+  /** Maximum distance for normalizing heat map colors */
+  maxDistance?: number;
   /** Whether the grid is locked during algorithm execution */
   isLocked?: boolean;
 }
@@ -38,6 +41,7 @@ type InteractionMode =
 export const Grid = memo(function Grid({
   className,
   visualizationState,
+  maxDistance = 0,
   isLocked = false,
 }: GridProps) {
   const gridConfig = useYieldStore((state) => state.gridConfig);
@@ -49,9 +53,9 @@ export const Grid = memo(function Grid({
   // Use ref for interaction mode to avoid re-renders during drag
   const interactionModeRef = useRef<InteractionMode>({ type: "idle" });
 
-  // Compute node states for the entire grid
-  const nodeStates = useMemo(() => {
-    const states = new Map<string, NodeState>();
+  // Compute node states and distances for the entire grid
+  const nodeData = useMemo(() => {
+    const data = new Map<string, { state: NodeState; heatIntensity: number | undefined }>();
     const { rows, cols } = gridConfig;
 
     for (let r = 0; r < rows; r++) {
@@ -59,34 +63,48 @@ export const Grid = memo(function Grid({
         const key = coordToKey([r, c]);
 
         // Check visualization state first (algorithm running)
-        const vizState = visualizationState?.get(key);
-        if (vizState) {
-          states.set(key, vizState);
+        const vizData = visualizationState?.get(key);
+        if (vizData) {
+          // Calculate heat intensity for visited nodes
+          const heatIntensity: number | undefined =
+            vizData.state === "visited" && vizData.distance !== undefined && maxDistance > 0
+              ? vizData.distance / maxDistance
+              : undefined;
+          data.set(key, { state: vizData.state, heatIntensity });
           continue;
         }
 
         // Check special nodes
         if (r === nodeState.start[0] && c === nodeState.start[1]) {
-          states.set(key, "start");
+          data.set(key, { state: "start", heatIntensity: undefined });
           continue;
         }
         if (r === nodeState.end[0] && c === nodeState.end[1]) {
-          states.set(key, "end");
+          data.set(key, { state: "end", heatIntensity: undefined });
           continue;
         }
 
         // Check walls
         if (nodeState.walls.has(key)) {
-          states.set(key, "wall");
+          data.set(key, { state: "wall", heatIntensity: undefined });
           continue;
         }
 
-        states.set(key, "empty");
+        data.set(key, { state: "empty", heatIntensity: undefined });
       }
     }
 
+    return data;
+  }, [gridConfig, nodeState, visualizationState, maxDistance]);
+
+  // Extract just node states for interaction checks
+  const nodeStates = useMemo(() => {
+    const states = new Map<string, NodeState>();
+    for (const [key, value] of nodeData) {
+      states.set(key, value.state);
+    }
     return states;
-  }, [gridConfig, nodeState, visualizationState]);
+  }, [nodeData]);
 
   // Handle mouse down on a node
   const handleMouseDown = useCallback(
@@ -181,13 +199,14 @@ export const Grid = memo(function Grid({
       const cells: React.ReactNode[] = [];
       for (let c = 0; c < numCols; c++) {
         const key = coordToKey([r, c]);
-        const state = nodeStates.get(key) ?? "empty";
+        const data = nodeData.get(key) ?? { state: "empty" as const, heatIntensity: undefined };
         cells.push(
           <GridNode
             key={key}
             row={r}
             col={c}
-            state={state}
+            state={data.state}
+            heatIntensity={data.heatIntensity}
             onMouseDown={handleMouseDown}
             onMouseEnter={handleMouseEnter}
             onMouseUp={handleMouseUp}
@@ -202,7 +221,7 @@ export const Grid = memo(function Grid({
     }
 
     return rowElements;
-  }, [gridConfig, nodeStates, handleMouseDown, handleMouseEnter, handleMouseUp]);
+  }, [gridConfig, nodeData, handleMouseDown, handleMouseEnter, handleMouseUp]);
 
   return (
     <div
