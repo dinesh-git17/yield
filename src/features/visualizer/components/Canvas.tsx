@@ -1,17 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSortingController } from "@/features/algorithms/hooks";
 import { cn } from "@/lib/utils";
-import { type BarState, SortingBar } from "./SortingBar";
+import { SortingBar } from "./SortingBar";
 
 export interface CanvasProps {
   className?: string;
-}
-
-interface BarItem {
-  id: string;
-  value: number;
-  state: BarState;
 }
 
 const BAR_COUNT = 50;
@@ -25,14 +20,6 @@ function generateOrderedValues(count: number): number[] {
     values.push(Math.round(MIN_HEIGHT + step * i));
   }
   return values;
-}
-
-function createBarsFromValues(values: number[]): BarItem[] {
-  return values.map((value, index) => ({
-    id: `bar-${index}`,
-    value,
-    state: "idle" as const,
-  }));
 }
 
 function shuffleArray(arr: number[]): number[] {
@@ -49,16 +36,51 @@ function shuffleArray(arr: number[]): number[] {
   return result;
 }
 
-const INITIAL_VALUES = generateOrderedValues(BAR_COUNT);
-const INITIAL_BARS = createBarsFromValues(INITIAL_VALUES);
-
 export function Canvas({ className }: CanvasProps) {
-  const [bars, setBars] = useState<BarItem[]>(INITIAL_BARS);
+  const [initialValues, setInitialValues] = useState<number[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const shuffled = shuffleArray(INITIAL_VALUES);
-    setBars(createBarsFromValues(shuffled));
+    const ordered = generateOrderedValues(BAR_COUNT);
+    const shuffled = shuffleArray(ordered);
+    setInitialValues(shuffled);
+    setIsClient(true);
   }, []);
+
+  const stableInitialValues = useMemo(() => initialValues, [initialValues]);
+
+  if (!isClient || initialValues.length === 0) {
+    return (
+      <div className={cn("flex h-full flex-col", className)}>
+        <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
+          <div className="flex items-center gap-3">
+            <h1 className="text-primary text-sm font-medium">Bubble Sort</h1>
+            <span className="bg-accent-muted text-accent rounded-full px-2 py-0.5 text-xs font-medium">
+              O(n²)
+            </span>
+          </div>
+        </header>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-muted text-sm">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return <CanvasContent className={className} initialValues={stableInitialValues} />;
+}
+
+interface CanvasContentProps {
+  className: string | undefined;
+  initialValues: number[];
+}
+
+function CanvasContent({ className, initialValues }: CanvasContentProps) {
+  const { bars, status, currentStepIndex, play, pause, nextStep, reset } =
+    useSortingController(initialValues);
+
+  const isPlaying = status === "playing";
+  const isComplete = status === "complete";
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -71,11 +93,16 @@ export function Canvas({ className }: CanvasProps) {
           </span>
         </div>
 
-        {/* Playback Controls Placeholder */}
+        {/* Playback Controls */}
         <div className="flex items-center gap-2">
-          <ControlButton label="Reset" />
-          <ControlButton label="Step" />
-          <ControlButton label="Play" isPrimary />
+          <ControlButton label="Reset" onClick={reset} disabled={status === "idle"} />
+          <ControlButton label="Step" onClick={nextStep} disabled={isComplete} />
+          <ControlButton
+            label={isPlaying ? "Pause" : "Play"}
+            onClick={isPlaying ? pause : play}
+            disabled={isComplete}
+            isPrimary
+          />
         </div>
       </header>
 
@@ -96,7 +123,9 @@ export function Canvas({ className }: CanvasProps) {
 
       {/* Footer Status Bar */}
       <footer className="border-border-subtle bg-surface flex h-10 shrink-0 items-center justify-between border-t px-4">
-        <div className="text-muted text-xs">Step: 0 / 0</div>
+        <div className="text-muted text-xs">
+          Step: {currentStepIndex} {isComplete && "(Complete)"}
+        </div>
         <div className="text-muted text-xs">Speed: 1x</div>
       </footer>
     </div>
@@ -105,18 +134,24 @@ export function Canvas({ className }: CanvasProps) {
 
 interface ControlButtonProps {
   label: string;
+  onClick: () => void;
   isPrimary?: boolean;
+  disabled?: boolean;
 }
 
-function ControlButton({ label, isPrimary }: ControlButtonProps) {
+function ControlButton({ label, onClick, isPrimary, disabled }: ControlButtonProps) {
   return (
     <button
       type="button"
+      onClick={onClick}
+      disabled={disabled}
       className={cn(
         "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+        "focus-visible:ring-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         isPrimary
-          ? "bg-accent hover:bg-accent/90 text-white"
-          : "bg-surface-elevated border-border text-primary hover:bg-border/50 border"
+          ? "bg-accent hover:bg-accent/90 text-white disabled:bg-accent/50"
+          : "bg-surface-elevated border-border text-primary hover:bg-border/50 border disabled:opacity-50",
+        disabled && "cursor-not-allowed"
       )}
     >
       {label}
