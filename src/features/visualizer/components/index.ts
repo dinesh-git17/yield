@@ -1,3 +1,5 @@
+export type { SortingContextValue, SortingProviderProps } from "../context";
+export { SortingProvider, useSorting } from "../context";
 export type { CanvasProps } from "./Canvas";
 export { Canvas } from "./Canvas";
 export type { CodePanelProps } from "./CodePanel";

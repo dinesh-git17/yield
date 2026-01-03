@@ -12,10 +12,13 @@ export interface BarData {
   state: BarState;
 }
 
+export type StepType = SortStep["type"] | null;
+
 export interface SortingControllerState {
   bars: BarData[];
   status: PlaybackStatus;
   currentStepIndex: number;
+  currentStepType: StepType;
   totalSteps: number;
   speed: number;
 }
@@ -44,6 +47,7 @@ export function useSortingController(initialValues: number[]): UseSortingControl
   const [bars, setBars] = useState<BarData[]>(() => createBarsFromValues(initialValues));
   const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [currentStepType, setCurrentStepType] = useState<StepType>(null);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [sortedIndices, setSortedIndices] = useState<Set<number>>(new Set());
 
@@ -111,6 +115,7 @@ export function useSortingController(initialValues: number[]): UseSortingControl
 
     const step = result.value;
     setCurrentStepIndex((prev) => prev + 1);
+    setCurrentStepType(step.type);
     totalStepsRef.current += 1;
 
     if (step.type === "sorted") {
@@ -168,6 +173,7 @@ export function useSortingController(initialValues: number[]): UseSortingControl
   const reset = useCallback(() => {
     setStatus("idle");
     setCurrentStepIndex(0);
+    setCurrentStepType(null);
     totalStepsRef.current = 0;
     setSortedIndices(new Set());
     setBars(createBarsFromValues(initialValues));
@@ -182,6 +188,7 @@ export function useSortingController(initialValues: number[]): UseSortingControl
     bars,
     status,
     currentStepIndex,
+    currentStepType,
     totalSteps: totalStepsRef.current,
     speed,
     play,

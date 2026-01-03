@@ -1,55 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useSortingController } from "@/features/algorithms/hooks";
 import { cn } from "@/lib/utils";
+import { useSorting } from "../context";
 import { SortingBar } from "./SortingBar";
 
 export interface CanvasProps {
   className?: string;
 }
 
-const BAR_COUNT = 50;
-const MIN_HEIGHT = 5;
-const MAX_HEIGHT = 100;
-
-function generateOrderedValues(count: number): number[] {
-  const values: number[] = [];
-  const step = (MAX_HEIGHT - MIN_HEIGHT) / (count - 1);
-  for (let i = 0; i < count; i++) {
-    values.push(Math.round(MIN_HEIGHT + step * i));
-  }
-  return values;
-}
-
-function shuffleArray(arr: number[]): number[] {
-  const result = [...arr];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = result[i];
-    const jVal = result[j];
-    if (temp !== undefined && jVal !== undefined) {
-      result[i] = jVal;
-      result[j] = temp;
-    }
-  }
-  return result;
-}
-
 export function Canvas({ className }: CanvasProps) {
-  const [initialValues, setInitialValues] = useState<number[]>([]);
-  const [isClient, setIsClient] = useState(false);
+  const { bars, status, currentStepIndex, play, pause, nextStep, reset, isReady } = useSorting();
 
-  useEffect(() => {
-    const ordered = generateOrderedValues(BAR_COUNT);
-    const shuffled = shuffleArray(ordered);
-    setInitialValues(shuffled);
-    setIsClient(true);
-  }, []);
-
-  const stableInitialValues = useMemo(() => initialValues, [initialValues]);
-
-  if (!isClient || initialValues.length === 0) {
+  if (!isReady) {
     return (
       <div className={cn("flex h-full flex-col", className)}>
         <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
@@ -66,18 +28,6 @@ export function Canvas({ className }: CanvasProps) {
       </div>
     );
   }
-
-  return <CanvasContent className={className} initialValues={stableInitialValues} />;
-}
-
-interface CanvasContentProps {
-  className: string | undefined;
-  initialValues: number[];
-}
-
-function CanvasContent({ className, initialValues }: CanvasContentProps) {
-  const { bars, status, currentStepIndex, play, pause, nextStep, reset } =
-    useSortingController(initialValues);
 
   const isPlaying = status === "playing";
   const isComplete = status === "complete";
@@ -107,8 +57,8 @@ function CanvasContent({ className, initialValues }: CanvasContentProps) {
       </header>
 
       {/* Visualization Area */}
-      <div className="relative flex flex-1 items-end justify-center overflow-hidden p-8">
-        <div className="flex h-full w-full max-w-4xl items-end justify-center gap-0.5">
+      <div className="bg-dot-pattern relative flex flex-1 items-end justify-center overflow-hidden p-8">
+        <div className="flex h-full w-full max-w-4xl items-end justify-center gap-1 border-b border-border/50">
           {bars.map((bar, index) => (
             <SortingBar
               key={bar.id}

@@ -55,7 +55,7 @@ function SortingBarComponent({ value, index, heightPercent, state }: SortingBarP
     <motion.div
       layout
       transition={SPRING_CONFIG}
-      className={cn("w-3 min-w-2 rounded-t-sm", STATE_COLORS[state])}
+      className={cn("w-4 min-w-2 rounded-t-md", STATE_COLORS[state])}
       style={{ height: `${heightPercent}%` }}
       role="img"
       aria-label={ariaLabel}

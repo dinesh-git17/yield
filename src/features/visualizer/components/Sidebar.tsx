@@ -1,22 +1,34 @@
 "use client";
 
+import { ChevronsLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SidebarProps {
   className?: string;
+  onCollapse?: () => void;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, onCollapse }: SidebarProps) {
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header */}
-      <div className="border-border-subtle flex h-14 items-center border-b px-4">
+      <div className="border-border-subtle flex h-14 items-center justify-between border-b px-4">
         <div className="flex items-center gap-2">
           <div className="bg-accent flex h-7 w-7 items-center justify-center rounded-md">
             <span className="text-sm font-semibold text-white">Y</span>
           </div>
           <span className="text-primary text-sm font-semibold">Yield</span>
         </div>
+        {onCollapse && (
+          <button
+            type="button"
+            onClick={onCollapse}
+            className="text-muted hover:text-primary hover:bg-border/50 rounded-md p-1.5 transition-colors"
+            aria-label="Collapse sidebar"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}

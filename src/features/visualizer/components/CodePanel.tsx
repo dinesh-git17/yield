@@ -1,10 +1,22 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { type StepType, useSorting } from "../context";
 
 export interface CodePanelProps {
   className?: string;
 }
+
+/**
+ * Maps algorithm step types to their corresponding line indices in the code display.
+ * These indices correspond to the yield statements in BUBBLE_SORT_LINES.
+ */
+const STEP_TYPE_TO_LINE: Record<NonNullable<StepType>, number> = {
+  compare: 6,
+  swap: 11,
+  sorted: 15,
+};
 
 const BUBBLE_SORT_LINES = [
   "function* bubbleSort(arr) {",
@@ -29,11 +41,23 @@ const BUBBLE_SORT_LINES = [
   "}",
 ];
 
+const STEP_TYPE_LABELS: Record<NonNullable<StepType>, string> = {
+  compare: "Comparing elements",
+  swap: "Swapping elements",
+  sorted: "Marking as sorted",
+};
+
 export function CodePanel({ className }: CodePanelProps) {
+  const { currentStepType, status } = useSorting();
+
+  const highlightedLine = currentStepType ? STEP_TYPE_TO_LINE[currentStepType] : null;
+  const stepLabel = currentStepType ? STEP_TYPE_LABELS[currentStepType] : null;
+  const displayLine = highlightedLine !== null ? highlightedLine + 1 : null;
+
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header */}
-      <header className="border-border-subtle flex h-14 shrink-0 items-center justify-between border-b px-4">
+      <header className="border-border-subtle flex h-14 shrink-0 items-center justify-between border-b px-6">
         <div className="flex items-center gap-2">
           <CodeIcon />
           <span className="text-primary text-sm font-medium">Code</span>
@@ -43,16 +67,16 @@ export function CodePanel({ className }: CodePanelProps) {
         </button>
       </header>
 
-      {/* Code Display */}
-      <div className="flex-1 overflow-auto p-4">
-        <pre className="font-mono text-xs leading-relaxed">
+      {/* Code Display - IDE-style with sticky gutter */}
+      <div className="flex-1 overflow-auto">
+        <pre className="font-mono text-[13px] leading-7 py-6">
           <code>
             {BUBBLE_SORT_LINES.map((line, lineNumber) => (
               <CodeLine
                 key={line || `empty-${lineNumber}`}
                 line={line}
                 lineNumber={lineNumber}
-                isHighlighted={lineNumber === 6}
+                isHighlighted={lineNumber === highlightedLine}
               />
             ))}
           </code>
@@ -60,8 +84,15 @@ export function CodePanel({ className }: CodePanelProps) {
       </div>
 
       {/* Footer */}
-      <footer className="border-border-subtle flex h-10 shrink-0 items-center border-t px-4">
-        <span className="text-muted text-xs">Line 7: Comparing elements</span>
+      <footer className="border-border-subtle flex h-10 shrink-0 items-center border-t px-6">
+        <span className="text-muted text-xs">
+          {status === "idle" && "Ready to start"}
+          {status === "complete" && "Sorting complete"}
+          {(status === "playing" || status === "paused") &&
+            displayLine &&
+            stepLabel &&
+            `Line ${displayLine}: ${stepLabel}`}
+        </span>
       </footer>
     </div>
   );
@@ -75,11 +106,51 @@ interface CodeLineProps {
 
 function CodeLine({ line, lineNumber, isHighlighted }: CodeLineProps) {
   return (
-    <div className={cn("flex", isHighlighted && "bg-accent-muted -mx-4 px-4")}>
-      <span className="text-muted mr-4 w-5 select-none text-right">{lineNumber + 1}</span>
-      <span className="text-primary">{line}</span>
+    <div className={cn("flex min-h-7", isHighlighted && "bg-accent-muted")}>
+      {/* Sticky line number gutter */}
+      <span
+        className={cn(
+          "bg-surface sticky left-0 w-12 shrink-0 select-none pr-4 text-right",
+          isHighlighted ? "bg-accent-muted text-accent" : "text-muted/40"
+        )}
+      >
+        {lineNumber + 1}
+      </span>
+      {/* Code content */}
+      <span className="text-primary whitespace-pre pr-6">{highlightSyntax(line) || "\u00A0"}</span>
     </div>
   );
+}
+
+const KEYWORDS = ["function*", "function", "const", "let", "var", "yield", "for", "if", "return"];
+const KEYWORD_PATTERN = new RegExp(`\\b(${KEYWORDS.join("|")})\\b`, "g");
+
+function highlightSyntax(line: string): ReactNode {
+  if (line.trim().startsWith("//")) {
+    return <span className="text-muted/60 italic">{line}</span>;
+  }
+
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  const regex = new RegExp(KEYWORD_PATTERN);
+
+  for (let match = regex.exec(line); match !== null; match = regex.exec(line)) {
+    if (match.index > lastIndex) {
+      parts.push(line.slice(lastIndex, match.index));
+    }
+    parts.push(
+      <span key={match.index} className="text-accent">
+        {match[0]}
+      </span>
+    );
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < line.length) {
+    parts.push(line.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : line;
 }
 
 function CodeIcon() {
