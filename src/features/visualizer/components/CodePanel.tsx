@@ -1,6 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, Clipboard } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { type StepType, useSorting } from "../context";
 
@@ -47,12 +50,39 @@ const STEP_TYPE_LABELS: Record<NonNullable<StepType>, string> = {
   sorted: "Marking as sorted",
 };
 
+const COPY_FEEDBACK_DURATION = 2000;
+const LINE_HEIGHT_PX = 28;
+
 export function CodePanel({ className }: CodePanelProps) {
   const { currentStepType, status } = useSorting();
+  const [isCopied, setIsCopied] = useState(false);
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const highlightedLine = currentStepType ? STEP_TYPE_TO_LINE[currentStepType] : null;
   const stepLabel = currentStepType ? STEP_TYPE_LABELS[currentStepType] : null;
   const displayLine = highlightedLine !== null ? highlightedLine + 1 : null;
+
+  const handleCopy = useCallback(async () => {
+    const code = BUBBLE_SORT_LINES.join("\n");
+    await navigator.clipboard.writeText(code);
+
+    setIsCopied(true);
+
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+    copyTimeoutRef.current = setTimeout(() => {
+      setIsCopied(false);
+    }, COPY_FEEDBACK_DURATION);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -62,15 +92,27 @@ export function CodePanel({ className }: CodePanelProps) {
           <CodeIcon />
           <span className="text-primary text-sm font-medium">Code</span>
         </div>
-        <button type="button" className="text-muted hover:text-primary text-xs transition-colors">
-          Copy
-        </button>
+        <CopyButton isCopied={isCopied} onClick={handleCopy} />
       </header>
 
       {/* Code Display - IDE-style with sticky gutter */}
       <div className="flex-1 overflow-auto">
         <pre className="font-mono text-[13px] leading-7 py-6">
-          <code>
+          <code className="relative block">
+            {/* Single persistent highlight that animates position */}
+            <AnimatePresence>
+              {highlightedLine !== null && (
+                <motion.div
+                  className="bg-accent-muted pointer-events-none absolute left-0 right-0 z-0"
+                  style={{ height: LINE_HEIGHT_PX }}
+                  initial={{ opacity: 0, y: highlightedLine * LINE_HEIGHT_PX }}
+                  animate={{ opacity: 1, y: highlightedLine * LINE_HEIGHT_PX }}
+                  exit={{ opacity: 0 }}
+                  transition={SPRING_PRESETS.entrance}
+                  aria-hidden="true"
+                />
+              )}
+            </AnimatePresence>
             {BUBBLE_SORT_LINES.map((line, lineNumber) => (
               <CodeLine
                 key={line || `empty-${lineNumber}`}
@@ -98,6 +140,42 @@ export function CodePanel({ className }: CodePanelProps) {
   );
 }
 
+interface CopyButtonProps {
+  isCopied: boolean;
+  onClick: () => void;
+}
+
+function CopyButton({ isCopied, onClick }: CopyButtonProps) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={buttonInteraction.hover}
+      whileTap={buttonInteraction.tap}
+      transition={SPRING_PRESETS.snappy}
+      className={cn(
+        "flex items-center gap-1.5 text-xs transition-colors",
+        isCopied ? "text-green-500" : "text-muted hover:text-primary"
+      )}
+      aria-label={isCopied ? "Copied!" : "Copy code"}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={isCopied ? "check" : "clipboard"}
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.5, opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="flex items-center"
+        >
+          {isCopied ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
+        </motion.span>
+      </AnimatePresence>
+      {isCopied ? "Copied!" : "Copy"}
+    </motion.button>
+  );
+}
+
 interface CodeLineProps {
   line: string;
   lineNumber: number;
@@ -106,18 +184,20 @@ interface CodeLineProps {
 
 function CodeLine({ line, lineNumber, isHighlighted }: CodeLineProps) {
   return (
-    <div className={cn("flex min-h-7", isHighlighted && "bg-accent-muted")}>
+    <div className="relative flex min-h-7">
       {/* Sticky line number gutter */}
       <span
         className={cn(
-          "bg-surface sticky left-0 w-12 shrink-0 select-none pr-4 text-right",
-          isHighlighted ? "bg-accent-muted text-accent" : "text-muted/40"
+          "sticky left-0 z-10 w-12 shrink-0 select-none pr-4 text-right transition-colors duration-150",
+          isHighlighted ? "text-accent" : "text-muted/40"
         )}
       >
         {lineNumber + 1}
       </span>
       {/* Code content */}
-      <span className="text-primary whitespace-pre pr-6">{highlightSyntax(line) || "\u00A0"}</span>
+      <span className="text-primary relative z-10 whitespace-pre pr-6">
+        {highlightSyntax(line) || "\u00A0"}
+      </span>
     </div>
   );
 }
