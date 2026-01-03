@@ -88,8 +88,8 @@ export function Canvas({ className }: CanvasProps) {
       </header>
 
       {/* Visualization Area */}
-      <div className="bg-dot-pattern relative flex flex-1 items-end justify-center overflow-hidden p-8 pb-24">
-        <div className="flex h-full w-full max-w-4xl items-end justify-center gap-1 border-b border-border/50">
+      <div className="bg-dot-pattern relative flex flex-1 items-end justify-center overflow-hidden p-6 pb-28">
+        <div className="flex h-full max-h-[480px] w-full max-w-4xl items-end justify-center gap-1 border-b border-border/50">
           {bars.map((bar, index) => (
             <SortingBar
               key={bar.id}
@@ -104,7 +104,7 @@ export function Canvas({ className }: CanvasProps) {
         </div>
 
         {/* Floating Control Bar */}
-        <div className="absolute inset-x-0 bottom-4 z-30 flex justify-center">
+        <div className="absolute inset-x-0 bottom-6 z-30 flex justify-center">
           <ControlBar />
         </div>
 
