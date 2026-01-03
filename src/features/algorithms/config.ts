@@ -9,6 +9,9 @@ export const STEP_TYPE_LABELS: Record<SortStep["type"], string> = {
   swap: "Swapping elements",
   scanning: "Current minimum",
   sorted: "Marking as sorted",
+  pivot: "Selecting pivot",
+  overwrite: "Writing value",
+  partition: "Partitioning range",
 };
 
 /**
@@ -19,6 +22,10 @@ export interface AlgorithmMetadata {
   label: string;
   /** Time complexity notation */
   complexity: string;
+  /** Space complexity notation */
+  spaceComplexity: string;
+  /** Brief description of how the algorithm works */
+  description: string;
   /** Source code lines for display */
   code: string[];
   /** Maps step types to their corresponding line indices (0-based) */
@@ -33,6 +40,8 @@ export const ALGO_METADATA: Record<AlgorithmType, AlgorithmMetadata> = {
   bubble: {
     label: "Bubble Sort",
     complexity: "O(n²)",
+    spaceComplexity: "O(1)",
+    description: "Repeatedly swaps adjacent elements if they are in the wrong order.",
     code: [
       "function* bubbleSort(arr) {",
       "  const n = arr.length;",
@@ -65,6 +74,8 @@ export const ALGO_METADATA: Record<AlgorithmType, AlgorithmMetadata> = {
   selection: {
     label: "Selection Sort",
     complexity: "O(n²)",
+    spaceComplexity: "O(1)",
+    description: "Finds the minimum element and places it at the sorted position.",
     code: [
       "function* selectionSort(arr) {",
       "  const n = arr.length;",
@@ -109,11 +120,14 @@ export const ALGO_METADATA: Record<AlgorithmType, AlgorithmMetadata> = {
   quick: {
     label: "Quick Sort",
     complexity: "O(n log n)",
+    spaceComplexity: "O(log n)",
+    description: "Partitions around a pivot, recursively sorting subarrays.",
     code: [
       "function* quickSort(arr, lo = 0, hi = arr.length - 1) {",
       "  if (lo >= hi) return;",
       "",
-      "  // Partition around pivot",
+      "  // Select pivot (last element)",
+      "  yield { type: 'pivot', index: hi };",
       "  const pivot = arr[hi];",
       "  let i = lo - 1;",
       "",
@@ -128,7 +142,7 @@ export const ALGO_METADATA: Record<AlgorithmType, AlgorithmMetadata> = {
       "    }",
       "  }",
       "",
-      "  // Place pivot in correct position",
+      "  // Place pivot in sorted position",
       "  [arr[i + 1], arr[hi]] = [arr[hi], arr[i + 1]];",
       "  yield { type: 'swap', indices: [i + 1, hi] };",
       "  yield { type: 'sorted', index: i + 1 };",
@@ -139,9 +153,56 @@ export const ALGO_METADATA: Record<AlgorithmType, AlgorithmMetadata> = {
       "}",
     ],
     lineMapping: {
-      compare: 9,
-      swap: 14,
-      sorted: 21,
+      pivot: 4,
+      compare: 10,
+      swap: 15,
+      sorted: 22,
+    },
+  },
+
+  merge: {
+    label: "Merge Sort",
+    complexity: "O(n log n)",
+    spaceComplexity: "O(n)",
+    description: "Divides array in half, sorts each, then merges them back.",
+    code: [
+      "function* mergeSort(arr, lo = 0, hi = arr.length - 1) {",
+      "  if (lo >= hi) return;",
+      "",
+      "  const mid = Math.floor((lo + hi) / 2);",
+      "",
+      "  // Recursively sort halves",
+      "  yield* mergeSort(arr, lo, mid);",
+      "  yield* mergeSort(arr, mid + 1, hi);",
+      "",
+      "  // Merge sorted halves",
+      "  const merged = [];",
+      "  let i = lo, j = mid + 1;",
+      "",
+      "  while (i <= mid && j <= hi) {",
+      "    // Compare elements from each half",
+      "    yield { type: 'compare', indices: [i, j] };",
+      "",
+      "    if (arr[i] <= arr[j]) {",
+      "      merged.push(arr[i++]);",
+      "    } else {",
+      "      merged.push(arr[j++]);",
+      "    }",
+      "  }",
+      "",
+      "  // Copy remaining and write back",
+      "  while (i <= mid) merged.push(arr[i++]);",
+      "  while (j <= hi) merged.push(arr[j++]);",
+      "",
+      "  for (let k = 0; k < merged.length; k++) {",
+      "    arr[lo + k] = merged[k];",
+      "    yield { type: 'overwrite', index: lo + k };",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      compare: 15,
+      overwrite: 30,
     },
   },
 };

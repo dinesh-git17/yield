@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronsLeft } from "lucide-react";
+import { BadgeHelp, ChevronsLeft } from "lucide-react";
 import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { type AlgorithmType, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { ComplexityModal } from "./ComplexityModal";
 import { Logo } from "./Logo";
 
 export interface SidebarProps {
@@ -16,11 +17,13 @@ export interface SidebarProps {
 const SORTING_ALGORITHMS: { id: AlgorithmType; label: string; enabled: boolean }[] = [
   { id: "bubble", label: "Bubble Sort", enabled: true },
   { id: "selection", label: "Selection Sort", enabled: true },
-  { id: "quick", label: "Quick Sort", enabled: false },
+  { id: "quick", label: "Quick Sort", enabled: true },
+  { id: "merge", label: "Merge Sort", enabled: true },
 ];
 
 export function Sidebar({ className, onCollapse }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [isComplexityOpen, setIsComplexityOpen] = useState(false);
   const currentAlgorithm = useYieldStore((state) => state.algorithm);
   const setAlgorithm = useYieldStore((state) => state.setAlgorithm);
 
@@ -30,6 +33,14 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
     },
     [setAlgorithm]
   );
+
+  const openComplexityModal = useCallback(() => {
+    setIsComplexityOpen(true);
+  }, []);
+
+  const closeComplexityModal = useCallback(() => {
+    setIsComplexityOpen(false);
+  }, []);
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -118,12 +129,34 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             />
           ))}
         </SidebarGroup>
+
+        <div className="border-border-subtle my-4 border-t" />
+
+        {/* Complexity Trigger */}
+        <motion.button
+          type="button"
+          onClick={openComplexityModal}
+          whileHover={buttonInteraction.hover}
+          whileTap={buttonInteraction.tap}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+            "border border-white/10 bg-white/5 backdrop-blur-sm",
+            "text-primary hover:bg-white/10 transition-colors",
+            "dark:border-white/5 dark:bg-black/20"
+          )}
+        >
+          <BadgeHelp className="h-4 w-4 text-violet-400" />
+          <span className="text-sm font-medium">Complexity</span>
+        </motion.button>
       </nav>
 
       {/* Footer */}
       <div className="border-border-subtle border-t p-3">
-        <div className="text-muted text-xs">Phase 2: Interactivity</div>
+        <div className="text-muted text-xs">Phase 3: Divide & Conquer</div>
       </div>
+
+      {/* Complexity Modal */}
+      <ComplexityModal isOpen={isComplexityOpen} onClose={closeComplexityModal} />
     </div>
   );
 }
