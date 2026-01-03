@@ -11,6 +11,10 @@
   --color-border-subtle: var(--border-subtle);
   --color-accent: var(--accent);
   --color-accent-muted: var(--accent-muted);
+  --color-bar-idle: var(--bar-idle);
+  --color-bar-comparing: var(--bar-comparing);
+  --color-bar-swapping: var(--bar-swapping);
+  --color-bar-sorted: var(--bar-sorted);
 }
 
 :root {
@@ -33,6 +37,12 @@
   /* Accent (Linear purple) */
   --accent: #5e6ad2;
   --accent-muted: rgba(94, 106, 210, 0.15);
+
+  /* Bar States */
+  --bar-idle: rgba(94, 106, 210, 0.3);
+  --bar-comparing: #f59e0b;
+  --bar-swapping: #8b5cf6;
+  --bar-sorted: #10b981;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -56,6 +66,12 @@
     /* Accent (Linear purple) */
     --accent: #5e6ad2;
     --accent-muted: rgba(94, 106, 210, 0.15);
+
+    /* Bar States */
+    --bar-idle: rgba(94, 106, 210, 0.3);
+    --bar-comparing: #fbbf24;
+    --bar-swapping: #a78bfa;
+    --bar-sorted: #34d399;
   }
 }
 

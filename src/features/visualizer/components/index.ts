@@ -6,3 +6,5 @@ export type { MainLayoutProps } from "./MainLayout";
 export { MainLayout } from "./MainLayout";
 export type { SidebarProps } from "./Sidebar";
 export { Sidebar } from "./Sidebar";
+export type { BarState, SortingBarProps } from "./SortingBar";
+export { SortingBar } from "./SortingBar";
