@@ -38,8 +38,8 @@
   --accent: #5e6ad2;
   --accent-muted: rgba(94, 106, 210, 0.15);
 
-  /* Bar States */
-  --bar-idle: rgba(94, 106, 210, 0.3);
+  /* Bar States - Solid colors for premium feel */
+  --bar-idle: #e4e4e7;
   --bar-comparing: #f59e0b;
   --bar-swapping: #8b5cf6;
   --bar-sorted: #10b981;
@@ -67,8 +67,8 @@
     --accent: #5e6ad2;
     --accent-muted: rgba(94, 106, 210, 0.15);
 
-    /* Bar States */
-    --bar-idle: rgba(94, 106, 210, 0.3);
+    /* Bar States - Solid colors for premium feel */
+    --bar-idle: #27272a;
     --bar-comparing: #fbbf24;
     --bar-swapping: #a78bfa;
     --bar-sorted: #34d399;
@@ -79,6 +79,12 @@ html,
 body {
   height: 100%;
   overflow: hidden;
+}
+
+.bg-dot-pattern {
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: center center;
 }
 
 body {
