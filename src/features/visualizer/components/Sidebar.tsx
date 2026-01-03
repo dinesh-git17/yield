@@ -5,6 +5,7 @@ import { ChevronsLeft } from "lucide-react";
 import { useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { Logo } from "./Logo";
 
 export interface SidebarProps {
   className?: string;
@@ -18,12 +19,7 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header */}
       <div className="border-border-subtle flex h-14 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-2">
-          <div className="bg-accent flex h-7 w-7 items-center justify-center rounded-md">
-            <span className="text-sm font-semibold text-white">Y</span>
-          </div>
-          <span className="text-primary text-sm font-semibold">Yield</span>
-        </div>
+        <Logo />
         {onCollapse && (
           <motion.button
             type="button"
