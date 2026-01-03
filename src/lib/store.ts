@@ -4,7 +4,7 @@ import { create } from "zustand";
  * Supported sorting algorithms.
  * Extensible as new algorithms are implemented.
  */
-export type AlgorithmType = "bubble" | "selection" | "quick";
+export type AlgorithmType = "bubble" | "selection" | "quick" | "merge";
 
 /**
  * Playback speed multipliers.

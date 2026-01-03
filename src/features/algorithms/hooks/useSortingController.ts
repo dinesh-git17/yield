@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { bubbleSort, type SortStep, selectionSort } from "@/features/algorithms/sorting";
+import {
+  bubbleSort,
+  mergeSort,
+  quickSort,
+  type SortStep,
+  selectionSort,
+} from "@/features/algorithms/sorting";
 import type { BarState } from "@/features/visualizer/components/SortingBar";
 import type { AlgorithmType } from "@/lib/store";
 
@@ -15,8 +21,11 @@ function getAlgorithmGenerator(
   switch (algorithm) {
     case "selection":
       return selectionSort(arr);
+    case "quick":
+      return quickSort(arr);
+    case "merge":
+      return mergeSort(arr);
     default:
-      // Quick sort not yet implemented, falls back to bubble
       return bubbleSort(arr);
   }
 }
@@ -76,6 +85,7 @@ export function useSortingController(
   const iteratorRef = useRef<Generator<SortStep, void, unknown> | null>(null);
   const totalStepsRef = useRef(0);
   const completionTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  const activePartitionRef = useRef<[number, number] | null>(null);
 
   const clearCompletionTimeouts = useCallback(() => {
     for (const timeout of completionTimeoutsRef.current) {
@@ -87,6 +97,7 @@ export function useSortingController(
   const initializeIterator = useCallback(() => {
     arrayRef.current = [...initialValues];
     iteratorRef.current = getAlgorithmGenerator(algorithm, arrayRef.current);
+    activePartitionRef.current = null;
     setSortedIndices(new Set());
   }, [initialValues, algorithm]);
 
@@ -120,15 +131,17 @@ export function useSortingController(
   );
 
   const applyStep = useCallback((step: SortStep, newSortedIndices: Set<number>) => {
-    setBars((prevBars) => {
-      return prevBars.map((bar, index) => {
-        if (step.type === "compare") {
-          const [i, j] = step.indices;
-          if (index === i || index === j) {
-            return { ...bar, state: "comparing" as const };
-          }
-        }
+    // Update active partition for partition steps
+    if (step.type === "partition") {
+      activePartitionRef.current = step.range;
+    }
 
+    setBars((prevBars) => {
+      const partition = activePartitionRef.current;
+
+      return prevBars.map((bar, index) => {
+        // Handle value-updating steps FIRST (before sorted check)
+        // These must update values even for previously "sorted" indices
         if (step.type === "swap") {
           const [i, j] = step.indices;
           const [newValI, newValJ] = step.newValues;
@@ -140,20 +153,76 @@ export function useSortingController(
           }
         }
 
+        if (step.type === "overwrite") {
+          if (index === step.index) {
+            return { ...bar, value: step.value, state: "swapping" as const };
+          }
+        }
+
+        // Check if element is already sorted (after value updates)
+        if (newSortedIndices.has(index)) {
+          return { ...bar, state: "sorted" as const };
+        }
+
+        // Handle partition step - freeze elements outside active range
+        if (step.type === "partition") {
+          const [lo, hi] = step.range;
+          if (index < lo || index > hi) {
+            return { ...bar, state: "frozen" as const };
+          }
+          return { ...bar, state: "idle" as const };
+        }
+
+        // Handle pivot step
+        if (step.type === "pivot") {
+          if (index === step.index) {
+            return { ...bar, state: "pivot" as const };
+          }
+          // Keep frozen state for elements outside partition
+          if (partition && (index < partition[0] || index > partition[1])) {
+            return { ...bar, state: "frozen" as const };
+          }
+          return { ...bar, state: "idle" as const };
+        }
+
+        // Handle compare step
+        if (step.type === "compare") {
+          const [i, j] = step.indices;
+          if (index === i || index === j) {
+            return { ...bar, state: "comparing" as const };
+          }
+          // Keep frozen state for elements outside partition
+          if (partition && (index < partition[0] || index > partition[1])) {
+            return { ...bar, state: "frozen" as const };
+          }
+        }
+
+        // Handle scanning step (Selection Sort)
         if (step.type === "scanning") {
           if (index === step.index) {
             return { ...bar, state: "scanning" as const };
           }
         }
 
+        // Handle sorted step
         if (step.type === "sorted") {
           if (index === step.index) {
             return { ...bar, state: "sorted" as const };
           }
         }
 
-        if (newSortedIndices.has(index)) {
-          return { ...bar, state: "sorted" as const };
+        // Keep frozen state for elements outside partition (for swap/overwrite/sorted)
+        if (
+          (step.type === "swap" || step.type === "overwrite" || step.type === "sorted") &&
+          partition &&
+          (index < partition[0] || index > partition[1])
+        ) {
+          return { ...bar, state: "frozen" as const };
+        }
+
+        // Default: idle state, but respect frozen for out-of-partition elements
+        if (partition && (index < partition[0] || index > partition[1])) {
+          return { ...bar, state: "frozen" as const };
         }
 
         return { ...bar, state: "idle" as const };
@@ -239,6 +308,7 @@ export function useSortingController(
     setCurrentStepIndex(0);
     setCurrentStepType(null);
     totalStepsRef.current = 0;
+    activePartitionRef.current = null;
     setSortedIndices(new Set());
     setBars(createBarsFromValues(initialValues));
     initializeIterator();
@@ -251,6 +321,7 @@ export function useSortingController(
       setCurrentStepIndex(0);
       setCurrentStepType(null);
       totalStepsRef.current = 0;
+      activePartitionRef.current = null;
       setSortedIndices(new Set());
       setBars(createBarsFromValues(newValues));
       arrayRef.current = [...newValues];
