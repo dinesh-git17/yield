@@ -104,7 +104,7 @@ export function Canvas({ className }: CanvasProps) {
         </div>
 
         {/* Floating Control Bar */}
-        <div className="absolute inset-x-0 bottom-4 flex justify-center">
+        <div className="absolute inset-x-0 bottom-4 z-30 flex justify-center">
           <ControlBar />
         </div>
 

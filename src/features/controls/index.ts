@@ -1,1 +1,6 @@
-export { ControlBar, type ControlBarProps } from "./components";
+export {
+  AlgorithmWheel,
+  type AlgorithmWheelProps,
+  ControlBar,
+  type ControlBarProps,
+} from "./components";

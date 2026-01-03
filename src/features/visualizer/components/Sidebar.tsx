@@ -17,8 +17,11 @@ export interface SidebarProps {
 const SORTING_ALGORITHMS: { id: AlgorithmType; label: string; enabled: boolean }[] = [
   { id: "bubble", label: "Bubble Sort", enabled: true },
   { id: "selection", label: "Selection Sort", enabled: true },
+  { id: "insertion", label: "Insertion Sort", enabled: true },
+  { id: "gnome", label: "Gnome Sort", enabled: true },
   { id: "quick", label: "Quick Sort", enabled: true },
   { id: "merge", label: "Merge Sort", enabled: true },
+  { id: "heap", label: "Heap Sort", enabled: true },
 ];
 
 export function Sidebar({ className, onCollapse }: SidebarProps) {
@@ -75,7 +78,7 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
           </span>
         </div>
 
-        {/* Algorithm Categories - Placeholder for Phase 1 */}
+        {/* Algorithm Categories */}
         <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
           <SidebarItem
             id="cat-sorting"
@@ -109,6 +112,7 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
 
         <div className="border-border-subtle my-4 border-t" />
 
+        {/* Sorting Algorithms List */}
         <div className="mb-2">
           <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
             Sorting
@@ -152,7 +156,7 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
 
       {/* Footer */}
       <div className="border-border-subtle border-t p-3">
-        <div className="text-muted text-xs">Phase 3: Divide & Conquer</div>
+        <div className="text-muted text-xs">Phase 3.5: Tactile Menu</div>
       </div>
 
       {/* Complexity Modal */}

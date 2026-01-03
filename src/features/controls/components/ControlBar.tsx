@@ -5,23 +5,13 @@ import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { motion } from "framer-motion";
 import { memo, useCallback, useMemo } from "react";
 import { SPRING_PRESETS } from "@/lib/motion";
-import {
-  type AlgorithmType,
-  CONFIG,
-  type PlaybackSpeedMultiplier,
-  useYieldStore,
-} from "@/lib/store";
+import { CONFIG, type PlaybackSpeedMultiplier, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { AlgorithmWheel } from "./AlgorithmWheel";
 
 export interface ControlBarProps {
   className?: string;
 }
-
-const ALGORITHM_OPTIONS: { value: AlgorithmType; label: string }[] = [
-  { value: "bubble", label: "Bubble" },
-  { value: "selection", label: "Selection" },
-  { value: "quick", label: "Quick" },
-];
 
 const SPEED_OPTIONS: { value: PlaybackSpeedMultiplier; label: string }[] = [
   { value: 0.5, label: "0.5x" },
@@ -31,21 +21,10 @@ const SPEED_OPTIONS: { value: PlaybackSpeedMultiplier; label: string }[] = [
 ];
 
 export const ControlBar = memo(function ControlBar({ className }: ControlBarProps) {
-  const algorithm = useYieldStore((state) => state.algorithm);
   const arraySize = useYieldStore((state) => state.arraySize);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
-  const setAlgorithm = useYieldStore((state) => state.setAlgorithm);
   const setArraySize = useYieldStore((state) => state.setArraySize);
   const setPlaybackSpeed = useYieldStore((state) => state.setPlaybackSpeed);
-
-  const handleAlgorithmChange = useCallback(
-    (value: string) => {
-      if (value) {
-        setAlgorithm(value as AlgorithmType);
-      }
-    },
-    [setAlgorithm]
-  );
 
   const handleSpeedChange = useCallback(
     (value: string) => {
@@ -88,38 +67,9 @@ export const ControlBar = memo(function ControlBar({ className }: ControlBarProp
         className
       )}
     >
-      {/* Algorithm Select */}
+      {/* Algorithm Wheel Selector */}
       <ControlSection label="Algorithm">
-        <ToggleGroup.Root
-          type="single"
-          value={algorithm}
-          onValueChange={handleAlgorithmChange}
-          className="bg-surface flex rounded-lg p-0.5"
-        >
-          {ALGORITHM_OPTIONS.map((option) => (
-            <ToggleGroup.Item
-              key={option.value}
-              value={option.value}
-              disabled={option.value === "quick"}
-              className={cn(
-                "text-muted relative rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                "focus-visible:ring-accent focus-visible:outline-none focus-visible:ring-2",
-                "disabled:cursor-not-allowed disabled:opacity-40",
-                "data-[state=on]:text-primary"
-              )}
-              aria-label={`Select ${option.label} Sort`}
-            >
-              {algorithm === option.value && (
-                <motion.span
-                  layoutId="algorithm-indicator"
-                  className="bg-surface-elevated border-border absolute inset-0 rounded-md border shadow-sm"
-                  transition={SPRING_PRESETS.snappy}
-                />
-              )}
-              <span className="relative z-10">{option.label}</span>
-            </ToggleGroup.Item>
-          ))}
-        </ToggleGroup.Root>
+        <AlgorithmWheel itemWidth={80} />
       </ControlSection>
 
       <Divider />

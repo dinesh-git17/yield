@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   bubbleSort,
+  gnomeSort,
+  heapSort,
+  insertionSort,
   mergeSort,
   quickSort,
   type SortStep,
@@ -21,10 +24,16 @@ function getAlgorithmGenerator(
   switch (algorithm) {
     case "selection":
       return selectionSort(arr);
+    case "insertion":
+      return insertionSort(arr);
+    case "gnome":
+      return gnomeSort(arr);
     case "quick":
       return quickSort(arr);
     case "merge":
       return mergeSort(arr);
+    case "heap":
+      return heapSort(arr);
     default:
       return bubbleSort(arr);
   }
