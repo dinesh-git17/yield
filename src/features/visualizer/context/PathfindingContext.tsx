@@ -32,6 +32,7 @@ export interface PathfindingProviderProps {
 
 export function PathfindingProvider({ children }: PathfindingProviderProps) {
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
+  const pathfindingHeuristic = useYieldStore((state) => state.pathfindingHeuristic);
   const gridConfig = useYieldStore((state) => state.gridConfig);
   const nodeState = useYieldStore((state) => state.nodeState);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
@@ -48,8 +49,8 @@ export function PathfindingProvider({ children }: PathfindingProviderProps) {
     [gridConfig, nodeState]
   );
 
-  // Use the pathfinding controller
-  const controller = usePathfindingController(context, pathfindingAlgorithm);
+  // Use the pathfinding controller with heuristic
+  const controller = usePathfindingController(context, pathfindingAlgorithm, pathfindingHeuristic);
 
   // Sync store's playback speed to controller
   useEffect(() => {

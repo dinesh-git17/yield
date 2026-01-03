@@ -4,8 +4,9 @@ import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { motion } from "framer-motion";
 import { memo, useCallback } from "react";
 import { SPRING_PRESETS } from "@/lib/motion";
-import { type PlaybackSpeedMultiplier, useYieldStore } from "@/lib/store";
+import { HEURISTIC_ALGORITHMS, type PlaybackSpeedMultiplier, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { HeuristicSelector } from "./HeuristicSelector";
 import { PathfindingAlgorithmWheel } from "./PathfindingAlgorithmWheel";
 
 export interface PathfindingControlBarProps {
@@ -24,6 +25,10 @@ export const PathfindingControlBar = memo(function PathfindingControlBar({
 }: PathfindingControlBarProps) {
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
   const setPlaybackSpeed = useYieldStore((state) => state.setPlaybackSpeed);
+  const currentAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
+
+  // Show heuristic selector only for algorithms that use heuristics
+  const showHeuristicSelector = HEURISTIC_ALGORITHMS.includes(currentAlgorithm);
 
   const handleSpeedChange = useCallback(
     (value: string) => {
@@ -50,6 +55,17 @@ export const PathfindingControlBar = memo(function PathfindingControlBar({
       </ControlSection>
 
       <Divider />
+
+      {/* Heuristic Selector (only for A* and Greedy) */}
+      {showHeuristicSelector && (
+        <>
+          <ControlSection label="Heuristic">
+            <HeuristicSelector />
+          </ControlSection>
+
+          <Divider />
+        </>
+      )}
 
       {/* Speed Toggle */}
       <ControlSection label="Speed">

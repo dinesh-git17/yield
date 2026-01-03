@@ -14,7 +14,16 @@ export interface PathfindingAlgorithmWheelProps {
 /**
  * Ordered list of pathfinding algorithms for the wheel.
  */
-const ALGORITHM_ORDER: PathfindingAlgorithmType[] = ["bfs", "dfs", "dijkstra", "astar"];
+const ALGORITHM_ORDER: PathfindingAlgorithmType[] = [
+  "bfs",
+  "dfs",
+  "dijkstra",
+  "astar",
+  "greedy",
+  "bidirectional",
+  "flood",
+  "random",
+];
 
 const ITEM_WIDTH = 72;
 const CONTAINER_WIDTH = ITEM_WIDTH * 3;

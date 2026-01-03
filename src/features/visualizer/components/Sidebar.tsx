@@ -38,6 +38,10 @@ const PATHFINDING_ALGORITHMS: {
   { id: "dfs", label: "Depth-First Search", enabled: true },
   { id: "dijkstra", label: "Dijkstra's Algorithm", enabled: true },
   { id: "astar", label: "A* Search", enabled: true },
+  { id: "greedy", label: "Greedy Best-First", enabled: true },
+  { id: "bidirectional", label: "Bidirectional A*", enabled: true },
+  { id: "flood", label: "Flood Fill", enabled: true },
+  { id: "random", label: "Random Walk", enabled: true },
 ];
 
 export function Sidebar({ className, onCollapse }: SidebarProps) {

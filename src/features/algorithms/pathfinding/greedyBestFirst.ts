@@ -9,35 +9,34 @@ import {
 } from "./types";
 
 /**
- * Priority queue node for A* algorithm.
- * Uses f = g + h scoring where:
- * - g: actual cost from start to this node
- * - h: heuristic estimate from this node to goal
- * - f: total estimated cost (used for priority)
+ * Priority queue node for Greedy Best-First Search.
+ * Uses f = h scoring where h is the heuristic estimate to the goal.
+ * Unlike A*, we don't track g (cost from start).
  */
-interface AStarNode {
+interface GreedyNode {
   coord: GridCoord;
-  g: number; // Cost from start
-  f: number; // Total score (g + h)
+  h: number; // Heuristic estimate to goal (used as priority)
+  /** Distance from start (tracked for visualization only, not used in priority) */
+  distance: number;
 }
 
 /**
- * Min-heap implementation for A* priority queue.
- * Orders by f-score (total estimated cost).
+ * Min-heap implementation for Greedy Best-First priority queue.
+ * Orders by h-score (heuristic estimate only).
  */
-class AStarHeap {
-  private heap: AStarNode[] = [];
+class GreedyHeap {
+  private heap: GreedyNode[] = [];
 
   get size(): number {
     return this.heap.length;
   }
 
-  push(node: AStarNode): void {
+  push(node: GreedyNode): void {
     this.heap.push(node);
     this.bubbleUp(this.heap.length - 1);
   }
 
-  pop(): AStarNode | undefined {
+  pop(): GreedyNode | undefined {
     if (this.heap.length === 0) return undefined;
     if (this.heap.length === 1) return this.heap.pop();
 
@@ -56,7 +55,7 @@ class AStarHeap {
       const parent = this.heap[parentIndex];
       const current = this.heap[index];
 
-      if (!parent || !current || parent.f <= current.f) break;
+      if (!parent || !current || parent.h <= current.h) break;
 
       this.heap[parentIndex] = current;
       this.heap[index] = parent;
@@ -76,12 +75,12 @@ class AStarHeap {
       const left = this.heap[leftIndex];
       const right = this.heap[rightIndex];
 
-      if (left && leftIndex < length && left.f < (current?.f ?? Number.POSITIVE_INFINITY)) {
+      if (left && leftIndex < length && left.h < (current?.h ?? Number.POSITIVE_INFINITY)) {
         smallest = leftIndex;
       }
 
       const smallestNode = this.heap[smallest];
-      if (right && rightIndex < length && right.f < (smallestNode?.f ?? Number.POSITIVE_INFINITY)) {
+      if (right && rightIndex < length && right.h < (smallestNode?.h ?? Number.POSITIVE_INFINITY)) {
         smallest = rightIndex;
       }
 
@@ -98,42 +97,42 @@ class AStarHeap {
 }
 
 /**
- * A* pathfinding algorithm.
+ * Greedy Best-First Search pathfinding algorithm.
  *
- * Uses a configurable heuristic to guide search toward the goal.
- * Guarantees shortest path when heuristic is admissible (never overestimates).
- * More efficient than Dijkstra for single-target searches.
+ * Uses only a configurable heuristic to guide search toward the goal.
+ * Does NOT guarantee shortest path - only considers distance to goal, ignoring
+ * distance traveled from start.
  *
- * The heuristic makes A* expand nodes preferentially toward the goal,
- * resulting in fewer visited nodes compared to Dijkstra.
+ * This creates a "laser beam" effect toward the target, making it very fast
+ * on open grids but prone to getting stuck in concave obstacles (U-shaped walls).
+ *
+ * The search front is narrow and directed, unlike A*'s expanding circle.
  *
  * @param context - Grid configuration and node positions
  * @param heuristic - Distance estimation function (defaults to Manhattan)
  * @yields PathfindingStep - visit, current, path, or no-path operations
  */
-export function* aStar(
+export function* greedyBestFirst(
   context: PathfindingContext,
   heuristic: HeuristicFunction = manhattan
 ): Generator<PathfindingStep, void, unknown> {
   const { start, end } = context;
 
-  // Priority queue ordered by f-score
-  const openSet = new AStarHeap();
+  // Priority queue ordered by heuristic only (f = h)
+  const openSet = new GreedyHeap();
   const startH = heuristic(start, end);
-  openSet.push({ coord: start, g: 0, f: startH });
-
-  // Track g-scores (cost from start) and visited nodes
-  const gScores = new Map<string, number>();
-  gScores.set(toKey(start), 0);
+  openSet.push({ coord: start, h: startH, distance: 0 });
 
   const closedSet = new Set<string>();
   const parent = new Map<string, GridCoord>();
+  const distances = new Map<string, number>();
+  distances.set(toKey(start), 0);
 
   while (openSet.size > 0) {
     const current = openSet.pop();
     if (!current) break;
 
-    const { coord, g: distance } = current;
+    const { coord, distance } = current;
     const key = toKey(coord);
 
     // Skip if already processed
@@ -163,19 +162,14 @@ export function* aStar(
 
       if (closedSet.has(neighborKey)) continue;
 
-      // Calculate tentative g-score (all edges have weight 1)
-      const tentativeG = distance + 1;
-      const currentG = gScores.get(neighborKey) ?? Number.POSITIVE_INFINITY;
-
-      if (tentativeG < currentG) {
-        // Found a better path to neighbor
+      // Only add if not already seen (no re-evaluation like A*)
+      if (!distances.has(neighborKey)) {
         parent.set(neighborKey, coord);
-        gScores.set(neighborKey, tentativeG);
+        distances.set(neighborKey, distance + 1);
 
+        // Priority is purely heuristic - ignore cost from start
         const h = heuristic(neighbor, end);
-        const f = tentativeG + h;
-
-        openSet.push({ coord: neighbor, g: tentativeG, f });
+        openSet.push({ coord: neighbor, h, distance: distance + 1 });
       }
     }
   }

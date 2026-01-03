@@ -24,7 +24,29 @@ export type SortingAlgorithmType =
 /**
  * Supported pathfinding algorithms.
  */
-export type PathfindingAlgorithmType = "bfs" | "dfs" | "dijkstra" | "astar";
+export type PathfindingAlgorithmType =
+  | "bfs"
+  | "dfs"
+  | "dijkstra"
+  | "astar"
+  | "greedy"
+  | "random"
+  | "flood"
+  | "bidirectional";
+
+/**
+ * Heuristic functions for informed search algorithms (A*, Greedy).
+ */
+export type HeuristicType = "manhattan" | "euclidean" | "chebyshev";
+
+/**
+ * Algorithms that use heuristics.
+ */
+export const HEURISTIC_ALGORITHMS: PathfindingAlgorithmType[] = [
+  "astar",
+  "greedy",
+  "bidirectional",
+];
 
 /**
  * Playback speed multipliers.
@@ -119,6 +141,7 @@ export interface YieldStore {
 
   // Pathfinding state (preserved when switching modes)
   pathfindingAlgorithm: PathfindingAlgorithmType;
+  pathfindingHeuristic: HeuristicType;
   gridConfig: GridConfig;
   nodeState: PathfindingNodeState;
 
@@ -132,6 +155,7 @@ export interface YieldStore {
 
   // Pathfinding actions
   setPathfindingAlgorithm: (algo: PathfindingAlgorithmType) => void;
+  setPathfindingHeuristic: (heuristic: HeuristicType) => void;
   setGridConfig: (config: Partial<GridConfig>) => void;
   setStartNode: (coord: GridCoord) => void;
   setEndNode: (coord: GridCoord) => void;
@@ -168,6 +192,7 @@ export const useYieldStore = create<YieldStore>((set) => ({
 
   // Pathfinding initial state
   pathfindingAlgorithm: PATHFINDING_CONFIG.ALGORITHM_DEFAULT,
+  pathfindingHeuristic: "manhattan" as HeuristicType,
   gridConfig: defaultGridConfig,
   nodeState: createDefaultNodeState(defaultGridConfig),
 
@@ -189,6 +214,8 @@ export const useYieldStore = create<YieldStore>((set) => ({
 
   // Pathfinding actions
   setPathfindingAlgorithm: (algo) => set({ pathfindingAlgorithm: algo }),
+
+  setPathfindingHeuristic: (heuristic) => set({ pathfindingHeuristic: heuristic }),
 
   setGridConfig: (config) =>
     set((state) => {
