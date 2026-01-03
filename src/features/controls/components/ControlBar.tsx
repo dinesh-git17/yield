@@ -63,13 +63,13 @@ export const ControlBar = memo(function ControlBar({ className }: ControlBarProp
       animate={{ opacity: 1, y: 0 }}
       transition={SPRING_PRESETS.entrance}
       className={cn(
-        "bg-surface-elevated/95 border-border flex items-center gap-6 rounded-xl border px-5 py-3 shadow-lg backdrop-blur-sm",
+        "bg-surface-elevated/95 border-border flex items-center gap-4 rounded-lg border px-4 py-2 shadow-lg backdrop-blur-sm",
         className
       )}
     >
-      {/* Algorithm Wheel Selector */}
+      {/* Algorithm Tab Selector */}
       <ControlSection label="Algorithm">
-        <AlgorithmWheel itemWidth={80} />
+        <AlgorithmWheel />
       </ControlSection>
 
       <Divider />
@@ -142,7 +142,7 @@ interface ControlSectionProps {
 
 function ControlSection({ label, children }: ControlSectionProps) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1">
       <span className="text-muted text-[10px] font-medium uppercase tracking-wider">{label}</span>
       {children}
     </div>
@@ -150,5 +150,5 @@ function ControlSection({ label, children }: ControlSectionProps) {
 }
 
 function Divider() {
-  return <div className="bg-border h-8 w-px" />;
+  return <div className="bg-border h-6 w-px" />;
 }
