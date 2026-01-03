@@ -1,0 +1,33 @@
+engine:
+  - changed-files:
+      - any-glob-to-any-file: "src/features/algorithms/**"
+
+visualizer:
+  - changed-files:
+      - any-glob-to-any-file: "src/features/visualizer/**"
+
+ui:
+  - changed-files:
+      - any-glob-to-any-file: "src/features/controls/**"
+      - any-glob-to-any-file: "src/ui/**"
+
+app:
+  - changed-files:
+      - any-glob-to-any-file: "src/app/**"
+
+config:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+      - any-glob-to-any-file: "*.config.*"
+      - any-glob-to-any-file: "biome.json"
+      - any-glob-to-any-file: "tsconfig.json"
+
+test:
+  - changed-files:
+      - any-glob-to-any-file: "**/*.test.ts"
+      - any-glob-to-any-file: "**/*.test.tsx"
+
+styles:
+  - changed-files:
+      - any-glob-to-any-file: "src/styles/**"
+      - any-glob-to-any-file: "**/*.css"

@@ -1,0 +1,62 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for Yield
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please fill out the form below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: A clear and concise description of the feature you'd like.
+      placeholder: Describe the feature...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why would this feature be useful? What problem does it solve?
+      placeholder: Explain the motivation...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: If you have ideas on how to implement this, share them here.
+      placeholder: Describe your proposed solution...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Yield does this relate to?
+      options:
+        - Sorting Algorithms
+        - Pathfinding Algorithms
+        - Visualizer/UI
+        - Controls/Playback
+        - Performance
+        - Accessibility
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or features you've considered?
+      placeholder: Describe alternatives...
+    validations:
+      required: false
