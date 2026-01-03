@@ -1,1 +1,4 @@
 pnpm exec commitlint --edit $1
+
+# AI Attribution guard - block AI references in commit messages
+node scripts/commit-msg-guard.cjs "$1"
