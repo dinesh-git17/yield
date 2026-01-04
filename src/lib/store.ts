@@ -144,6 +144,8 @@ export interface YieldStore {
   pathfindingHeuristic: HeuristicType;
   gridConfig: GridConfig;
   nodeState: PathfindingNodeState;
+  /** Whether a maze generation algorithm is currently running */
+  isGeneratingMaze: boolean;
 
   // Global actions
   setMode: (mode: VisualizerMode) => void;
@@ -163,6 +165,7 @@ export interface YieldStore {
   setWalls: (walls: Set<string>) => void;
   clearWalls: () => void;
   resetNodeState: () => void;
+  setIsGeneratingMaze: (isGenerating: boolean) => void;
 }
 
 /**
@@ -195,6 +198,7 @@ export const useYieldStore = create<YieldStore>((set) => ({
   pathfindingHeuristic: "manhattan" as HeuristicType,
   gridConfig: defaultGridConfig,
   nodeState: createDefaultNodeState(defaultGridConfig),
+  isGeneratingMaze: false,
 
   // Global actions
   setMode: (mode) => set({ mode }),
@@ -271,6 +275,8 @@ export const useYieldStore = create<YieldStore>((set) => ({
     set((state) => ({
       nodeState: createDefaultNodeState(state.gridConfig),
     })),
+
+  setIsGeneratingMaze: (isGenerating) => set({ isGeneratingMaze: isGenerating }),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────

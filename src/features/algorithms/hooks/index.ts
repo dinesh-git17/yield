@@ -1,4 +1,8 @@
 export {
+  type UseMazeGeneratorReturn,
+  useMazeGenerator,
+} from "./useMazeGenerator";
+export {
   type NodeVisualization,
   type PathfindingControllerActions,
   type PathfindingControllerState,
