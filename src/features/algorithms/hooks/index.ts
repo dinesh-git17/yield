@@ -20,6 +20,7 @@ export {
   useSortingController,
 } from "./useSortingController";
 export {
+  type RotationInfo,
   type TraversalOutput,
   type TreeControllerActions,
   type TreeControllerState,

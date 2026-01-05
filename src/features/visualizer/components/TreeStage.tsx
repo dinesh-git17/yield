@@ -14,7 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
-import type { TraversalOutput, TreeNodeState } from "@/features/algorithms";
+import type { RotationInfo, TraversalOutput, TreeNodeState } from "@/features/algorithms";
 import { generateBalancedInsertionOrder } from "@/features/algorithms/tree";
 import { TreeControlBar } from "@/features/controls";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
@@ -402,6 +402,7 @@ export function TreeStage({ className }: TreeStageProps) {
         <StatusOverlay
           status={controller.status}
           lastResult={controller.lastResult}
+          currentRotation={controller.currentRotation}
           stepCount={controller.currentStepIndex}
           nodeCount={positionedNodes.length}
           maxDepth={
@@ -433,17 +434,37 @@ export function TreeStage({ className }: TreeStageProps) {
 }
 
 /**
+ * Human-readable labels for rotation types.
+ */
+const ROTATION_LABELS: Record<string, { name: string; description: string }> = {
+  LL: { name: "Right Rotation", description: "Single right rotation to fix left-left imbalance" },
+  RR: { name: "Left Rotation", description: "Single left rotation to fix right-right imbalance" },
+  LR: { name: "Left-Right Rotation", description: "Double rotation: left then right" },
+  RL: { name: "Right-Left Rotation", description: "Double rotation: right then left" },
+};
+
+/**
  * Status overlay showing current operation state.
  */
 interface StatusOverlayProps {
   status: "idle" | "playing" | "paused" | "complete";
   lastResult: "found" | "not-found" | "inserted" | "deleted" | null;
+  currentRotation: RotationInfo | null;
   stepCount: number;
   nodeCount: number;
   maxDepth: number;
 }
 
-function StatusOverlay({ status, lastResult, stepCount, nodeCount, maxDepth }: StatusOverlayProps) {
+function StatusOverlay({
+  status,
+  lastResult,
+  currentRotation,
+  stepCount,
+  nodeCount,
+  maxDepth,
+}: StatusOverlayProps) {
+  const rotationInfo = currentRotation ? ROTATION_LABELS[currentRotation.rotationType] : null;
+
   return (
     <div className="absolute top-4 left-4 flex flex-col gap-2">
       <div className="flex items-center gap-3">
@@ -454,10 +475,43 @@ function StatusOverlay({ status, lastResult, stepCount, nodeCount, maxDepth }: S
         {stepCount > 0 && <span className="text-muted text-xs">Steps: {stepCount}</span>}
       </div>
 
+      {/* Rotation indicator */}
+      <AnimatePresence>
+        {currentRotation && rotationInfo && (
+          <motion.div
+            key="rotation-indicator"
+            initial={{ opacity: 0, y: -10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            transition={SPRING_PRESETS.snappy}
+            className="flex flex-col gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 py-2"
+          >
+            <div className="flex items-center gap-2">
+              {/* Rotation type badge */}
+              <span className="rounded bg-purple-500/30 px-1.5 py-0.5 font-mono text-xs font-bold text-purple-300">
+                {currentRotation.rotationType}
+              </span>
+              <span className="text-xs font-medium text-purple-200">{rotationInfo.name}</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-purple-500" />
+                <span className="text-purple-300">Pivot (down)</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-teal-400" />
+                <span className="text-teal-300">New root (up)</span>
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Result indicator */}
       <AnimatePresence>
         {status === "complete" && lastResult && (
           <motion.div
+            key="result-indicator"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -628,6 +682,7 @@ interface TreeNodeCircleProps {
 const TreeNodeCircle = memo(
   function TreeNodeCircle({ node, x, y, visualState }: TreeNodeCircleProps) {
     const styles = NODE_STATE_STYLES[visualState];
+    const isRotating = visualState === "rotating-pivot" || visualState === "rotating-new-root";
 
     // Determine scale based on visual state
     const getScale = () => {
@@ -668,12 +723,29 @@ const TreeNodeCircle = memo(
           "transition-colors duration-200",
           styles.border,
           styles.shadow,
-          styles.bg
+          styles.bg,
+          // Pulse animation for rotating nodes
+          isRotating && "animate-pulse"
         )}
         role="img"
         aria-label={`Node with value ${node.value}, state: ${visualState}`}
       >
         <span className="text-primary text-sm font-semibold tabular-nums">{node.value}</span>
+        {/* Rotation direction indicator */}
+        {isRotating && (
+          <motion.div
+            className={cn(
+              "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-bold",
+              visualState === "rotating-pivot" && "bg-purple-500 text-white",
+              visualState === "rotating-new-root" && "bg-teal-400 text-white"
+            )}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
+          >
+            {visualState === "rotating-pivot" ? "↓" : "↑"}
+          </motion.div>
+        )}
       </motion.div>
     );
   },

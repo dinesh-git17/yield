@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { AVLRotationType } from "@/features/algorithms/tree";
 import {
   avlDelete,
   avlInsert,
@@ -44,6 +45,19 @@ export type TreeNodeState =
   | "updating-height";
 
 /**
+ * Rotation information for AVL tree operations.
+ * Used to display rotation type and involved nodes during visualization.
+ */
+export interface RotationInfo {
+  /** Type of rotation being performed (LL, RR, LR, RL) */
+  rotationType: AVLRotationType;
+  /** ID of the pivot node (the one moving down) */
+  pivotId: string;
+  /** ID of the new root of this subtree (the one moving up) */
+  newRootId: string;
+}
+
+/**
  * Playback status for the tree controller.
  */
 export type TreePlaybackStatus = "idle" | "playing" | "paused" | "complete";
@@ -72,6 +86,8 @@ export interface TreeControllerState {
   currentStepIndex: number;
   currentStepType: TreeStep["type"] | null;
   lastResult: "found" | "not-found" | "inserted" | "deleted" | null;
+  /** Current rotation info when an AVL rotation is being visualized */
+  currentRotation: RotationInfo | null;
 }
 
 export interface TreeControllerActions {
@@ -198,6 +214,7 @@ export function useTreeController(
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [currentStepType, setCurrentStepType] = useState<TreeStep["type"] | null>(null);
   const [lastResult, setLastResult] = useState<TreeControllerState["lastResult"]>(null);
+  const [currentRotation, setCurrentRotation] = useState<RotationInfo | null>(null);
 
   const iteratorRef = useRef<Generator<TreeStep, void, unknown> | null>(null);
   const treeStateSnapshotRef = useRef<TreeState>(treeState);
@@ -408,6 +425,12 @@ export function useTreeController(
           next.set(step.newRootId, "rotating-new-root");
           return next;
         });
+        // Store rotation info for display
+        setCurrentRotation({
+          rotationType: step.rotationType,
+          pivotId: step.pivotId,
+          newRootId: step.newRootId,
+        });
         break;
 
       case "update-height":
@@ -474,6 +497,7 @@ export function useTreeController(
     setCurrentStepIndex(0);
     setCurrentStepType(null);
     setLastResult(null);
+    setCurrentRotation(null);
     iteratorRef.current = null;
   }, []);
 
@@ -562,6 +586,7 @@ export function useTreeController(
     currentStepIndex,
     currentStepType,
     lastResult,
+    currentRotation,
     play,
     pause,
     step,

@@ -35,6 +35,7 @@ export {
 
 // Types
 export type {
+  AVLRotationType,
   TreeContext,
   TreeOperationGenerator,
   TreeStep,
