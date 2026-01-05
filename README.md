@@ -31,15 +31,15 @@ Yield is not just moving bars. It is a complete visualization suite across four 
 
 The classic visualization, done right.
 
-| Algorithm | Time Complexity | Notes |
-|-----------|-----------------|-------|
-| Quick Sort | O(n log n) avg | Lomuto partition scheme |
-| Merge Sort | O(n log n) | Divide and conquer |
-| Heap Sort | O(n log n) | In-place, not stable |
-| Insertion Sort | O(n^2) | Good for nearly sorted |
-| Selection Sort | O(n^2) | Minimal swaps |
-| Bubble Sort | O(n^2) | For educational shaming purposes |
-| Gnome Sort | O(n^2) | The zipper pattern |
+| Algorithm      | Time Complexity | Notes                            |
+| -------------- | --------------- | -------------------------------- |
+| Quick Sort     | O(n log n) avg  | Lomuto partition scheme          |
+| Merge Sort     | O(n log n)      | Divide and conquer               |
+| Heap Sort      | O(n log n)      | In-place, not stable             |
+| Insertion Sort | O(n^2)          | Good for nearly sorted           |
+| Selection Sort | O(n^2)          | Minimal swaps                    |
+| Bubble Sort    | O(n^2)          | For educational shaming purposes |
+| Gnome Sort     | O(n^2)          | The zipper pattern               |
 
 Adjustable array size (5 to 50 elements) and playback speed (0.5x to 4x). Step through one operation at a time or let it run.
 
@@ -47,16 +47,16 @@ Adjustable array size (5 to 50 elements) and playback speed (0.5x to 4x). Step t
 
 Watch algorithms navigate, get stuck, and find their way through a 2D grid.
 
-| Algorithm | Optimal Path | Pattern |
-|-----------|--------------|---------|
-| A* | Yes | Directed expansion with heuristic |
-| Dijkstra | Yes | Radial expansion |
-| BFS | Yes (unweighted) | Flood fill |
-| DFS | No | Deep snake exploration |
-| Greedy Best-First | No | Heuristic-only, fast but blind |
-| Bidirectional A* | Yes | Dual frontier meeting in the middle |
-| Flood Fill | N/A | Complete coverage |
-| Random Walk | No | Chaos mode |
+| Algorithm         | Optimal Path     | Pattern                             |
+| ----------------- | ---------------- | ----------------------------------- |
+| A\*               | Yes              | Directed expansion with heuristic   |
+| Dijkstra          | Yes              | Radial expansion                    |
+| BFS               | Yes (unweighted) | Flood fill                          |
+| DFS               | No               | Deep snake exploration              |
+| Greedy Best-First | No               | Heuristic-only, fast but blind      |
+| Bidirectional A\* | Yes              | Dual frontier meeting in the middle |
+| Flood Fill        | N/A              | Complete coverage                   |
+| Random Walk       | No               | Chaos mode                          |
 
 Includes maze generation algorithms: Recursive Division (chamber-style) and Recursive Backtracker (perfect mazes with long corridors).
 
@@ -64,12 +64,12 @@ Includes maze generation algorithms: Recursive Division (chamber-style) and Recu
 
 Interactive hierarchical data structures with full operation visualization.
 
-| Structure | Operations | Special Features |
-|-----------|------------|------------------|
-| Binary Search Tree | Insert, Search, Delete | Standard BST rules |
-| AVL Tree | Insert, Search, Delete | Auto-balancing rotations (LL, RR, LR, RL) |
-| Max Heap | Insert, Extract Max | Bubble up and sink down |
-| Splay Tree | Insert, Search, Delete | Move-to-root via zig, zig-zig, zig-zag |
+| Structure          | Operations             | Special Features                          |
+| ------------------ | ---------------------- | ----------------------------------------- |
+| Binary Search Tree | Insert, Search, Delete | Standard BST rules                        |
+| AVL Tree           | Insert, Search, Delete | Auto-balancing rotations (LL, RR, LR, RL) |
+| Max Heap           | Insert, Extract Max    | Bubble up and sink down                   |
+| Splay Tree         | Insert, Search, Delete | Move-to-root via zig, zig-zig, zig-zag    |
 
 All four traversal orders (in-order, pre-order, post-order, level-order) are available with step-by-step execution.
 
@@ -77,25 +77,25 @@ All four traversal orders (in-order, pre-order, post-order, level-order) are ava
 
 Node-based algorithms for connectivity, spanning trees, and ordering.
 
-| Algorithm | Category | Use Case |
-|-----------|----------|----------|
-| Prim's | Minimum Spanning Tree | Greedy edge selection from growing tree |
-| Kruskal's | Minimum Spanning Tree | Union-Find with sorted edges |
-| Kahn's | Topological Sort | Dependency resolution, cycle detection |
+| Algorithm | Category              | Use Case                                |
+| --------- | --------------------- | --------------------------------------- |
+| Prim's    | Minimum Spanning Tree | Greedy edge selection from growing tree |
+| Kruskal's | Minimum Spanning Tree | Union-Find with sorted edges            |
+| Kahn's    | Topological Sort      | Dependency resolution, cycle detection  |
 
 <br />
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| Framework | Next.js 16 | App Router, server components |
-| Language | TypeScript (strict) | Type safety, zero `any` tolerance |
-| Styling | Tailwind CSS v4 | Utility-first, CSS variables for theming |
-| State | Zustand | Lightweight global state |
-| Animation | Framer Motion | GPU-accelerated transforms |
-| Testing | Vitest | Fast unit tests for all algorithms |
-| Linting | Biome | Formatting and linting in one |
+| Layer     | Technology          | Purpose                                  |
+| --------- | ------------------- | ---------------------------------------- |
+| Framework | Next.js 16          | App Router, server components            |
+| Language  | TypeScript (strict) | Type safety, zero `any` tolerance        |
+| Styling   | Tailwind CSS v4     | Utility-first, CSS variables for theming |
+| State     | Zustand             | Lightweight global state                 |
+| Animation | Framer Motion       | GPU-accelerated transforms               |
+| Testing   | Vitest              | Fast unit tests for all algorithms       |
+| Linting   | Biome               | Formatting and linting in one            |
 
 <br />
 
