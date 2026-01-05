@@ -9,7 +9,10 @@ import { cn } from "@/lib/utils";
 /**
  * Visual state styling for graph edges.
  */
-const EDGE_STATE_STYLES: Record<GraphEdgeState, { stroke: string; strokeWidth: number }> = {
+const EDGE_STATE_STYLES: Record<
+  GraphEdgeState,
+  { stroke: string; strokeWidth: number; opacity?: number }
+> = {
   idle: {
     stroke: "stroke-border",
     strokeWidth: 2,
@@ -29,6 +32,12 @@ const EDGE_STATE_STYLES: Record<GraphEdgeState, { stroke: string; strokeWidth: n
   highlighted: {
     stroke: "stroke-cyan-400",
     strokeWidth: 3,
+  },
+  // Topological sort: edge has been "removed" (neighbor's indegree decremented)
+  processed: {
+    stroke: "stroke-border",
+    strokeWidth: 2,
+    opacity: 0.3,
   },
 };
 
@@ -133,7 +142,7 @@ export const GraphEdgeComponent = memo(
           className={cn("transition-colors duration-200", styles.stroke)}
           markerEnd={isDirected ? `url(#${markerId})` : undefined}
           initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
+          animate={{ pathLength: 1, opacity: styles.opacity ?? 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
         />

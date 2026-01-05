@@ -111,6 +111,67 @@ export type GraphStep =
       nodeId: string;
       /** The priority value of the extracted node */
       priority: number;
+    }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Topological Sort (Kahn's Algorithm) Operations
+  // ─────────────────────────────────────────────────────────────────────────────
+  | {
+      /** Initializing indegree counts for all nodes */
+      type: "init-indegrees";
+      /** Map of node IDs to their initial indegree counts */
+      indegrees: Map<string, number>;
+    }
+  | {
+      /** Node with indegree 0 is being added to the queue */
+      type: "enqueue-zero";
+      /** ID of the node being enqueued */
+      nodeId: string;
+    }
+  | {
+      /** Dequeuing a node for processing */
+      type: "dequeue";
+      /** ID of the node being dequeued */
+      nodeId: string;
+      /** Current position in topological order (0-indexed) */
+      orderIndex: number;
+    }
+  | {
+      /** Processing an outgoing edge during topological sort */
+      type: "process-outgoing-edge";
+      /** ID of the edge being processed */
+      edgeId: string;
+      /** ID of the source node (being processed) */
+      sourceId: string;
+      /** ID of the target node (neighbor) */
+      targetId: string;
+    }
+  | {
+      /** Decrementing a neighbor's indegree */
+      type: "decrement-indegree";
+      /** ID of the node whose indegree is being decremented */
+      nodeId: string;
+      /** New indegree value after decrement */
+      newIndegree: number;
+    }
+  | {
+      /** Node has been added to the topological order */
+      type: "add-to-order";
+      /** ID of the node added */
+      nodeId: string;
+      /** Position in the topological order (0-indexed) */
+      orderIndex: number;
+    }
+  | {
+      /** Cycle detected - graph is not a DAG */
+      type: "cycle-detected";
+      /** Number of nodes that couldn't be processed */
+      remainingNodes: number;
+    }
+  | {
+      /** Topological sort complete */
+      type: "topo-complete";
+      /** The topological ordering of node IDs */
+      order: string[];
     };
 
 /**

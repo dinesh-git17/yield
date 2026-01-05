@@ -38,7 +38,7 @@ export interface GraphStageProps {
 const GRAPH_ALGORITHMS: { id: GraphAlgorithmType; label: string; enabled: boolean }[] = [
   { id: "prim", label: "Prim's MST", enabled: true },
   { id: "kruskal", label: "Kruskal's MST", enabled: true },
-  { id: "kahn", label: "Topological Sort", enabled: false },
+  { id: "kahn", label: "Topological Sort", enabled: true },
 ];
 
 /**
@@ -722,6 +722,7 @@ export function GraphStage({ className }: GraphStageProps) {
               <AnimatePresence mode="popLayout">
                 {nodes.map((node) => {
                   const setId = controller.nodeSetIds.get(node.id);
+                  const indegree = controller.nodeIndegrees.get(node.id);
                   return (
                     <GraphNodeComponent
                       key={node.id}
@@ -733,6 +734,7 @@ export function GraphStage({ className }: GraphStageProps) {
                       }
                       setId={setId}
                       setColor={setId !== undefined ? getSetColor(setId) : undefined}
+                      indegree={indegree}
                       onMouseDown={(e) => handleNodeMouseDown(node.id, e)}
                       onMouseUp={() => handleNodeMouseUp(node.id)}
                       onDoubleClick={() => handleNodeDoubleClick(node.id)}
@@ -751,6 +753,9 @@ export function GraphStage({ className }: GraphStageProps) {
           mstTotalWeight={controller.mstTotalWeight}
           mstEdgeCount={controller.mstEdgeCount}
           isDisconnected={controller.isDisconnected}
+          topologicalOrder={controller.topologicalOrder}
+          hasCycle={controller.hasCycle}
+          nodes={graphState.nodes}
           isComplete={isComplete}
         />
 
@@ -781,6 +786,9 @@ interface StatusOverlayProps {
   mstTotalWeight: number | null;
   mstEdgeCount: number | null;
   isDisconnected: boolean;
+  topologicalOrder: string[] | null;
+  hasCycle: boolean;
+  nodes: Record<string, GraphNode>;
   isComplete: boolean;
 }
 
@@ -790,6 +798,9 @@ function StatusOverlay({
   mstTotalWeight,
   mstEdgeCount,
   isDisconnected,
+  topologicalOrder,
+  hasCycle,
+  nodes,
   isComplete,
 }: StatusOverlayProps) {
   return (
@@ -827,6 +838,38 @@ function StatusOverlay({
           >
             <span className="font-bold">Graph Not Connected</span>
             <span className="text-rose-300 ml-2">Cannot form MST</span>
+          </motion.div>
+        )}
+
+        {/* Topological Sort Result */}
+        {isComplete && topologicalOrder !== null && (
+          <motion.div
+            key="topo-result"
+            initial={{ opacity: 0, y: -10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            transition={SPRING_PRESETS.snappy}
+            className="border border-emerald-500/30 bg-emerald-500/10 rounded-lg px-3 py-2 text-xs font-medium text-emerald-400"
+          >
+            <span className="font-bold">Topological Order</span>
+            <span className="text-emerald-300 ml-2">
+              {topologicalOrder.map((id) => nodes[id]?.label ?? id).join(" → ")}
+            </span>
+          </motion.div>
+        )}
+
+        {/* Cycle Detected */}
+        {isComplete && hasCycle && (
+          <motion.div
+            key="cycle-warning"
+            initial={{ opacity: 0, y: -10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            transition={SPRING_PRESETS.snappy}
+            className="border border-rose-500/30 bg-rose-500/10 rounded-lg px-3 py-2 text-xs font-medium text-rose-400"
+          >
+            <span className="font-bold">Cycle Detected</span>
+            <span className="text-rose-300 ml-2">Graph is not a DAG</span>
           </motion.div>
         )}
       </AnimatePresence>

@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import type { GraphStep, UnionFindSetId } from "@/features/algorithms/graph";
-import { kruskal, prim } from "@/features/algorithms/graph";
+import { kahn, kruskal, prim } from "@/features/algorithms/graph";
 import type { GraphAlgorithmType, GraphState, PlaybackSpeedMultiplier } from "@/lib/store";
 import { useYieldStore } from "@/lib/store";
 
@@ -35,12 +35,22 @@ export type GraphNodeState =
   | "in-mst"
   | "processing"
   | "source"
-  | "current";
+  | "current"
+  // Topological sort states
+  | "queued" // In the queue waiting to be processed
+  | "in-order"; // Added to topological order (processed/complete)
 
 /**
  * Visual state for a graph edge during algorithm execution.
  */
-export type GraphEdgeState = "idle" | "considering" | "in-mst" | "rejected" | "highlighted";
+export type GraphEdgeState =
+  | "idle"
+  | "considering"
+  | "in-mst"
+  | "rejected"
+  | "highlighted"
+  // Topological sort states
+  | "processed"; // Edge has been "removed" (neighbor's indegree decremented)
 
 /**
  * Interaction mode for the graph canvas.
@@ -73,6 +83,13 @@ export interface GraphControllerState {
   mstEdgeCount: number | null;
   /** Whether the graph was found to be disconnected */
   isDisconnected: boolean;
+  // Topological sort state
+  /** Indegree counts for each node (used in Kahn's algorithm) */
+  nodeIndegrees: Map<string, number>;
+  /** The topological order result (set on completion) */
+  topologicalOrder: string[] | null;
+  /** Whether a cycle was detected (graph is not a DAG) */
+  hasCycle: boolean;
 }
 
 /**
@@ -131,6 +148,10 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
   const [mstTotalWeight, setMstTotalWeight] = useState<number | null>(null);
   const [mstEdgeCount, setMstEdgeCount] = useState<number | null>(null);
   const [isDisconnected, setIsDisconnected] = useState(false);
+  // Topological sort state
+  const [nodeIndegrees, setNodeIndegrees] = useState<Map<string, number>>(new Map());
+  const [topologicalOrder, setTopologicalOrder] = useState<string[] | null>(null);
+  const [hasCycle, setHasCycle] = useState(false);
 
   const iteratorRef = useRef<Generator<GraphStep, void, unknown> | null>(null);
   const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
@@ -246,6 +267,80 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
       case "disconnected":
         setIsDisconnected(true);
         break;
+
+      // Topological sort steps
+      case "init-indegrees":
+        setNodeIndegrees(new Map(step.indegrees));
+        break;
+
+      case "enqueue-zero":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          next.set(step.nodeId, "queued");
+          return next;
+        });
+        break;
+
+      case "dequeue":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          next.set(step.nodeId, "current");
+          return next;
+        });
+        break;
+
+      case "process-outgoing-edge":
+        setEdgeStates((prev) => {
+          const next = new Map(prev);
+          next.set(step.edgeId, "considering");
+          return next;
+        });
+        break;
+
+      case "decrement-indegree":
+        setNodeIndegrees((prev) => {
+          const next = new Map(prev);
+          next.set(step.nodeId, step.newIndegree);
+          return next;
+        });
+        // Flash the node to show indegree change
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          const currentState = next.get(step.nodeId);
+          if (!currentState || currentState === "idle") {
+            next.set(step.nodeId, "processing");
+          }
+          return next;
+        });
+        // Mark all edges in "considering" state as processed after decrement
+        setEdgeStates((prev) => {
+          const next = new Map(prev);
+          for (const [edgeId, state] of prev) {
+            if (state === "considering") {
+              next.set(edgeId, "processed");
+            }
+          }
+          return next;
+        });
+        break;
+
+      case "add-to-order":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          next.set(step.nodeId, "in-order");
+          return next;
+        });
+        // Mark all outgoing edges from this node as processed
+        // This is handled by looking at the edge states after the algorithm runs
+        break;
+
+      case "cycle-detected":
+        setHasCycle(true);
+        break;
+
+      case "topo-complete":
+        setTopologicalOrder(step.order);
+        break;
     }
   }, []);
 
@@ -275,6 +370,10 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
       setMstTotalWeight(null);
       setMstEdgeCount(null);
       setIsDisconnected(false);
+      // Clear topological sort state
+      setNodeIndegrees(new Map());
+      setTopologicalOrder(null);
+      setHasCycle(false);
 
       // Create the appropriate generator
       const context = { graphState, startNodeId };
@@ -286,8 +385,8 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
           iteratorRef.current = kruskal(context);
           break;
         case "kahn":
-          // Topological sort - to be implemented in Story 7.4
-          return;
+          iteratorRef.current = kahn(context);
+          break;
       }
 
       // Start in playing state
@@ -352,6 +451,10 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
     setMstTotalWeight(null);
     setMstEdgeCount(null);
     setIsDisconnected(false);
+    // Clear topological sort state
+    setNodeIndegrees(new Map());
+    setTopologicalOrder(null);
+    setHasCycle(false);
     iteratorRef.current = null;
   }, []);
 
@@ -420,6 +523,10 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
     mstTotalWeight,
     mstEdgeCount,
     isDisconnected,
+    // Topological sort state
+    nodeIndegrees,
+    topologicalOrder,
+    hasCycle,
     runAlgorithm,
     play,
     pause,

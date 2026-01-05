@@ -9,8 +9,9 @@ export {
   getSetColor,
   SET_COLORS,
 } from "./config";
-export { kruskal } from "./kruskal";
 // Algorithms
+export { kahn } from "./kahn";
+export { kruskal } from "./kruskal";
 export { prim } from "./prim";
 export type {
   GraphAlgorithmGenerator,

@@ -58,6 +58,17 @@ const NODE_STATE_STYLES: Record<GraphNodeState, { border: string; shadow: string
     shadow: "shadow-sky-400/40",
     bg: "bg-sky-500/20",
   },
+  // Topological sort states
+  queued: {
+    border: "border-orange-400",
+    shadow: "shadow-orange-400/30",
+    bg: "bg-orange-500/10",
+  },
+  "in-order": {
+    border: "border-emerald-400",
+    shadow: "shadow-emerald-400/40",
+    bg: "bg-emerald-500/20",
+  },
 };
 
 export interface GraphNodeComponentProps {
@@ -68,6 +79,8 @@ export interface GraphNodeComponentProps {
   setId?: number | undefined;
   /** Custom set color for Union-Find visualization */
   setColor?: string | undefined;
+  /** Indegree count for Kahn's algorithm visualization */
+  indegree?: number | undefined;
   onMouseDown?: ((e: React.MouseEvent) => void) | undefined;
   onMouseUp?: ((e: React.MouseEvent) => void) | undefined;
   onMouseEnter?: (() => void) | undefined;
@@ -90,6 +103,7 @@ export const GraphNodeComponent = memo(
     isConnecting = false,
     setId,
     setColor,
+    indegree,
     onMouseDown,
     onMouseUp,
     onMouseEnter,
@@ -106,6 +120,7 @@ export const GraphNodeComponent = memo(
           return 1.15;
         case "visiting":
         case "processing":
+        case "queued":
           return 1.1;
         default:
           return 1;
@@ -117,6 +132,9 @@ export const GraphNodeComponent = memo(
     const showSetColor =
       setColor &&
       (visualState === "idle" || visualState === "processing" || visualState === "visiting");
+
+    // Show indegree badge when indegree is defined and > 0, or when node is queued/in-order
+    const showIndegree = indegree !== undefined;
 
     return (
       <motion.div
@@ -161,9 +179,27 @@ export const GraphNodeComponent = memo(
         onDoubleClick={onDoubleClick}
         role="button"
         tabIndex={0}
-        aria-label={`Graph node ${node.label}, state: ${visualState}${setId !== undefined ? `, set ${setId}` : ""}`}
+        aria-label={`Graph node ${node.label}, state: ${visualState}${setId !== undefined ? `, set ${setId}` : ""}${indegree !== undefined ? `, indegree ${indegree}` : ""}`}
       >
         <span className="text-primary text-sm font-semibold">{node.label}</span>
+
+        {/* Indegree badge for topological sort visualization */}
+        {showIndegree && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className={cn(
+              "absolute -top-1 -right-1",
+              "flex items-center justify-center",
+              "w-5 h-5 rounded-full",
+              "text-[10px] font-bold",
+              "border border-border",
+              indegree === 0 ? "bg-emerald-500 text-white" : "bg-surface-elevated text-primary"
+            )}
+          >
+            {indegree}
+          </motion.div>
+        )}
       </motion.div>
     );
   },
@@ -175,5 +211,6 @@ export const GraphNodeComponent = memo(
     prev.visualState === next.visualState &&
     prev.isConnecting === next.isConnecting &&
     prev.setId === next.setId &&
-    prev.setColor === next.setColor
+    prev.setColor === next.setColor &&
+    prev.indegree === next.indegree
 );
