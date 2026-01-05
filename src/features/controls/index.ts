@@ -9,4 +9,6 @@ export {
   type PathfindingAlgorithmWheelProps,
   PathfindingControlBar,
   type PathfindingControlBarProps,
+  TreeControlBar,
+  type TreeControlBarProps,
 } from "./components";

@@ -5,9 +5,9 @@ import { create } from "zustand";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * The two visualization domains supported by Yield.
+ * The three visualization domains supported by Yield.
  */
-export type VisualizerMode = "sorting" | "pathfinding";
+export type VisualizerMode = "sorting" | "pathfinding" | "tree";
 
 /**
  * Supported sorting algorithms.
@@ -49,6 +49,18 @@ export const HEURISTIC_ALGORITHMS: PathfindingAlgorithmType[] = [
 ];
 
 /**
+ * Supported tree operations and traversals.
+ */
+export type TreeAlgorithmType =
+  | "insert"
+  | "search"
+  | "delete"
+  | "inorder"
+  | "preorder"
+  | "postorder"
+  | "bfs";
+
+/**
  * Playback speed multipliers.
  * Maps to actual interval timing in the controller.
  */
@@ -77,6 +89,16 @@ export const PATHFINDING_CONFIG = {
 
 export const SPEED_CONFIG = {
   DEFAULT: 1 as PlaybackSpeedMultiplier,
+} as const;
+
+export const TREE_CONFIG = {
+  /** Maximum number of nodes allowed in the tree */
+  MAX_NODES: 31,
+  /** Algorithm shown by default when entering tree mode */
+  ALGORITHM_DEFAULT: "insert" as TreeAlgorithmType,
+  /** Value range for random tree generation */
+  VALUE_MIN: 1,
+  VALUE_MAX: 99,
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -122,6 +144,64 @@ export interface GridConfig {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Tree State Types (Flat/Normalized Pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A single node in the binary search tree.
+ * Uses ID references instead of nested objects to enable efficient updates.
+ */
+export interface TreeNode {
+  /** Unique identifier for this node */
+  id: string;
+  /** The numeric value stored in this node */
+  value: number;
+  /** ID of the left child, or null if no left child */
+  leftId: string | null;
+  /** ID of the right child, or null if no right child */
+  rightId: string | null;
+  /** ID of the parent node, or null if this is the root */
+  parentId: string | null;
+}
+
+/**
+ * Normalized tree state using a flat lookup structure.
+ * This pattern avoids deep object nesting and enables O(1) node lookups.
+ */
+export interface TreeState {
+  /** ID of the root node, or null if tree is empty */
+  rootId: string | null;
+  /** Map of node IDs to their data */
+  nodes: Record<string, TreeNode>;
+}
+
+/**
+ * Creates an empty tree state.
+ */
+export function createEmptyTreeState(): TreeState {
+  return {
+    rootId: null,
+    nodes: {},
+  };
+}
+
+/**
+ * Generates a unique node ID.
+ */
+let nodeIdCounter = 0;
+export function generateNodeId(): string {
+  nodeIdCounter += 1;
+  return `node-${nodeIdCounter}`;
+}
+
+/**
+ * Resets the node ID counter (useful for testing).
+ */
+export function resetNodeIdCounter(): void {
+  nodeIdCounter = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Store Interface
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -147,6 +227,10 @@ export interface YieldStore {
   /** Whether a maze generation algorithm is currently running */
   isGeneratingMaze: boolean;
 
+  // Tree state (preserved when switching modes)
+  treeAlgorithm: TreeAlgorithmType;
+  treeState: TreeState;
+
   // Global actions
   setMode: (mode: VisualizerMode) => void;
   setPlaybackSpeed: (speed: PlaybackSpeedMultiplier) => void;
@@ -166,6 +250,23 @@ export interface YieldStore {
   clearWalls: () => void;
   resetNodeState: () => void;
   setIsGeneratingMaze: (isGenerating: boolean) => void;
+
+  // Tree actions
+  setTreeAlgorithm: (algo: TreeAlgorithmType) => void;
+  /**
+   * Inserts a value into the BST, maintaining BST property.
+   * Returns the ID of the newly inserted node, or null if value already exists.
+   */
+  insertNode: (value: number) => string | null;
+  /**
+   * Deletes a value from the BST.
+   * Returns true if the node was found and deleted, false otherwise.
+   */
+  deleteNode: (value: number) => boolean;
+  /** Resets the tree to empty state */
+  resetTree: () => void;
+  /** Sets the entire tree state (useful for loading presets) */
+  setTreeState: (state: TreeState) => void;
 }
 
 /**
@@ -199,6 +300,10 @@ export const useYieldStore = create<YieldStore>((set) => ({
   gridConfig: defaultGridConfig,
   nodeState: createDefaultNodeState(defaultGridConfig),
   isGeneratingMaze: false,
+
+  // Tree initial state
+  treeAlgorithm: TREE_CONFIG.ALGORITHM_DEFAULT,
+  treeState: createEmptyTreeState(),
 
   // Global actions
   setMode: (mode) => set({ mode }),
@@ -277,6 +382,250 @@ export const useYieldStore = create<YieldStore>((set) => ({
     })),
 
   setIsGeneratingMaze: (isGenerating) => set({ isGeneratingMaze: isGenerating }),
+
+  // Tree actions
+  setTreeAlgorithm: (algo) => set({ treeAlgorithm: algo }),
+
+  insertNode: (value) => {
+    let insertedId: string | null = null;
+
+    set((state) => {
+      const { treeState } = state;
+      const nodeCount = Object.keys(treeState.nodes).length;
+
+      // Enforce max node limit
+      if (nodeCount >= TREE_CONFIG.MAX_NODES) {
+        return state;
+      }
+
+      // Empty tree - insert as root
+      if (treeState.rootId === null) {
+        const newId = generateNodeId();
+        insertedId = newId;
+        const newNode: TreeNode = {
+          id: newId,
+          value,
+          leftId: null,
+          rightId: null,
+          parentId: null,
+        };
+        return {
+          treeState: {
+            rootId: newId,
+            nodes: { [newId]: newNode },
+          },
+        };
+      }
+
+      // Find insertion point using BST property
+      let currentId: string | null = treeState.rootId;
+      while (currentId !== null) {
+        const current: TreeNode | undefined = treeState.nodes[currentId];
+        if (!current) break;
+
+        if (value === current.value) {
+          // Duplicate value - no insertion
+          return state;
+        }
+
+        if (value < current.value) {
+          if (current.leftId === null) {
+            // Insert as left child
+            const newId = generateNodeId();
+            insertedId = newId;
+            const newNode: TreeNode = {
+              id: newId,
+              value,
+              leftId: null,
+              rightId: null,
+              parentId: currentId,
+            };
+            return {
+              treeState: {
+                ...treeState,
+                nodes: {
+                  ...treeState.nodes,
+                  [currentId]: { ...current, leftId: newId },
+                  [newId]: newNode,
+                },
+              },
+            };
+          }
+          currentId = current.leftId;
+        } else {
+          if (current.rightId === null) {
+            // Insert as right child
+            const newId = generateNodeId();
+            insertedId = newId;
+            const newNode: TreeNode = {
+              id: newId,
+              value,
+              leftId: null,
+              rightId: null,
+              parentId: currentId,
+            };
+            return {
+              treeState: {
+                ...treeState,
+                nodes: {
+                  ...treeState.nodes,
+                  [currentId]: { ...current, rightId: newId },
+                  [newId]: newNode,
+                },
+              },
+            };
+          }
+          currentId = current.rightId;
+        }
+      }
+
+      return state;
+    });
+
+    return insertedId;
+  },
+
+  deleteNode: (value) => {
+    let deleted = false;
+
+    set((state) => {
+      const { treeState } = state;
+
+      // Empty tree
+      if (treeState.rootId === null) {
+        return state;
+      }
+
+      // Find the node to delete
+      let targetId: string | null = treeState.rootId;
+      while (targetId !== null) {
+        const target: TreeNode | undefined = treeState.nodes[targetId];
+        if (!target) break;
+
+        if (value === target.value) {
+          // Found the node to delete
+          deleted = true;
+          const newNodes = { ...treeState.nodes };
+          let newRootId = treeState.rootId;
+
+          // Case 1: Leaf node (no children)
+          if (target.leftId === null && target.rightId === null) {
+            if (target.parentId === null) {
+              // Deleting root leaf
+              return { treeState: createEmptyTreeState() };
+            }
+            // Update parent to remove reference
+            const parent = newNodes[target.parentId];
+            if (parent) {
+              if (parent.leftId === targetId) {
+                newNodes[target.parentId] = { ...parent, leftId: null };
+              } else {
+                newNodes[target.parentId] = { ...parent, rightId: null };
+              }
+            }
+            delete newNodes[targetId];
+          }
+          // Case 2: One child
+          else if (target.leftId === null || target.rightId === null) {
+            // Exactly one of leftId or rightId is non-null since Case 1 (both null) was already handled
+            const childId = (target.leftId ?? target.rightId) as string; // Safe: XOR condition guarantees non-null
+            const child = newNodes[childId];
+
+            if (target.parentId === null) {
+              // Deleting root with one child
+              newRootId = childId;
+              if (child) {
+                newNodes[childId] = { ...child, parentId: null };
+              }
+            } else {
+              // Link child to grandparent
+              const parent = newNodes[target.parentId];
+              if (parent && child) {
+                if (parent.leftId === targetId) {
+                  newNodes[target.parentId] = { ...parent, leftId: childId };
+                } else {
+                  newNodes[target.parentId] = { ...parent, rightId: childId };
+                }
+                newNodes[childId] = { ...child, parentId: target.parentId };
+              }
+            }
+            delete newNodes[targetId];
+          }
+          // Case 3: Two children - replace with in-order successor
+          else {
+            // Find in-order successor (leftmost in right subtree)
+            let successorId: string = target.rightId;
+            let successor: TreeNode | undefined = newNodes[successorId];
+            while (successor && successor.leftId !== null) {
+              successorId = successor.leftId;
+              successor = newNodes[successorId];
+            }
+
+            if (successor) {
+              // Copy successor value to target node
+              newNodes[targetId] = { ...target, value: successor.value };
+
+              // Remove successor (has at most one right child)
+              const successorParentId = successor.parentId;
+              const successorParent = successorParentId ? newNodes[successorParentId] : null;
+
+              if (successorParent) {
+                if (successorParent.leftId === successorId) {
+                  newNodes[successorParentId as string] = {
+                    ...successorParent,
+                    leftId: successor.rightId,
+                  };
+                } else {
+                  newNodes[successorParentId as string] = {
+                    ...successorParent,
+                    rightId: successor.rightId,
+                  };
+                }
+              }
+
+              // Update successor's child parent pointer if exists
+              if (successor.rightId) {
+                const successorChild = newNodes[successor.rightId];
+                if (successorChild) {
+                  newNodes[successor.rightId] = {
+                    ...successorChild,
+                    parentId: successorParentId,
+                  };
+                }
+              }
+
+              delete newNodes[successorId];
+            }
+          }
+
+          return {
+            treeState: {
+              rootId: newRootId,
+              nodes: newNodes,
+            },
+          };
+        }
+
+        // Continue searching
+        if (value < target.value) {
+          targetId = target.leftId;
+        } else {
+          targetId = target.rightId;
+        }
+      }
+
+      return state;
+    });
+
+    return deleted;
+  },
+
+  resetTree: () =>
+    set({
+      treeState: createEmptyTreeState(),
+    }),
+
+  setTreeState: (newTreeState) => set({ treeState: newTreeState }),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────

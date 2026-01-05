@@ -138,9 +138,10 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
           <SidebarItem
             id="cat-trees"
             label="Trees"
-            disabled
+            isActive={mode === "tree"}
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
+            onClick={() => handleModeSelect("tree")}
           />
           <SidebarItem
             id="cat-graphs"
@@ -242,11 +243,32 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             </motion.button>
           </>
         )}
+
+        {/* Tree Algorithms List */}
+        {mode === "tree" && (
+          <>
+            <div className="mb-2">
+              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
+                Tree Algorithms
+              </span>
+            </div>
+
+            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+              <SidebarItem
+                id="algo-traversal"
+                label="Traversal"
+                isActive={true}
+                hoveredItem={hoveredItem}
+                onHover={setHoveredItem}
+              />
+            </SidebarGroup>
+          </>
+        )}
       </nav>
 
       {/* Footer */}
       <div className="border-border-subtle border-t p-3">
-        <div className="text-muted text-xs">Phase 4: Pathfinding</div>
+        <div className="text-muted text-xs">Phase 6: Trees</div>
       </div>
 
       {/* Complexity Modal */}

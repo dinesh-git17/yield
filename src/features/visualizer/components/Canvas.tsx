@@ -5,6 +5,7 @@ import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { PathfindingStage } from "./PathfindingStage";
 import { SortingStage } from "./SortingStage";
+import { TreeStage } from "./TreeStage";
 
 export interface CanvasProps {
   className?: string;
@@ -47,10 +48,10 @@ const stageVariants = {
 export function Canvas({ className }: CanvasProps) {
   const mode = useYieldStore((state) => state.mode);
 
-  return (
-    <div className={cn("relative h-full overflow-hidden", className)}>
-      <AnimatePresence mode="wait" initial={false}>
-        {mode === "sorting" ? (
+  const renderStage = () => {
+    switch (mode) {
+      case "sorting":
+        return (
           <motion.div
             key="sorting-stage"
             variants={stageVariants}
@@ -61,7 +62,9 @@ export function Canvas({ className }: CanvasProps) {
           >
             <SortingStage className="h-full" />
           </motion.div>
-        ) : (
+        );
+      case "pathfinding":
+        return (
           <motion.div
             key="pathfinding-stage"
             variants={stageVariants}
@@ -72,7 +75,27 @@ export function Canvas({ className }: CanvasProps) {
           >
             <PathfindingStage className="h-full" />
           </motion.div>
-        )}
+        );
+      case "tree":
+        return (
+          <motion.div
+            key="tree-stage"
+            variants={stageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="h-full"
+          >
+            <TreeStage className="h-full" />
+          </motion.div>
+        );
+    }
+  };
+
+  return (
+    <div className={cn("relative h-full overflow-hidden", className)}>
+      <AnimatePresence mode="wait" initial={false}>
+        {renderStage()}
       </AnimatePresence>
     </div>
   );
