@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   Canvas,
   CodePanel,
@@ -7,6 +8,7 @@ import {
   Sidebar,
   SortingProvider,
   TreeProvider,
+  UrlStateSync,
 } from "@/features/visualizer/components";
 
 export default function Home() {
@@ -15,6 +17,10 @@ export default function Home() {
       <PathfindingProvider>
         <TreeProvider>
           <GraphProvider>
+            {/* Sync URL params to store (enables deep linking) */}
+            <Suspense fallback={null}>
+              <UrlStateSync />
+            </Suspense>
             <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
           </GraphProvider>
         </TreeProvider>

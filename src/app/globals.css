@@ -75,10 +75,33 @@
   }
 }
 
-html,
-body {
+html {
   height: 100%;
+}
+
+body {
+  min-height: 100%;
+}
+
+/* Prevent scroll on visualizer pages (applied via layout) */
+.overflow-locked {
   overflow: hidden;
+  height: 100%;
+}
+
+/* Prose container for Learn pages */
+.prose-container {
+  /* Typography baseline */
+  line-height: 1.75;
+}
+
+.prose-content p {
+  margin-bottom: 1rem;
+}
+
+.prose-content strong {
+  color: var(--primary);
+  font-weight: 600;
 }
 
 .bg-dot-pattern {
