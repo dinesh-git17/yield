@@ -4,8 +4,10 @@ import {
   Clock,
   Code2,
   Compass,
+  GraduationCap,
   HardDrive,
   Lightbulb,
+  Network,
   Route,
   Target,
   TreeDeciduous,
@@ -13,8 +15,10 @@ import {
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
+import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
 import { CodeTabs } from "@/features/learning/components";
+import { type GraphArticle, getGraphArticle } from "@/features/learning/content/graphs";
 import {
   getPathfindingArticle,
   type PathfindingArticle,
@@ -22,6 +26,7 @@ import {
 import { getSortingArticle, type SortingArticle } from "@/features/learning/content/sorting";
 import { getTreeArticle, type TreeArticle } from "@/features/learning/content/trees";
 import type {
+  GraphAlgorithmType,
   PathfindingAlgorithmType,
   SortingAlgorithmType,
   TreeDataStructureType,
@@ -57,6 +62,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
   "random",
 ] as const;
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
+const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
 
 function isValidMode(mode: string): mode is VisualizerMode {
   return VALID_MODES.includes(mode as VisualizerMode);
@@ -74,13 +80,18 @@ function isValidTreeStructure(structure: string): structure is TreeDataStructure
   return VALID_TREE_STRUCTURES.includes(structure as TreeDataStructureType);
 }
 
+function isValidGraphAlgorithm(algorithm: string): algorithm is GraphAlgorithmType {
+  return VALID_GRAPH_ALGORITHMS.includes(algorithm as GraphAlgorithmType);
+}
+
 /**
  * Unified article type for polymorphic page rendering.
  */
 type ArticleContent =
   | { mode: "sorting"; article: SortingArticle; algorithm: SortingAlgorithmType }
   | { mode: "pathfinding"; article: PathfindingArticle; algorithm: PathfindingAlgorithmType }
-  | { mode: "tree"; article: TreeArticle; structure: TreeDataStructureType };
+  | { mode: "tree"; article: TreeArticle; structure: TreeDataStructureType }
+  | { mode: "graph"; article: GraphArticle; algorithm: GraphAlgorithmType };
 
 /**
  * Factory function to get the appropriate article based on mode and algorithm/structure.
@@ -107,6 +118,13 @@ function getArticle(mode: string, algorithm: string): ArticleContent | null {
       structure: algorithm,
     };
   }
+  if (mode === "graph" && isValidGraphAlgorithm(algorithm)) {
+    return {
+      mode: "graph",
+      article: getGraphArticle(algorithm),
+      algorithm,
+    };
+  }
   return null;
 }
 
@@ -119,6 +137,9 @@ function getMetadata(mode: string, algorithm: string) {
   }
   if (mode === "pathfinding" && isValidPathfindingAlgorithm(algorithm)) {
     return getPathfindingAlgorithmMetadata(algorithm);
+  }
+  if (mode === "graph" && isValidGraphAlgorithm(algorithm)) {
+    return getGraphAlgorithmMetadata(algorithm);
   }
   return null;
 }
@@ -159,6 +180,10 @@ export default async function LearnPage({ params }: LearnPageProps) {
       label: "Data Structure",
       icon: <TreeDeciduous className="h-5 w-5" />,
     },
+    graph: {
+      label: "Graph Algorithm",
+      icon: <Network className="h-5 w-5" />,
+    },
   };
 
   const config = modeConfig[content.mode];
@@ -197,6 +222,27 @@ export default async function LearnPage({ params }: LearnPageProps) {
                 label="Self-Balancing"
                 value={content.article.selfBalancing ? "Yes" : "No"}
                 variant={content.article.selfBalancing ? "excellent" : "fair"}
+              />
+            </>
+          ) : content.mode === "graph" ? (
+            <>
+              <ComplexityBadge
+                icon={<Clock className="h-4 w-4" />}
+                label="Time"
+                value={content.article.timeComplexity.complexity}
+                variant={getComplexityVariant(content.article.timeComplexity.complexity)}
+              />
+              <ComplexityBadge
+                icon={<HardDrive className="h-4 w-4" />}
+                label="Space"
+                value={content.article.spaceComplexity.complexity}
+                variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
+              />
+              <ComplexityBadge
+                icon={<Network className="h-4 w-4" />}
+                label="Output"
+                value={content.article.output}
+                variant="good"
               />
             </>
           ) : (
@@ -297,6 +343,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
               complexity={content.article.visualPattern}
               explanation="How this algorithm appears during visualization."
               variant="neutral"
+              stacked
             />
           </div>
         )}
@@ -328,6 +375,35 @@ export default async function LearnPage({ params }: LearnPageProps) {
             />
           </div>
         )}
+        {content.mode === "graph" && (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ComplexityCard
+              title="Time Complexity"
+              complexity={content.article.timeComplexity.complexity}
+              explanation={content.article.timeComplexity.explanation}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Space Complexity"
+              complexity={content.article.spaceComplexity.complexity}
+              explanation={content.article.spaceComplexity.explanation}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Data Structure"
+              complexity={content.article.dataStructure}
+              explanation={`The core data structure powering ${content.article.title}.`}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Visual Pattern"
+              complexity={content.article.visualPattern}
+              explanation="How this algorithm appears during visualization."
+              variant="neutral"
+              stacked
+            />
+          </div>
+        )}
       </Section>
 
       {/* Code Walkthrough Section */}
@@ -349,7 +425,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
               <span className="bg-accent/20 text-accent mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium">
                 {index + 1}
               </span>
-              <span className="text-primary/80">{useCase}</span>
+              <span className="text-primary/80">{parseTextWithMath(useCase)}</span>
             </li>
           ))}
         </ul>
@@ -368,7 +444,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
               )}
             >
               <Lightbulb className="text-accent mt-0.5 h-4 w-4 shrink-0" />
-              <span className="text-primary/80 text-sm">{insight}</span>
+              <span className="text-primary/80 text-sm">{parseTextWithMath(insight)}</span>
             </li>
           ))}
         </ul>
@@ -386,7 +462,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
             <Target className="h-5 w-5" />
             <h3 className="font-semibold">When to Use</h3>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">{article.whenToUse}</p>
+          <p className="text-primary/80 text-sm leading-relaxed">
+            {parseTextWithMath(article.whenToUse)}
+          </p>
         </div>
 
         <div className={cn("rounded-xl border border-rose-500/30 bg-rose-500/10 p-6", "space-y-3")}>
@@ -394,7 +472,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
             <XCircle className="h-5 w-5" />
             <h3 className="font-semibold">When NOT to Use</h3>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">{article.whenNotToUse}</p>
+          <p className="text-primary/80 text-sm leading-relaxed">
+            {parseTextWithMath(article.whenNotToUse)}
+          </p>
         </div>
       </div>
 
@@ -407,7 +487,24 @@ export default async function LearnPage({ params }: LearnPageProps) {
             <AlertTriangle className="h-5 w-5" />
             <h3 className="font-semibold">Watch Out</h3>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">{content.article.pitfall}</p>
+          <p className="text-primary/80 text-sm leading-relaxed">
+            {parseTextWithMath(content.article.pitfall)}
+          </p>
+        </div>
+      )}
+
+      {/* Interview Tip Section - Graphs only */}
+      {content.mode === "graph" && (
+        <div
+          className={cn("rounded-xl border border-violet-500/30 bg-violet-500/10 p-6", "space-y-3")}
+        >
+          <div className="flex items-center gap-2 text-violet-500">
+            <GraduationCap className="h-5 w-5" />
+            <h3 className="font-semibold">Interview Tip</h3>
+          </div>
+          <p className="text-primary/80 text-sm leading-relaxed">
+            {parseTextWithMath(content.article.interviewTip)}
+          </p>
         </div>
       )}
 
@@ -481,27 +578,11 @@ function Prose({ content }: ProseProps) {
         }
 
         if (paragraph.startsWith("- ") || paragraph.startsWith("1. ")) {
-          // It's a list
-          const items = paragraph.split("\n").filter(Boolean);
+          // It's a list - handle nested lists via indentation
+          const lines = paragraph.split("\n").filter(Boolean);
           const isOrdered = paragraph.startsWith("1. ");
-          const ListTag = isOrdered ? "ol" : "ul";
 
-          return (
-            <ListTag
-              key={key}
-              className={cn("space-y-2", isOrdered ? "list-decimal pl-6" : "list-disc pl-6")}
-            >
-              {items.map((item) => {
-                const cleanedItem = item.replace(/^[-\d]+\.\s*/, "");
-                const itemKey = `li-${cleanedItem.slice(0, 30).replace(/\W/g, "")}`;
-                return (
-                  <li key={itemKey} className="text-primary/80 leading-relaxed">
-                    {parseTextWithMath(cleanedItem)}
-                  </li>
-                );
-              })}
-            </ListTag>
-          );
+          return <NestedList key={key} lines={lines} isOrdered={isOrdered} />;
         }
 
         // Regular paragraph - process bold text inline without dangerouslySetInnerHTML
@@ -601,6 +682,91 @@ function ProseParagraph({ text }: { text: string }) {
   return <p className="text-primary/80 leading-relaxed">{parseTextWithMath(text)}</p>;
 }
 
+/**
+ * Represents a parsed list item with potential children for nested lists.
+ */
+interface ListNode {
+  content: string;
+  children: ListNode[];
+  isOrdered: boolean;
+}
+
+/**
+ * Renders nested lists by parsing indentation levels.
+ * Handles mixed ordered/unordered sublists.
+ */
+function NestedList({ lines, isOrdered }: { lines: string[]; isOrdered: boolean }) {
+  // Parse lines into a tree structure based on indentation
+  const rootNodes: ListNode[] = [];
+  const stack: { node: ListNode; indent: number }[] = [];
+
+  for (const line of lines) {
+    // Measure leading whitespace
+    const leadingSpaces = line.match(/^(\s*)/)?.[1]?.length ?? 0;
+    // Determine if this line is an unordered sub-item (starts with - after whitespace)
+    const isSubItemUnordered = /^\s+-\s/.test(line);
+    // Clean the line content
+    const cleanedContent = line.replace(/^\s*(?:-\s*|\d+\.\s*)/, "");
+
+    const newNode: ListNode = {
+      content: cleanedContent,
+      children: [],
+      isOrdered: !isSubItemUnordered && isOrdered,
+    };
+
+    if (leadingSpaces === 0) {
+      // Top-level item
+      rootNodes.push(newNode);
+      stack.length = 0;
+      stack.push({ node: newNode, indent: 0 });
+    } else {
+      // Nested item - find parent by indentation
+      while (stack.length > 0 && (stack[stack.length - 1]?.indent ?? 0) >= leadingSpaces) {
+        stack.pop();
+      }
+
+      if (stack.length > 0) {
+        const parent = stack[stack.length - 1];
+        if (parent) {
+          parent.node.children.push(newNode);
+        }
+      } else {
+        // Fallback: treat as top-level if no valid parent
+        rootNodes.push(newNode);
+      }
+
+      stack.push({ node: newNode, indent: leadingSpaces });
+    }
+  }
+
+  // Render the tree
+  const renderNodes = (nodes: ListNode[], parentOrdered: boolean) => {
+    if (nodes.length === 0) return null;
+
+    // Check if we should render as ordered or unordered
+    // Use the first node's isOrdered property to determine list type
+    const firstNode = nodes[0];
+    const useOrdered = firstNode?.isOrdered ?? parentOrdered;
+    const ListTag = useOrdered ? "ol" : "ul";
+
+    return (
+      <ListTag className={cn("space-y-2", useOrdered ? "list-decimal pl-6" : "list-disc pl-6")}>
+        {nodes.map((node, idx) => {
+          const itemKey = `li-${idx}-${node.content.slice(0, 20).replace(/\W/g, "")}`;
+          return (
+            <li key={itemKey} className="text-primary/80 leading-relaxed">
+              {parseTextWithMath(node.content)}
+              {node.children.length > 0 && renderNodes(node.children, node.isOrdered)}
+            </li>
+          );
+        })}
+      </ListTag>
+    );
+  };
+
+  return renderNodes(rootNodes, isOrdered);
+}
+
 interface ComplexityBadgeProps {
   icon: React.ReactNode;
   label: string;
@@ -635,6 +801,7 @@ interface ComplexityCardProps {
   complexity: string;
   explanation: string;
   variant: "good" | "fair" | "neutral";
+  stacked?: boolean;
 }
 
 const CARD_VARIANTS = {
@@ -649,35 +816,64 @@ const CARD_BADGE_VARIANTS = {
   neutral: "text-accent bg-accent/20",
 } as const;
 
-function ComplexityCard({ title, complexity, explanation, variant }: ComplexityCardProps) {
+function ComplexityCard({ title, complexity, explanation, variant, stacked }: ComplexityCardProps) {
   return (
     <div className={cn("rounded-xl border p-4 space-y-2", CARD_VARIANTS[variant])}>
-      <div className="flex items-center justify-between">
-        <span className="text-muted text-sm font-medium">{title}</span>
-        <span
-          className={cn(
-            "rounded-md px-2 py-1 font-mono text-sm font-semibold",
-            CARD_BADGE_VARIANTS[variant]
-          )}
-        >
-          {complexity}
-        </span>
-      </div>
+      {stacked ? (
+        <div className="space-y-2">
+          <span className="text-muted text-sm font-medium">{title}</span>
+          <span
+            className={cn(
+              "block w-fit rounded-md px-2 py-1 font-mono text-sm font-semibold",
+              CARD_BADGE_VARIANTS[variant]
+            )}
+          >
+            {complexity}
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <span className="text-muted text-sm font-medium">{title}</span>
+          <span
+            className={cn(
+              "rounded-md px-2 py-1 font-mono text-sm font-semibold",
+              CARD_BADGE_VARIANTS[variant]
+            )}
+          >
+            {complexity}
+          </span>
+        </div>
+      )}
       <p className="text-primary/70 text-sm leading-relaxed">{explanation}</p>
     </div>
   );
 }
 
 function getComplexityVariant(complexity: string): "excellent" | "good" | "fair" {
-  // Handle O(log n) - excellent (guaranteed logarithmic)
-  if (complexity.includes("log n") && !complexity.includes("n log n")) {
+  // Handle O(log n) or O(log V) - excellent (guaranteed logarithmic)
+  if (
+    (complexity.includes("log n") || complexity.includes("log V")) &&
+    !complexity.includes("n log n") &&
+    !complexity.includes("E log")
+  ) {
     return "excellent";
   }
   // Handle O(h) - good (depends on tree height, can be log n if balanced)
   if (complexity === "O(h)") {
     return "good";
   }
-  if (complexity === "O(1)" || complexity === "O(n)" || complexity.includes("n log n")) {
+  // Handle linear complexities - good
+  if (
+    complexity === "O(1)" ||
+    complexity === "O(n)" ||
+    complexity === "O(V)" ||
+    complexity === "O(V + E)" ||
+    complexity.includes("n log n")
+  ) {
+    return "good";
+  }
+  // Handle graph log complexities - good (E log V, E log E are efficient)
+  if (complexity.includes("E log V") || complexity.includes("E log E")) {
     return "good";
   }
   return "fair";
@@ -717,6 +913,7 @@ export async function generateMetadata({ params }: LearnPageProps) {
       sorting: "Sorting",
       pathfinding: "Pathfinding",
       tree: "Data Structures",
+      graph: "Graph Algorithms",
     } as const;
     const modeLabel = modeLabels[content.mode];
     return {
@@ -747,5 +944,10 @@ export function generateStaticParams() {
     algorithm: structure,
   }));
 
-  return [...sortingParams, ...pathfindingParams, ...treeParams];
+  const graphParams = VALID_GRAPH_ALGORITHMS.map((algorithm) => ({
+    mode: "graph",
+    algorithm,
+  }));
+
+  return [...sortingParams, ...pathfindingParams, ...treeParams, ...graphParams];
 }

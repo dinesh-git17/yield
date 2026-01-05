@@ -6,6 +6,7 @@ import { Check, ChevronDown, Copy } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { FaGolang, FaJava, FaPython, FaRust } from "react-icons/fa6";
 import { SiCplusplus, SiJavascript } from "react-icons/si";
+import { getGraphImplementation } from "@/features/learning/code/graphs";
 import { getPathfindingImplementation } from "@/features/learning/code/pathfinding";
 import {
   getSortingImplementation,
@@ -16,6 +17,7 @@ import {
 import { getTreeImplementation } from "@/features/learning/code/trees";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import type {
+  GraphAlgorithmType,
   PathfindingAlgorithmType,
   SortingAlgorithmType,
   TreeDataStructureType,
@@ -55,7 +57,7 @@ const LanguageIcon = memo(function LanguageIcon({ language, className }: Languag
 
 export interface CodeTabsProps {
   /** The visualization mode */
-  mode: "sorting" | "pathfinding" | "tree";
+  mode: "sorting" | "pathfinding" | "tree" | "graph";
   /** The algorithm or data structure to display code for */
   algorithm: string;
   /** Optional additional class names */
@@ -66,7 +68,7 @@ export interface CodeTabsProps {
  * Get code implementation based on mode and algorithm/structure.
  */
 function getImplementation(
-  mode: "sorting" | "pathfinding" | "tree",
+  mode: "sorting" | "pathfinding" | "tree" | "graph",
   algorithm: string,
   language: Language
 ): string {
@@ -75,6 +77,9 @@ function getImplementation(
   }
   if (mode === "tree") {
     return getTreeImplementation(algorithm as TreeDataStructureType, language);
+  }
+  if (mode === "graph") {
+    return getGraphImplementation(algorithm as GraphAlgorithmType, language);
   }
   return getPathfindingImplementation(algorithm as PathfindingAlgorithmType, language);
 }
