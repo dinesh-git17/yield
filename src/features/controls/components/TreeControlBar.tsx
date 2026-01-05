@@ -30,13 +30,6 @@ const OPERATIONS: { value: TreeAlgorithmType; label: string; icon: React.ReactNo
   { value: "delete", label: "Delete", icon: <Minus className="h-3.5 w-3.5" /> },
 ];
 
-const TRAVERSALS: { value: TreeAlgorithmType; label: string; shortLabel: string }[] = [
-  { value: "inorder", label: "In-Order", shortLabel: "In" },
-  { value: "preorder", label: "Pre-Order", shortLabel: "Pre" },
-  { value: "postorder", label: "Post-Order", shortLabel: "Post" },
-  { value: "bfs", label: "Level-Order", shortLabel: "BFS" },
-];
-
 const SPEED_OPTIONS: { value: PlaybackSpeedMultiplier; label: string }[] = [
   { value: 0.5, label: "0.5x" },
   { value: 1, label: "1x" },
@@ -90,14 +83,6 @@ export const TreeControlBar = memo(function TreeControlBar({
       setInputValue(""); // Clear after execution
     },
     [inputValue, isMaxNodes, setTreeAlgorithm, onExecute]
-  );
-
-  const handleTraversalExecute = useCallback(
-    (traversal: TreeAlgorithmType) => {
-      setTreeAlgorithm(traversal);
-      onExecute?.(traversal);
-    },
-    [setTreeAlgorithm, onExecute]
   );
 
   const handleSpeedChange = useCallback(
@@ -175,43 +160,6 @@ export const TreeControlBar = memo(function TreeControlBar({
             );
           })}
         </div>
-      </ControlSection>
-
-      <Divider />
-
-      {/* Traversals Section */}
-      <ControlSection label="Traversals">
-        <ToggleGroup.Root
-          type="single"
-          value={TRAVERSALS.some((t) => t.value === treeAlgorithm) ? treeAlgorithm : ""}
-          onValueChange={(value) => value && handleTraversalExecute(value as TreeAlgorithmType)}
-          disabled={isTraversalPlaying || nodeCount === 0}
-          className="bg-surface flex rounded-lg p-0.5"
-        >
-          {TRAVERSALS.map((traversal) => (
-            <ToggleGroup.Item
-              key={traversal.value}
-              value={traversal.value}
-              disabled={isTraversalPlaying || nodeCount === 0}
-              className={cn(
-                "text-muted relative rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
-                "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-                "data-[state=on]:text-primary"
-              )}
-              aria-label={`Run ${traversal.label} traversal`}
-            >
-              {treeAlgorithm === traversal.value && (
-                <motion.span
-                  layoutId="tree-traversal-indicator"
-                  className="bg-surface-elevated border-border absolute inset-0 rounded-md border shadow-sm"
-                  transition={SPRING_PRESETS.snappy}
-                />
-              )}
-              <span className="relative z-10">{traversal.shortLabel}</span>
-            </ToggleGroup.Item>
-          ))}
-        </ToggleGroup.Root>
       </ControlSection>
 
       <Divider />

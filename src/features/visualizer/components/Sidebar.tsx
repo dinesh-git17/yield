@@ -243,6 +243,27 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             </motion.button>
           </>
         )}
+
+        {/* Tree Algorithms List */}
+        {mode === "tree" && (
+          <>
+            <div className="mb-2">
+              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
+                Tree Algorithms
+              </span>
+            </div>
+
+            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+              <SidebarItem
+                id="algo-traversal"
+                label="Traversal"
+                isActive={true}
+                hoveredItem={hoveredItem}
+                onHover={setHoveredItem}
+              />
+            </SidebarGroup>
+          </>
+        )}
       </nav>
 
       {/* Footer */}

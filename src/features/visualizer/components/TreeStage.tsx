@@ -1,9 +1,11 @@
 "use client";
 
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
   Dices,
   Pause,
   Play,
@@ -11,12 +13,9 @@ import {
   SkipForward,
   Trash2,
 } from "lucide-react";
-import { memo, useCallback, useMemo, useRef } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import type { TraversalOutput, TreeNodeState } from "@/features/algorithms";
-import {
-  generateBalancedInsertionOrder,
-  getTreeAlgorithmMetadata,
-} from "@/features/algorithms/tree";
+import { generateBalancedInsertionOrder } from "@/features/algorithms/tree";
 import { TreeControlBar } from "@/features/controls";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { type TreeAlgorithmType, type TreeNode, type TreeState, useYieldStore } from "@/lib/store";
@@ -38,6 +37,13 @@ const LAYOUT = {
   /** Node diameter in pixels */
   NODE_SIZE: 48,
 } as const;
+
+const TRAVERSALS: { value: TreeAlgorithmType; label: string }[] = [
+  { value: "inorder", label: "In-Order" },
+  { value: "preorder", label: "Pre-Order" },
+  { value: "postorder", label: "Post-Order" },
+  { value: "bfs", label: "Level-Order (BFS)" },
+];
 
 /**
  * Calculates the position of a node in the tree using the binary split algorithm.
@@ -139,8 +145,20 @@ export function TreeStage({ className }: TreeStageProps) {
   const isComplete = controller.status === "complete";
   const isIdle = controller.status === "idle";
 
-  // Get algorithm metadata for display
-  const metadata = getTreeAlgorithmMetadata(treeAlgorithm);
+  // State for traversal dropdown
+  const [selectedTraversal, setSelectedTraversal] = useState<TreeAlgorithmType>("inorder");
+
+  /**
+   * Handles executing a traversal from the dropdown.
+   */
+  const handleTraversalExecute = useCallback(
+    (traversal: TreeAlgorithmType) => {
+      setSelectedTraversal(traversal);
+      setTreeAlgorithm(traversal);
+      controller.executeOperation(traversal);
+    },
+    [setTreeAlgorithm, controller]
+  );
 
   /**
    * Handles executing an operation from the control bar.
@@ -221,22 +239,57 @@ export function TreeStage({ className }: TreeStageProps) {
       <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div className="flex items-center gap-3">
           <h1 className="text-primary text-sm font-medium">Binary Search Tree</h1>
-          <motion.span
-            key={treeAlgorithm}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={SPRING_PRESETS.snappy}
-            className="bg-emerald-500/20 text-emerald-400 rounded-full px-2 py-0.5 text-xs font-medium"
-          >
-            {metadata.shortLabel}
-          </motion.span>
-          {metadata.isTraversal && (
-            <span className="text-orange-400 text-xs">{metadata.visualPattern}</span>
-          )}
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-4">
+          {/* Traversal Dropdown */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <motion.button
+                type="button"
+                disabled={isPlaying || isEmpty}
+                whileHover={isPlaying || isEmpty ? {} : buttonInteraction.hover}
+                whileTap={isPlaying || isEmpty ? {} : buttonInteraction.tap}
+                className={cn(
+                  "bg-surface-elevated border-border text-primary flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium",
+                  "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
+                  (isPlaying || isEmpty) && "cursor-not-allowed opacity-50"
+                )}
+              >
+                <span>
+                  {TRAVERSALS.find((t) => t.value === selectedTraversal)?.label ?? "Traversal"}
+                </span>
+                <ChevronDown className="h-3 w-3" />
+              </motion.button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                className={cn(
+                  "bg-surface-elevated border-border z-50 min-w-[160px] rounded-lg border p-1 shadow-lg",
+                  "animate-in fade-in-0 zoom-in-95"
+                )}
+                sideOffset={5}
+              >
+                {TRAVERSALS.map((traversal) => (
+                  <DropdownMenu.Item
+                    key={traversal.value}
+                    onSelect={() => handleTraversalExecute(traversal.value)}
+                    className={cn(
+                      "text-primary flex cursor-pointer items-center rounded-md px-2 py-1.5 text-xs font-medium outline-none",
+                      "hover:bg-surface focus:bg-surface",
+                      selectedTraversal === traversal.value && "text-emerald-400"
+                    )}
+                  >
+                    {traversal.label}
+                  </DropdownMenu.Item>
+                ))}
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+
+          <div className="bg-border h-6 w-px" />
+
           {/* Tree Actions */}
           <div className="flex items-center gap-2">
             <ActionButton
