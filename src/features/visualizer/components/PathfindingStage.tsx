@@ -11,8 +11,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { useCallback } from "react";
+import { useMazeGenerator } from "@/features/algorithms/hooks";
+import type { MazeAlgorithmType } from "@/features/algorithms/maze";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
-import { PathfindingControlBar } from "@/features/controls";
+import { GenerateDropdown, PathfindingControlBar } from "@/features/controls";
 import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { type PathfindingAlgorithmType, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -32,9 +34,13 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
   const gridConfig = useYieldStore((state) => state.gridConfig);
   const clearWalls = useYieldStore((state) => state.clearWalls);
   const resetNodeState = useYieldStore((state) => state.resetNodeState);
+  const isGeneratingMaze = useYieldStore((state) => state.isGeneratingMaze);
 
   // Use the pathfinding controller from context
   const controller = usePathfinding();
+
+  // Use the maze generator
+  const mazeGenerator = useMazeGenerator();
 
   // Get algorithm metadata
   const metadata = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
@@ -49,10 +55,19 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
     resetNodeState();
   }, [controller, resetNodeState]);
 
+  const handleGenerate = useCallback(
+    (algorithm: MazeAlgorithmType) => {
+      controller.reset();
+      mazeGenerator.generate(algorithm);
+    },
+    [controller, mazeGenerator]
+  );
+
   const isPlaying = controller.status === "playing";
   const isComplete = controller.status === "complete";
   const isIdle = controller.status === "idle";
-  const isLocked = controller.status === "playing" || controller.status === "complete";
+  const isLocked =
+    controller.status === "playing" || controller.status === "complete" || isGeneratingMaze;
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -80,24 +95,25 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
             label="Step"
             icon={<SkipForward className="h-3.5 w-3.5" />}
             onClick={controller.nextStep}
-            disabled={isComplete}
+            disabled={isComplete || isGeneratingMaze}
           />
           <ControlButton
             label="Clear Walls"
             icon={<Trash2 className="h-3.5 w-3.5" />}
             onClick={handleClearWalls}
-            disabled={isPlaying}
+            disabled={isPlaying || isGeneratingMaze}
           />
+          <GenerateDropdown onGenerate={handleGenerate} disabled={isPlaying || isGeneratingMaze} />
           <ControlButton
             label="Reset"
             icon={<RotateCcw className="h-3.5 w-3.5" />}
             onClick={handleResetAll}
-            disabled={isIdle}
+            disabled={isIdle && !isGeneratingMaze}
           />
           <PlayPauseButton
             isPlaying={isPlaying}
             onClick={isPlaying ? controller.pause : controller.play}
-            disabled={isComplete}
+            disabled={isComplete || isGeneratingMaze}
           />
         </div>
       </header>

@@ -3,6 +3,8 @@ export {
   type AlgorithmWheelProps,
   ControlBar,
   type ControlBarProps,
+  GenerateDropdown,
+  type GenerateDropdownProps,
   PathfindingAlgorithmWheel,
   type PathfindingAlgorithmWheelProps,
   PathfindingControlBar,
