@@ -9,6 +9,7 @@ import {
   STEP_TYPE_LABELS,
   TREE_STEP_LABELS,
 } from "@/features/algorithms";
+import { GRAPH_STEP_LABELS, getGraphAlgorithmMetadata } from "@/features/algorithms/graph";
 import {
   getPathfindingAlgorithmMetadata,
   PATHFINDING_STEP_LABELS,
@@ -16,7 +17,7 @@ import {
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { usePathfinding, useSorting, useTree } from "../context";
+import { useGraph, usePathfinding, useSorting, useTree } from "../context";
 
 export interface CodePanelProps {
   className?: string;
@@ -31,11 +32,13 @@ export function CodePanel({ className }: CodePanelProps) {
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
   const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
+  const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
 
   // Get context values based on mode
   const sortingContext = useSorting();
   const pathfindingContext = usePathfinding();
   const treeContext = useTree();
+  const graphContext = useGraph();
 
   const [isCopied, setIsCopied] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -66,6 +69,18 @@ export function CodePanel({ className }: CodePanelProps) {
         highlightedLine: lineIndex,
       };
     }
+    if (mode === "graph") {
+      const metadata = getGraphAlgorithmMetadata(graphAlgorithm);
+      const stepType = graphContext.currentStepType;
+      const lineIndex = stepType ? (metadata.lineMapping[stepType] ?? null) : null;
+      return {
+        status: graphContext.status,
+        codeLines: metadata.code,
+        stepLabel: stepType ? GRAPH_STEP_LABELS[stepType] : null,
+        algorithmKey: graphAlgorithm,
+        highlightedLine: lineIndex,
+      };
+    }
     // Pathfinding mode
     const metadata = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
     const stepType = pathfindingContext.currentStepType;
@@ -83,12 +98,15 @@ export function CodePanel({ className }: CodePanelProps) {
     pathfindingAlgorithm,
     treeAlgorithm,
     treeDataStructure,
+    graphAlgorithm,
     sortingContext.currentStepType,
     sortingContext.status,
     pathfindingContext.currentStepType,
     pathfindingContext.status,
     treeContext.currentStepType,
     treeContext.status,
+    graphContext.currentStepType,
+    graphContext.status,
   ]);
 
   const displayLine = highlightedLine !== null ? highlightedLine + 1 : null;
@@ -130,19 +148,20 @@ export function CodePanel({ className }: CodePanelProps) {
       <div className="flex-1 overflow-auto">
         <pre className="font-mono text-[13px] leading-7 py-6">
           <code className="relative block">
-            {/* Single persistent highlight that animates position (sorting and tree modes) */}
+            {/* Single persistent highlight that animates position (sorting, tree, and graph modes) */}
             <AnimatePresence>
-              {(mode === "sorting" || mode === "tree") && highlightedLine !== null && (
-                <motion.div
-                  className="bg-accent-muted pointer-events-none absolute left-0 right-0 z-0"
-                  style={{ height: LINE_HEIGHT_PX }}
-                  initial={{ opacity: 0, y: highlightedLine * LINE_HEIGHT_PX }}
-                  animate={{ opacity: 1, y: highlightedLine * LINE_HEIGHT_PX }}
-                  exit={{ opacity: 0 }}
-                  transition={SPRING_PRESETS.entrance}
-                  aria-hidden="true"
-                />
-              )}
+              {(mode === "sorting" || mode === "tree" || mode === "graph") &&
+                highlightedLine !== null && (
+                  <motion.div
+                    className="bg-accent-muted pointer-events-none absolute left-0 right-0 z-0"
+                    style={{ height: LINE_HEIGHT_PX }}
+                    initial={{ opacity: 0, y: highlightedLine * LINE_HEIGHT_PX }}
+                    animate={{ opacity: 1, y: highlightedLine * LINE_HEIGHT_PX }}
+                    exit={{ opacity: 0 }}
+                    transition={SPRING_PRESETS.entrance}
+                    aria-hidden="true"
+                  />
+                )}
             </AnimatePresence>
             {codeLines.map((line, lineNumber) => (
               <CodeLine
@@ -151,7 +170,8 @@ export function CodePanel({ className }: CodePanelProps) {
                 line={line}
                 lineNumber={lineNumber}
                 isHighlighted={
-                  (mode === "sorting" || mode === "tree") && lineNumber === highlightedLine
+                  (mode === "sorting" || mode === "tree" || mode === "graph") &&
+                  lineNumber === highlightedLine
                 }
               />
             ))}
@@ -187,6 +207,16 @@ export function CodePanel({ className }: CodePanelProps) {
               {status === "idle" && "Ready to visualize"}
               {status === "complete" && "Pathfinding complete"}
               {(status === "playing" || status === "paused") && "Visualizing..."}
+            </>
+          )}
+          {mode === "graph" && (
+            <>
+              {status === "idle" && "Ready to visualize"}
+              {status === "complete" && "Algorithm complete"}
+              {(status === "playing" || status === "paused") &&
+                displayLine &&
+                stepLabel &&
+                `Line ${displayLine}: ${stepLabel}`}
             </>
           )}
         </span>

@@ -1,4 +1,6 @@
 export type {
+  GraphContextValue,
+  GraphProviderProps,
   PathfindingContextValue,
   PathfindingProviderProps,
   SortingContextValue,
@@ -7,9 +9,11 @@ export type {
   TreeProviderProps,
 } from "../context";
 export {
+  GraphProvider,
   PathfindingProvider,
   SortingProvider,
   TreeProvider,
+  useGraph,
   usePathfinding,
   useSorting,
   useTree,
@@ -18,6 +22,11 @@ export type { CanvasProps } from "./Canvas";
 export { Canvas } from "./Canvas";
 export type { CodePanelProps } from "./CodePanel";
 export { CodePanel } from "./CodePanel";
+// Graph components
+export type { GraphStageProps } from "./GraphStage";
+export { GraphStage } from "./GraphStage";
+export type { GraphEdgeComponentProps, GraphNodeComponentProps } from "./graph";
+export { DrawingEdge, GraphEdgeComponent, GraphNodeComponent } from "./graph";
 export type { LogoProps } from "./Logo";
 export { Logo } from "./Logo";
 export type { MainLayoutProps } from "./MainLayout";

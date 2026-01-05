@@ -5,6 +5,7 @@ import { BadgeHelp, ChevronsLeft } from "lucide-react";
 import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
+  type GraphAlgorithmType,
   type PathfindingAlgorithmType,
   type SortingAlgorithmType,
   type TreeDataStructureType,
@@ -56,6 +57,16 @@ const TREE_DATA_STRUCTURES: {
   { id: "max-heap", label: "Max Heap", enabled: true },
 ];
 
+const GRAPH_ALGORITHMS: {
+  id: GraphAlgorithmType;
+  label: string;
+  enabled: boolean;
+}[] = [
+  { id: "prim", label: "Prim's MST", enabled: true },
+  { id: "kruskal", label: "Kruskal's MST", enabled: true },
+  { id: "kahn", label: "Topological Sort", enabled: true },
+];
+
 export function Sidebar({ className, onCollapse }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
@@ -68,6 +79,8 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
   const setPathfindingAlgorithm = useYieldStore((state) => state.setPathfindingAlgorithm);
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const setTreeDataStructure = useYieldStore((state) => state.setTreeDataStructure);
+  const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
+  const setGraphAlgorithm = useYieldStore((state) => state.setGraphAlgorithm);
 
   const handleModeSelect = useCallback(
     (newMode: VisualizerMode) => {
@@ -95,6 +108,13 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
       setTreeDataStructure(structure);
     },
     [setTreeDataStructure]
+  );
+
+  const handleGraphAlgorithmSelect = useCallback(
+    (algo: GraphAlgorithmType) => {
+      setGraphAlgorithm(algo);
+    },
+    [setGraphAlgorithm]
   );
 
   const openComplexityModal = useCallback(() => {
@@ -167,9 +187,10 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
           <SidebarItem
             id="cat-graphs"
             label="Graphs"
-            disabled
+            isActive={mode === "graph"}
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
+            onClick={() => handleModeSelect("graph")}
           />
         </SidebarGroup>
 
@@ -309,11 +330,58 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             </motion.button>
           </>
         )}
+
+        {/* Graph Algorithms List */}
+        {mode === "graph" && (
+          <>
+            <div className="mb-2">
+              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
+                Graph Algorithms
+              </span>
+            </div>
+
+            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+              {GRAPH_ALGORITHMS.map((algo) => (
+                <SidebarItem
+                  key={algo.id}
+                  id={`graph-${algo.id}`}
+                  label={algo.label}
+                  isActive={graphAlgorithm === algo.id}
+                  disabled={!algo.enabled}
+                  hoveredItem={hoveredItem}
+                  onHover={setHoveredItem}
+                  onClick={() => algo.enabled && handleGraphAlgorithmSelect(algo.id)}
+                />
+              ))}
+            </SidebarGroup>
+
+            <div className="border-border-subtle my-4 border-t" />
+
+            {/* Complexity Trigger */}
+            <motion.button
+              type="button"
+              onClick={openComplexityModal}
+              whileHover={buttonInteraction.hover}
+              whileTap={buttonInteraction.tap}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                "border border-white/10 bg-white/5 backdrop-blur-sm",
+                "text-primary hover:bg-white/10 transition-colors",
+                "dark:border-white/5 dark:bg-black/20"
+              )}
+            >
+              <BadgeHelp className="h-4 w-4 text-rose-400" />
+              <span className="text-sm font-medium">Complexity</span>
+            </motion.button>
+          </>
+        )}
       </nav>
 
       {/* Footer */}
       <div className="border-border-subtle border-t p-3">
-        <div className="text-muted text-xs">Phase 6: Trees</div>
+        <div className="text-muted text-xs">
+          {mode === "graph" ? "Phase 7: Graphs" : "Phase 6: Trees"}
+        </div>
       </div>
 
       {/* Complexity Modal */}
