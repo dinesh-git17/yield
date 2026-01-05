@@ -1,3 +1,4 @@
+import katex from "katex";
 import { Clock, Code2, Compass, HardDrive, Lightbulb, Route, Target, XCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
@@ -353,12 +354,12 @@ function Prose({ content }: ProseProps) {
           // It's a subheading
           const parts = paragraph.split(":**");
           const heading = parts[0] ?? "";
-          const rest = parts.slice(1);
+          const rest = parts.slice(1).join(":**");
           const headingText = heading.replace(/\*\*/g, "");
           return (
             <div key={key} className="space-y-2">
               <h4 className="text-primary font-semibold">{headingText}</h4>
-              <p className="text-primary/80 leading-relaxed">{rest.join(":**")}</p>
+              <p className="text-primary/80 leading-relaxed">{parseTextWithMath(rest)}</p>
             </div>
           );
         }
@@ -374,11 +375,15 @@ function Prose({ content }: ProseProps) {
               key={key}
               className={cn("space-y-2", isOrdered ? "list-decimal pl-6" : "list-disc pl-6")}
             >
-              {items.map((item) => (
-                <li key={item.slice(0, 30)} className="text-primary/80 leading-relaxed">
-                  {item.replace(/^[-\d]+\.\s*/, "").replace(/\*\*(.*?)\*\*/g, "$1")}
-                </li>
-              ))}
+              {items.map((item) => {
+                const cleanedItem = item.replace(/^[-\d]+\.\s*/, "");
+                const itemKey = `li-${cleanedItem.slice(0, 30).replace(/\W/g, "")}`;
+                return (
+                  <li key={itemKey} className="text-primary/80 leading-relaxed">
+                    {parseTextWithMath(cleanedItem)}
+                  </li>
+                );
+              })}
             </ListTag>
           );
         }
@@ -391,30 +396,93 @@ function Prose({ content }: ProseProps) {
 }
 
 /**
- * Renders a paragraph with inline bold text processing.
- * Avoids dangerouslySetInnerHTML by parsing markdown bold syntax into React elements.
+ * Renders LaTeX math expression to HTML string using KaTeX.
+ * Returns the original text if parsing fails.
+ */
+function renderMath(latex: string, displayMode: boolean): string {
+  try {
+    return katex.renderToString(latex, {
+      displayMode,
+      throwOnError: false,
+      strict: false,
+    });
+  } catch {
+    return latex;
+  }
+}
+
+/**
+ * Parses text with markdown bold and LaTeX math, returning an array of React elements.
+ * Supports:
+ * - Inline math: $...$
+ * - Display math: $$...$$
+ * - Bold text: **...**
+ */
+function parseTextWithMath(text: string): React.ReactNode[] {
+  const elements: React.ReactNode[] = [];
+  // Pattern matches: $$...$$, $...$, or **...**
+  const pattern = /(\$\$[\s\S]*?\$\$|\$[^$\n]+?\$|\*\*.*?\*\*)/g;
+  let lastIndex = 0;
+  let keyIndex = 0;
+
+  for (let match = pattern.exec(text); match !== null; match = pattern.exec(text)) {
+    // Add text before this match
+    if (match.index > lastIndex) {
+      const before = text.slice(lastIndex, match.index);
+      elements.push(<span key={`text-${keyIndex++}`}>{before}</span>);
+    }
+
+    const matched = match[0];
+
+    if (matched.startsWith("$$") && matched.endsWith("$$")) {
+      // Display math
+      const latex = matched.slice(2, -2).trim();
+      const html = renderMath(latex, true);
+      elements.push(
+        <span
+          key={`math-${keyIndex++}`}
+          className="block my-4"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: KaTeX sanitizes output
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      );
+    } else if (matched.startsWith("$") && matched.endsWith("$")) {
+      // Inline math
+      const latex = matched.slice(1, -1);
+      const html = renderMath(latex, false);
+      elements.push(
+        <span
+          key={`math-${keyIndex++}`}
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: KaTeX sanitizes output
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      );
+    } else if (matched.startsWith("**") && matched.endsWith("**")) {
+      // Bold text
+      const boldText = matched.slice(2, -2);
+      elements.push(
+        <strong key={`bold-${keyIndex++}`} className="text-primary font-semibold">
+          {boldText}
+        </strong>
+      );
+    }
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  // Add remaining text after last match
+  if (lastIndex < text.length) {
+    elements.push(<span key={`text-${keyIndex++}`}>{text.slice(lastIndex)}</span>);
+  }
+
+  return elements;
+}
+
+/**
+ * Renders a paragraph with inline bold text and LaTeX math processing.
  */
 function ProseParagraph({ text }: { text: string }) {
-  // Split by **...** patterns and render bold segments as <strong>
-  const parts = text.split(/(\*\*.*?\*\*)/g);
-
-  return (
-    <p className="text-primary/80 leading-relaxed">
-      {parts.map((part) => {
-        // Use content as key since parts are unique text segments
-        const key = `part-${part.slice(0, 20).replace(/\W/g, "") || "empty"}`;
-        if (part.startsWith("**") && part.endsWith("**")) {
-          const boldText = part.slice(2, -2);
-          return (
-            <strong key={key} className="text-primary font-semibold">
-              {boldText}
-            </strong>
-          );
-        }
-        return <span key={key}>{part}</span>;
-      })}
-    </p>
-  );
+  return <p className="text-primary/80 leading-relaxed">{parseTextWithMath(text)}</p>;
 }
 
 interface ComplexityBadgeProps {

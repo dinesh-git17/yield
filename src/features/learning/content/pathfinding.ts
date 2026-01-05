@@ -46,621 +46,473 @@ export interface PathfindingArticle {
 export const PATHFINDING_ARTICLES: Record<PathfindingAlgorithmType, PathfindingArticle> = {
   bfs: {
     title: "Breadth-First Search",
-    tagline: "The Ripple Effect",
-    history: `Breadth-First Search (BFS) was first described by Konrad Zuse in his Ph.D. thesis in 1945, though it wasn't published until 1972. The algorithm was later rediscovered by Edward F. Moore in 1959 while working on the shortest path problem for maze navigation at Bell Labs.
+    tagline: "The Cautious Explorer",
+    history: `Breadth-First Search (BFS) has roots in the 1940s with Konrad Zuse, but it was formally published by Edward F. Moore in 1959 at Bell Labs. Moore was trying to find the shortest path out of a maze, proving that sometimes the best way to exit a labyrinth is to try every single direction simultaneously.
 
-BFS represents one of the fundamental building blocks of graph theory and computer science. Its elegant simplicity — exploring all neighbors before moving deeper — mirrors how ripples spread across water when you drop a stone. This natural metaphor makes it one of the most intuitive graph traversal algorithms.
+It is the "vanilla" ice cream of graph theory. Reliable, foundational, and widely liked, even if it lacks the exotic toppings of newer heuristics. Its behavior mirrors a ripple spreading across a pond or a rumor spreading through a slack channel.`,
 
-The algorithm gained widespread adoption in early AI research for game tree exploration and has since become essential in network routing protocols (OSPF), social network analysis (finding degrees of separation), and web crawlers exploring hyperlink structures.`,
-
-    mechanics: `BFS explores a graph layer by layer, visiting all nodes at distance d before visiting any node at distance d+1. This level-order traversal is achieved using a Queue data structure — First In, First Out (FIFO).
+    mechanics: `BFS is the definition of "slow and steady wins the race." It explores the graph layer by layer, visiting every neighbor at the current distance before moving one step further out.
 
 **The Algorithm Step-by-Step:**
 
-1. **Initialize** — add the start node to a queue and mark it visited
-2. **Dequeue** — remove the front node from the queue
-3. **Check goal** — if this is the destination, reconstruct the path
-4. **Explore neighbors** — for each unvisited neighbor:
-   - Mark it as visited
-   - Record its parent (for path reconstruction)
-   - Add it to the back of the queue
-5. **Repeat** until the queue is empty or goal is found
+1. **Initialize**: Add the start node to a queue and mark it as visited.
+2. **Dequeue**: Remove the node at the front of the line.
+3. **Check Goal**: If this is the destination, you're done.
+4. **Expand**: For every unvisited neighbor, mark it as visited, record its parent (so we can trace the path back later), and add it to the back of the queue.
+5. **Repeat**: Keep going until the queue is empty or the goal is found.
 
 **Why It Guarantees Shortest Path:**
-Because BFS explores nodes in order of their distance from the start, the first time we reach any node is guaranteed to be via the shortest path. When we find the goal, we've found the shortest route.
+Because BFS explores radially. You cannot physically reach a node at distance 5 before finishing all nodes at distance 4. Therefore, the moment you touch the goal, you have found the shortest route in an unweighted graph.
 
 **The Queue's Role:**
-The queue acts as a "frontier" — the boundary between explored and unexplored territory. By always expanding the oldest frontier nodes first, we ensure uniform expansion in all directions.
-
-**Path Reconstruction:**
-Each visited node stores its parent. When the goal is found, we trace back from goal to start through parents, then reverse the path.`,
+The Queue (FIFO) ensures fair processing. It prevents the algorithm from getting distracted and diving down a rabbit hole.`,
 
     timeComplexity: {
       complexity: "O(V + E)",
       explanation:
-        "BFS visits each vertex once and examines each edge once. V is the number of vertices (nodes) and E is the number of edges. In a grid, V = rows × cols and E ≈ 4V (each cell has up to 4 neighbors).",
+        "We visit every Vertex once and check every Edge once. In a grid, this is proportional to the area searched. It's efficient, but it doesn't skip any work.",
     },
     spaceComplexity: {
       complexity: "O(V)",
       explanation:
-        "The queue can hold at most O(V) nodes (in the worst case, the entire frontier). The visited set also stores O(V) entries. For a grid, this is O(rows × cols).",
+        "The 'frontier' (the rim of the ripple) grows as the search expands. In a worst-case open grid, this can get memory-heavy quickly.",
     },
     guaranteesShortestPath: true,
     dataStructure: "Queue (FIFO)",
-    visualPattern: "Flood expansion — concentric waves rippling outward from the start",
+    visualPattern: "Concentric rings expanding uniformly from the center",
 
     useCases: [
-      "GPS and navigation — finding shortest route in unweighted road networks",
-      "Social networks — finding degrees of separation between users",
-      "Web crawlers — exploring pages level by level",
-      "Peer-to-peer networks — broadcasting messages to all nodes",
-      "Garbage collection — finding all reachable objects from roots",
-      "Puzzle solving — finding minimum moves in sliding puzzles",
+      "GPS Navigation (in unweighted grids)",
+      "Social Networks (finding 'degrees of separation')",
+      "Web Crawlers (limiting search depth)",
+      "Broadcasting in peer-to-peer networks",
+      "Garbage Collection (identifying live objects)",
+      "Solving Rubik's Cubes (minimum move solutions)",
     ],
 
     keyInsights: [
-      "Guarantees shortest path in unweighted graphs — the first path found is optimal",
-      "Level-order exploration — all nodes at distance d visited before distance d+1",
-      "Complete algorithm — will find a path if one exists",
-      "Memory-intensive — stores the entire frontier, which can be large",
-      "Uniform cost — treats all edges as having equal weight",
-      "Foundation for Dijkstra — BFS is Dijkstra with all weights = 1",
+      "It is the gold standard for unweighted graphs.",
+      "It explores equally in all directions, which is safe but can be slow.",
+      "It requires more memory than DFS because it stores the entire frontier.",
+      "It forms the basis for more complex algorithms like Dijkstra and A*.",
+      "It will always find a solution if one exists.",
     ],
 
     whenToUse:
-      "Use BFS when you need the shortest path in an unweighted graph, when all moves have equal cost, or when you want to explore all nodes within a certain distance. It's the go-to algorithm for maze solving and network traversal.",
+      "Use BFS when you need the shortest path in a graph where all edges have the same cost (or no cost). It is perfect for procedural generation and proximity checks.",
 
     whenNotToUse:
-      "Avoid BFS when edges have different weights (use Dijkstra or A* instead), when memory is severely constrained (consider DFS or iterative deepening), or when you have a good heuristic to guide the search (A* will be faster).",
+      "Avoid BFS if the graph is weighted (it ignores costs) or if the target is likely to be very far away, as the memory usage can explode.",
   },
 
   dfs: {
     title: "Depth-First Search",
-    tagline: "The Maze Solver",
-    history: `Depth-First Search dates back to the 19th century, with Charles Pierre Trémaux documenting the first known DFS-like maze-solving algorithm around 1882. He described marking passages to avoid revisiting dead ends — essentially a physical implementation of DFS with backtracking.
+    tagline: "The Maze Runner",
+    history: `The concept of Depth-First Search dates back to the 19th century with Charles Pierre Trémaux, who created a manual method for solving mazes. It was formalized for computers alongside other fundamental graph algorithms in the mid-20th century.
 
-The formal algorithmic description emerged in the 20th century, with the algorithm becoming a cornerstone of graph theory. DFS gained prominence in computer science through its use in topological sorting, cycle detection, and strongly connected component algorithms.
+If BFS is a cautious expanding circle, DFS is a lightning bolt. It commits to a decision and sticks with it until it hits a wall. It is the algorithmic equivalent of looking for your car keys by walking in a straight line until you hit a fence, then turning left.`,
 
-The algorithm's recursive nature mirrors how humans often solve mazes — pick a direction, follow it until you hit a wall, then backtrack and try another path. This "dive deep first" strategy gives DFS its distinctive snake-like exploration pattern.`,
-
-    mechanics: `DFS explores as far as possible along each branch before backtracking. Unlike BFS's orderly expansion, DFS aggressively pursues a single path until it reaches a dead end or the goal.
+    mechanics: `DFS is aggressive. It explores as far as possible along each branch before backtracking. It doesn't care about the "closest" nodes; it cares about the "deepest" nodes.
 
 **The Algorithm Step-by-Step:**
 
-1. **Initialize** — push the start node onto a stack (or use recursion)
-2. **Pop** — remove the top node from the stack
-3. **Skip if visited** — continue to next iteration if already seen
-4. **Mark visited** — add this node to the visited set
-5. **Check goal** — if this is the destination, reconstruct the path
-6. **Push neighbors** — add all unvisited neighbors to the stack
-7. **Repeat** until the stack is empty or goal is found
+1. **Initialize**: Push the start node onto a stack.
+2. **Pop**: Take the top node off the stack.
+3. **Explore**: If it hasn't been visited, mark it.
+4. **Check Goal**: If we found it, celebrate.
+5. **Push Neighbors**: Add all unvisited neighbors to the stack.
+6. **Repeat**: Continue until the stack is empty.
 
 **Stack vs. Recursion:**
-DFS can be implemented iteratively with an explicit stack or recursively (using the call stack). The recursive version is more elegant but risks stack overflow on large graphs.
+DFS is naturally recursive. You can implement it with an explicit Stack data structure, or you can just let the system call stack handle it via recursion.
 
-**Why It Doesn't Guarantee Shortest Path:**
-DFS commits to the first path it finds, regardless of length. It might explore a 100-step path before discovering a 3-step alternative existed.
-
-**Memory Advantage:**
-DFS only stores nodes along the current path, not the entire frontier. For a tree with depth d and branching factor b, DFS uses O(d) space while BFS uses O(b^d).
-
-**Backtracking:**
-When DFS hits a dead end, it backtracks to the most recent node with unexplored neighbors. This is handled automatically by the stack/recursion.`,
+**Why It Does Not Guarantee Shortest Path:**
+DFS might find a path that winds around the entire map before stumbling onto the goal, even if the goal was just one tile away from the start. It is lucky, not smart.`,
 
     timeComplexity: {
       complexity: "O(V + E)",
       explanation:
-        "Like BFS, DFS visits each vertex once and examines each edge once. The order of visitation differs, but the total work is the same.",
+        "Mathematically, it does the same amount of work as BFS (visiting nodes and edges). It just does them in a drastically different order.",
     },
     spaceComplexity: {
-      complexity: "O(V)",
+      complexity: "O(V) (often O(depth))",
       explanation:
-        "Worst case is O(V) for a linear graph. However, for balanced trees or typical grids, DFS often uses O(depth) space, which is much less than BFS's O(width).",
+        "This is where DFS shines. It only needs to store the current path of nodes. On deep, branching trees, this is significantly more memory efficient than BFS.",
     },
     guaranteesShortestPath: false,
     dataStructure: "Stack (LIFO) or Recursion",
-    visualPattern: "Snake exploration — diving deep along paths before backtracking",
+    visualPattern: "Snake-like tendrils probing deep into the maze",
 
     useCases: [
-      "Topological sorting — ordering dependencies in build systems",
-      "Cycle detection — finding circular references or deadlocks",
-      "Maze generation — creating random mazes via recursive backtracking",
-      "Strongly connected components — Tarjan's and Kosaraju's algorithms",
-      "Game tree exploration — analyzing possible moves in chess/go (with pruning)",
-      "Solving puzzles — Sudoku, N-Queens using backtracking",
+      "Maze Generation (creating long, winding corridors)",
+      "Topological Sorting (build dependency resolution)",
+      "Cycle Detection in graphs",
+      "Sudoku and Puzzle Solvers",
+      "Pathfinding where memory is extremely limited",
+      "Game AI decision trees",
     ],
 
     keyInsights: [
-      "Does NOT guarantee shortest path — finds any path, not the optimal one",
-      "Memory-efficient — stores only the current path, not the frontier",
-      "Naturally recursive — mirrors how humans solve mazes mentally",
-      "Complete in finite graphs — will find a path if one exists",
-      "Can get trapped — may explore very long paths when short ones exist",
-      "Foundation for backtracking — essential for constraint satisfaction problems",
+      "It finds *a* path, not necessarily the *good* path.",
+      "It is extremely memory efficient compared to BFS.",
+      "It preserves the topology of the graph better than BFS.",
+      "It can get stuck in infinite loops if you don't track visited nodes properly.",
+      "It mirrors how humans naturally try to solve mazes.",
     ],
 
     whenToUse:
-      "Use DFS when you only need to find any path (not necessarily shortest), when memory is constrained, when the graph is deep but narrow, or when implementing backtracking algorithms. It excels at exhaustive search problems like puzzle solving.",
+      "Use DFS when you need to visit every node (like in a simulation), when memory is tight, or when you are generating a maze rather than solving one.",
 
     whenNotToUse:
-      "Avoid DFS when you need the shortest path (use BFS or A*), when the graph might have very deep branches (can waste time exploring), or when cycles could cause infinite loops (ensure proper visited tracking).",
+      "Never use DFS if you need the shortest path. Also avoid it on extremely deep graphs (like state-machines) without a depth limit, or you'll trigger a Stack Overflow.",
   },
 
   dijkstra: {
     title: "Dijkstra's Algorithm",
-    tagline: "The Gold Standard",
-    history: `Dijkstra's Algorithm was conceived by Dutch computer scientist Edsger W. Dijkstra in 1956 while working at the Mathematical Center in Amsterdam. The story goes that he designed the algorithm in about 20 minutes while sitting at a café with his fiancée, working without pencil and paper.
+    tagline: "The Serious Professional",
+    history: `Edsger W. Dijkstra invented this algorithm in 1956 over a cup of coffee. He wanted to demonstrate the power of the new ARMAC computer but needed a problem that non-mathematicians could understand. He chose "finding the shortest route between two cities in the Netherlands."
 
-The algorithm was published in 1959 and quickly became the standard solution for shortest path problems. Dijkstra later became one of computing's most influential figures, winning the Turing Award in 1972 and contributing foundational work on structured programming and operating systems.
+Dijkstra was a stickler for elegance and correctness. His algorithm reflects that personality. It doesn't guess, and it doesn't take shortcuts. It simply calculates the mathematically optimal path with ruthless efficiency.`,
 
-Dijkstra famously said of his algorithm: "The question of whether computers can think is like the question of whether submarines can swim." His algorithm continues to power navigation systems, network routing protocols, and countless other applications worldwide.`,
-
-    mechanics: `Dijkstra's Algorithm finds the shortest path in graphs with weighted edges. The key insight is "relaxation" — continuously updating distance estimates as shorter paths are discovered.
+    mechanics: `Dijkstra's Algorithm is essentially BFS with a brain for costs. It accounts for "weighted" edges (like traffic, terrain cost, or toll roads).
 
 **The Algorithm Step-by-Step:**
 
-1. **Initialize** — set distance to start = 0, all others = ∞
-2. **Priority queue** — add start node with priority 0
-3. **Extract minimum** — remove the node with smallest distance
-4. **Skip if processed** — continue if already in closed set
-5. **Mark processed** — add to closed set
-6. **Check goal** — if this is the destination, we're done
-7. **Relax edges** — for each neighbor:
-   - Calculate new_distance = current_distance + edge_weight
-   - If new_distance < known_distance, update it and add to queue
-8. **Repeat** until queue is empty or goal is found
+1. **Initialize**: Set distance to start as 0 and all other nodes to Infinity.
+2. **Priority Queue**: Put the start node in a min-priority queue.
+3. **Extract Min**: Grab the node with the currently shortest known distance.
+4. **Relaxation**: Check all neighbors. If the distance to the current node + the edge weight is less than the neighbor's known distance, update the neighbor's distance and parent.
+5. **Repeat**: Keep going until the destination is finalized.
 
 **The "Relaxation" Concept:**
-When we find a shorter path to a node, we "relax" its distance estimate. The name comes from the metaphor of a stretched rubber band relaxing to a shorter length.
+It sounds like a spa treatment, but in graph theory, "relaxing" an edge means checking if we found a shortcut. If we found a faster way to get to Node B via Node A, we update our records.
 
-**Why It Works:**
-Dijkstra always processes nodes in order of their distance from the start. Once a node is processed, its shortest path is finalized — no shorter path can be found later (assuming non-negative weights).
-
-**Priority Queue's Role:**
-The priority queue ensures we always expand the closest unprocessed node. This greedy choice is what makes the algorithm correct and efficient.
-
-**Non-Negative Weights Requirement:**
-Dijkstra assumes all edge weights are ≥ 0. Negative weights can cause incorrect results because a "processed" node might later be reached via a shorter path.`,
+**Greedy but Correct:**
+It always processes the "closest" unprocessed node next. This ensures that once a node is visited, we have mathematically proven the shortest path to it.`,
 
     timeComplexity: {
       complexity: "O((V + E) log V)",
       explanation:
-        "With a binary heap, each extract-min takes O(log V) and we do at most V extractions. Each edge can trigger a decrease-key operation, also O(log V). Using Fibonacci heaps reduces this to O(E + V log V).",
+        "The log V comes from the Priority Queue operations. It's slower than BFS per step, but much more powerful because it handles weights.",
     },
     spaceComplexity: {
       complexity: "O(V)",
       explanation:
-        "Storage for the priority queue (up to V nodes), the distance array (V entries), and the visited set (V entries).",
+        "We need to store the distance estimates for every node and the priority queue itself.",
     },
     guaranteesShortestPath: true,
     dataStructure: "Priority Queue (Min-Heap)",
-    visualPattern: "Radial expansion — circles growing from start, weighted by cost",
+    visualPattern: "Organic expansion that flows faster through low-cost terrain",
 
     useCases: [
-      "GPS navigation — finding fastest route considering traffic/distance",
-      "Network routing — OSPF protocol for internet packet routing",
-      "Robotics — path planning with terrain cost consideration",
-      "Airline route planning — minimizing flight time or cost",
-      "Video games — NPC pathfinding with movement costs",
-      "Telecommunications — routing calls with varying link costs",
+      "Google Maps / GPS Navigation",
+      "Network Routing Protocols (OSPF)",
+      "Logistics and Supply Chain optimization",
+      "Airline flight planning",
+      "Social Network modeling",
+      "Telephone network routing",
     ],
 
     keyInsights: [
-      "Guarantees shortest path — provably optimal for non-negative weights",
-      "Requires non-negative weights — negative edges break the algorithm",
-      "More general than BFS — handles weighted graphs",
-      "Foundation for A* — Dijkstra is A* with heuristic h(n) = 0",
-      "Greedy algorithm — always expands the closest unvisited node",
-      "Single-source — finds shortest paths from start to ALL nodes",
+      "It handles weighted graphs (mud costs more movement than road).",
+      "It guarantees the shortest path for non-negative weights.",
+      "It is the grandfather of A*.",
+      "It calculates the shortest path from the start to *all* other nodes.",
+      "It fails if negative edge weights exist (you need Bellman-Ford for that).",
     ],
 
     whenToUse:
-      "Use Dijkstra when edges have varying weights (like road distances or costs), when you need guaranteed shortest path, or when you need distances to all nodes from a single source. It's the standard choice for weighted graph pathfinding.",
+      "Use Dijkstra when movement costs vary (e.g., a game with swamps and roads) and you need the absolute optimal path. It is the industry standard for established routing.",
 
     whenNotToUse:
-      "Avoid Dijkstra when all edges have equal weight (BFS is simpler and faster), when you have a good heuristic to the goal (A* will be faster), or when edges can have negative weights (use Bellman-Ford instead).",
+      "Avoid Dijkstra if all weights are equal (BFS is faster) or if you need to find the path very quickly in a massive map (use A*).",
   },
 
   astar: {
     title: "A* Search",
-    tagline: "The Crown Jewel",
-    history: `A* (pronounced "A-star") was created in 1968 by Peter Hart, Nils Nilsson, and Bertram Raphael at Stanford Research Institute. They were working on Shakey the Robot, one of the first mobile robots capable of reasoning about its actions.
+    tagline: "The Smart Navigator",
+    history: `A* (A-Star) was developed in 1968 for Shakey the Robot at Stanford. The researchers wanted Shakey to navigate a room without bumping into things, but Dijkstra's algorithm was too slow for the hardware of the time.
 
-The breakthrough of A* was combining Dijkstra's guarantee of finding the shortest path with heuristic guidance toward the goal. The algorithm is named after its evaluation function f(n) = g(n) + h(n), where the asterisk denotes the optimal path.
+They added a "heuristic" (a best guess) to guide the search. The result was an algorithm that combines the precision of Dijkstra with the speed of a greedy approach. It is widely considered the crown jewel of pathfinding in game development.`,
 
-A* became the algorithm that launched a thousand video games. From early classics like Warcraft to modern titles, A* and its variants power virtually all real-time strategy and simulation games. It remains the most important algorithm in game AI and robotic path planning.`,
+    mechanics: `A* is Dijkstra with a cheat sheet. It decides which node to explore next based on two numbers:
+1. **g(n)**: The cost to get here (same as Dijkstra).
+2. **h(n)**: The estimated cost to get to the goal (the heuristic).
 
-    mechanics: `A* combines the best of both worlds: Dijkstra's optimality guarantee and greedy best-first's speed. The secret is the evaluation function f(n) = g(n) + h(n).
-
-**Understanding f(n) = g(n) + h(n):**
-
-- **g(n)** = actual cost from start to node n (known, exact)
-- **h(n)** = estimated cost from n to goal (heuristic, estimated)
-- **f(n)** = estimated total path cost through n
+**The Magic Formula:**
+$f(n) = g(n) + h(n)$
 
 **The Algorithm Step-by-Step:**
 
-1. **Initialize** — create open set (priority queue) and closed set
-2. **Add start** — with g=0, f=h(start)
-3. **Extract minimum f** — get node with lowest f(n) from open set
-4. **Add to closed** — mark as fully processed
-5. **Check goal** — if this is the destination, reconstruct path
-6. **Expand neighbors** — for each neighbor not in closed set:
-   - Calculate tentative_g = current_g + edge_cost
-   - If neighbor not in open OR tentative_g < existing g:
-     - Update parent, g-score, and f-score
-     - Add to open set (or update priority)
-7. **Repeat** until open set is empty (no path) or goal is found
+1. **Initialize**: Add start node to the open set with its f-score.
+2. **Select Best**: Choose the node with the lowest f-score.
+3. **Check Goal**: If we are there, trace the path.
+4. **Evaluate**: For each neighbor, calculate the cost to get there. If it's a better path than we knew before, record it, calculate the heuristic, and add it to the open set.
+5. **Repeat**: Until the goal is found.
 
-**Heuristic Requirements:**
-For A* to guarantee the shortest path, h(n) must be **admissible** — it must never overestimate the true cost. An optimistic estimate is safe; a pessimistic one is not.
-
-**Common Heuristics for Grids:**
-
-- **Manhattan distance** = |x1-x2| + |y1-y2| (4-directional movement)
-- **Euclidean distance** = √[(x1-x2)² + (y1-y2)²] (any direction)
-- **Chebyshev distance** = max(|x1-x2|, |y1-y2|) (8-directional movement)
-
-**Why A* is Faster Than Dijkstra:**
-The heuristic guides search toward the goal. While Dijkstra explores in all directions equally, A* prioritizes nodes that appear closer to the goal, often reaching it with far fewer node expansions.`,
+**The Heuristic:**
+This is the "educated guess." In a grid, we usually use the Manhattan Distance (counting tiles) or Euclidean Distance (straight line) to estimate how far the goal is. This acts as a magnet, pulling the search toward the finish line.`,
 
     timeComplexity: {
       complexity: "O((V + E) log V)",
       explanation:
-        "Worst case matches Dijkstra. However, with a good heuristic, A* typically examines far fewer nodes. The quality of the heuristic determines practical performance.",
+        "The worst case is the same as Dijkstra, but in practice, A* visits significantly fewer nodes because it doesn't waste time exploring the wrong direction.",
     },
     spaceComplexity: {
       complexity: "O(V)",
       explanation:
-        "Open and closed sets together can hold all nodes. Memory is often the limiting factor for A* on large maps, leading to variants like IDA* and SMA*.",
+        "It still needs to store the open and closed lists. Memory is usually the bottleneck for A* on massive maps.",
     },
     guaranteesShortestPath: true,
-    dataStructure: "Priority Queue ordered by f(n) = g(n) + h(n)",
-    visualPattern: "Directed expansion — stretched toward goal while maintaining optimality",
+    dataStructure: "Priority Queue (ordered by f-score)",
+    visualPattern: "Directed beam that expands specifically toward the target",
 
     useCases: [
-      "Video game pathfinding — the industry standard for NPC movement",
-      "Robotics — navigating physical spaces with known maps",
-      "Route planning — GPS with distance heuristics",
-      "Puzzle solving — sliding puzzles, Rubik's cube with admissible heuristics",
-      "Natural language processing — finding optimal parse trees",
-      "Logistics — warehouse robot routing, delivery optimization",
+      "Video Games (NPC movement)",
+      "Robotics and Autonomous Vehicles",
+      "Parsing Natural Language",
+      "Route planning apps",
+      "Puzzle solving (15-puzzle)",
+      "Warehouse robot coordination",
     ],
 
     keyInsights: [
-      "Guarantees shortest path — when heuristic is admissible",
-      "f(n) = g(n) + h(n) — balances actual cost and estimated remaining cost",
-      "Heuristic quality matters — better h means fewer nodes expanded",
-      "Reduces to Dijkstra when h(n) = 0 — no guidance, explore everywhere",
-      "Reduces to Greedy when g(n) = 0 — all guidance, no guarantee",
-      "Optimally efficient — no algorithm expands fewer nodes with same info",
+      "It is the best general-purpose pathfinding algorithm.",
+      "The performance depends heavily on the Heuristic.",
+      "If h(n) is 0, A* turns into Dijkstra.",
+      "If h(n) is too high, it becomes Greedy Best-First Search.",
+      "It balances optimality with speed.",
     ],
 
     whenToUse:
-      "Use A* when you have a good heuristic estimate to the goal, when you need guaranteed shortest path, and when the search space is large enough that Dijkstra would be too slow. It's the best choice for most point-to-point pathfinding problems.",
+      "Always. Unless you have a very specific reason not to. If you know the start and the end point, A* is almost always the right choice.",
 
     whenNotToUse:
-      "Avoid A* when you don't have a meaningful heuristic (Dijkstra is simpler), when searching to all destinations (A* is for single-target), or when memory is severely limited (consider IDA* or hierarchical pathfinding).",
+      "If you don't know where the goal is (exploration), or if the map is so small that the overhead of calculating heuristics isn't worth it.",
   },
 
   greedy: {
     title: "Greedy Best-First Search",
-    tagline: "The Speed Demon",
-    history: `Greedy Best-First Search emerged from early artificial intelligence research in the 1960s as researchers sought faster alternatives to uninformed search. The idea was simple: instead of exploring systematically, always move toward the goal.
+    tagline: "The Impatient Optimist",
+    history: `Greedy Best-First Search comes from the early days of AI, where researchers experimented with pure heuristics. It operates on a simple philosophy: "That looks like the right direction, so I'm going that way."
 
-The algorithm represents pure heuristic search — using only the estimated cost to goal h(n) with no consideration of the path taken so far. While this "greedy" approach often works brilliantly, it sacrifices optimality for speed.
+It represents the extreme end of the heuristic spectrum. While A* balances the past (cost so far) and future (estimated cost), Greedy BFS ignores the past entirely and focuses solely on the destination.`,
 
-Greedy Best-First became an important stepping stone in the development of A*. By understanding where greedy search fails (not finding shortest paths), Hart, Nilsson, and Raphael designed A* to retain the speed benefits while guaranteeing optimality.`,
-
-    mechanics: `Greedy Best-First Search is like A* with amnesia — it only considers how far the goal appears to be, ignoring how far it has already traveled.
-
-**The Evaluation Function:**
-
-- f(n) = h(n) (heuristic only)
-- Unlike A*: g(n) is not considered
-- Always expands the node that appears closest to the goal
+    mechanics: `Greedy BFS is A* with amnesia. It drops the $g(n)$ component and makes decisions solely based on $h(n)$ (the estimated distance to the goal).
 
 **The Algorithm Step-by-Step:**
 
-1. **Initialize** — create priority queue with start node
-2. **Extract minimum h** — get node with lowest h(n)
-3. **Skip if visited** — continue if already processed
-4. **Mark visited** — add to closed set
-5. **Check goal** — if destination reached, reconstruct path
-6. **Add neighbors** — for each unvisited neighbor:
-   - Calculate h(neighbor)
-   - Add to priority queue with priority h
-7. **Repeat** until queue is empty or goal is found
+1. **Initialize**: Put start node in the priority queue.
+2. **Pick**: Choose the node that *looks* closest to the goal.
+3. **Check**: Is it the goal?
+4. **Push**: Add neighbors to the queue based on their heuristic distance.
+5. **Repeat**.
 
-**Why It's Fast:**
-Without tracking g(n), the algorithm makes quick decisions. It beelines toward the goal, often finding a path much faster than Dijkstra or even A*.
-
-**Why It Can Fail:**
-Consider a U-shaped obstacle. Greedy search races toward the goal, hits the obstacle, then must backtrack extensively. The final path may be far longer than optimal.
-
-**The "Trap" Problem:**
-Greedy search can get stuck in concave obstacles or local minima — situations where moving toward the goal actually moves you further from an achievable path.`,
+**The Trap:**
+Because it ignores the cost of the path taken so far, Greedy BFS can get fooled easily. If there is a U-shaped wall, it will run straight into the center of the U, hit the wall, and be forced to search effectively random neighbors until it finds a way around.`,
 
     timeComplexity: {
       complexity: "O((V + E) log V)",
       explanation:
-        "Same worst-case as A* and Dijkstra. However, greedy often terminates much faster by ignoring non-promising areas. Best case can be nearly linear if the heuristic is very accurate.",
+        "It uses a Priority Queue like A*, but typically runs much faster because it beelines for the target. However, it can degenerate into a slow search in complex mazes.",
     },
     spaceComplexity: {
       complexity: "O(V)",
-      explanation:
-        "Similar to A* — stores nodes in open and closed sets. May store fewer nodes in practice due to faster termination.",
+      explanation: "Stores the frontier of nodes. similar to A*.",
     },
     guaranteesShortestPath: false,
-    dataStructure: "Priority Queue ordered by h(n) only",
-    visualPattern: "Laser beam — shoots directly at goal, bouncing off obstacles",
+    dataStructure: "Priority Queue (ordered by h-score)",
+    visualPattern: "A laser beam that shoots toward the goal but splinters on obstacles",
 
     useCases: [
-      "Real-time applications — when any path is better than no path",
-      "Preliminary search — finding approximate paths quickly",
-      "Heuristic testing — evaluating heuristic quality before A*",
-      "Games with deadlines — when frame time limits prevent full A*",
-      "Exploratory pathfinding — when optimality doesn't matter",
-      "Memory-constrained systems — simpler than A*",
+      "Fast prototyping where optimality doesn't matter",
+      "Games where 'good enough' movement is acceptable",
+      "Scenarios with very few obstacles",
+      "AI behaviors that simulate impulsiveness",
+      "Web crawling with specific target topics",
+      "Heuristic testing",
     ],
 
     keyInsights: [
-      "Does NOT guarantee shortest path — often finds suboptimal routes",
-      "Very fast on open terrain — reaches goal with minimal exploration",
-      "Vulnerable to traps — concave obstacles cause poor performance",
-      "Uses only h(n) — ignores actual path cost entirely",
-      "A* without memory — doesn't track how far we've come",
-      "Good heuristic critical — poor h makes greedy nearly random",
+      "It is incredibly fast in open spaces.",
+      "It does NOT guarantee the shortest path.",
+      "It can find drastically suboptimal paths (the 'long way around').",
+      "It is susceptible to getting stuck in local optima.",
+      "It demonstrates the danger of relying purely on heuristics.",
     ],
 
     whenToUse:
-      "Use Greedy Best-First when speed matters more than path quality, when obstacles are convex or sparse, when you need a quick approximate solution, or when real-time constraints prevent thorough search.",
+      "Use Greedy BFS when you need raw speed and don't care if the path is slightly inefficient. It's great for simple movement logic in games with open maps.",
 
     whenNotToUse:
-      "Avoid Greedy when path optimality matters, when obstacles are concave or maze-like, when the heuristic isn't highly accurate, or when you need guaranteed correctness for critical applications.",
+      "Do not use this for navigation apps or logistics. Sending a user on a route that is 50% longer just because it looked good at the start is a bad user experience.",
   },
 
   bidirectional: {
     title: "Bidirectional A*",
-    tagline: "The Tunnel Bore",
-    history: `Bidirectional search was first proposed by Ira Pohl in 1971 as a way to reduce the exponential explosion of search space. The insight was elegant: instead of searching from start to goal, search from both ends simultaneously and meet in the middle.
+    tagline: "The Diplomat",
+    history: `Proposed in the late 1960s, Bidirectional Search addresses the problem of exponential growth in search trees. The logic is simple geometry: the area of two small circles is smaller than the area of one big circle.
 
-The mathematical beauty is compelling: if a search tree has branching factor b and depth d, unidirectional search explores O(b^d) nodes. Bidirectional search explores O(2 × b^(d/2)) = O(b^(d/2)) nodes — exponentially fewer.
+It essentially digs a tunnel from both sides of the mountain, hoping to meet exactly in the middle. When implemented correctly, it can drastically cut down compute time.`,
 
-Combining bidirectional search with A* creates a powerful algorithm for point-to-point pathfinding. The challenge lies in detecting when the frontiers meet and ensuring the combined path is optimal — problems that researchers have refined solutions for over decades.`,
-
-    mechanics: `Bidirectional A* runs two simultaneous A* searches — one from start toward goal, and one from goal toward start. When the frontiers meet, we've found a path.
-
-**The "Tunnel Bore" Metaphor:**
-Imagine digging a tunnel through a mountain. Instead of drilling from one side, two teams drill from opposite sides and meet in the middle — cutting the work roughly in half (or more, due to the exponential nature of search).
+    mechanics: `This algorithm runs two simultaneous searches: one Forward from the start, and one Backward from the goal.
 
 **The Algorithm Step-by-Step:**
 
-1. **Initialize two frontiers:**
-   - Forward: open_start with start node, heuristic toward goal
-   - Backward: open_end with goal node, heuristic toward start
-2. **Alternate expansion:**
-   - Expand one node from forward frontier
-   - Expand one node from backward frontier
-3. **Check for intersection:**
-   - After each expansion, check if the node is in the other closed set
-   - If intersection found, we have a candidate path
-4. **Verify optimality:**
-   - The first intersection may not be optimal
-   - Continue until we can prove no better path exists
-5. **Stitch the path:**
-   - Combine forward path (start → meeting point)
-   - With backward path (meeting point → goal)
+1. **Setup**: Initialize two Priority Queues (Start-to-Goal and Goal-to-Start).
+2. **Alternate**: Advance the Forward search one step, then the Backward search one step.
+3. **Check Intersection**: After every step, check if the current node has been visited by the *other* search.
+4. **Meet**: Once the searches collide, we have a bridge.
+5. **Reconstruct**: Stitch the path from Start-to-Meeting-Point and Meeting-Point-to-Goal.
 
-**Why It's Faster:**
-
-With branching factor b and path length d:
-
-- Unidirectional: explores ~b^d nodes
-- Bidirectional: explores ~2 × b^(d/2) nodes
-- For b=4, d=20: 1 trillion vs. 2 million nodes!
-
-**The Meeting Point Challenge:**
-Finding where the frontiers meet is tricky. The first intersection isn't always optimal — we need to ensure no better path exists through other meeting points.`,
+**The Complexity:**
+The hardest part isn't the search; it's the termination condition. Just because the searches met doesn't *automatically* mean that specific meeting point lies on the optimal path, though in unweighted graphs it usually does.`,
 
     timeComplexity: {
-      complexity: "O((V + E) log V)",
+      complexity: "O(b^(d/2))",
       explanation:
-        "Worst case same as unidirectional A*. However, practical performance is often O(b^(d/2)) instead of O(b^d) — exponentially better for long paths.",
+        "This is the killer feature. Instead of searching depth d, we search depth d/2 twice. Because graph expansion is exponential, this is a massive performance win.",
     },
     spaceComplexity: {
       complexity: "O(V)",
-      explanation:
-        "Maintains two open sets and two closed sets. Total space is similar to unidirectional A*, but often less in practice due to smaller frontiers.",
+      explanation: "We still need to store the frontiers for both searches.",
     },
     guaranteesShortestPath: true,
-    dataStructure: "Two Priority Queues (one for each direction)",
-    visualPattern: "Dual expanding bubbles — two searches meeting in the middle",
+    dataStructure: "Two Priority Queues",
+    visualPattern: "Two expanding bubbles that merge like cells fusing",
 
     useCases: [
-      "Long-distance routing — cross-country or intercontinental paths",
-      "Large game maps — MMO worlds with vast distances",
-      "Social network analysis — finding connections between distant users",
-      "Transportation networks — flight routes, railroad paths",
-      "Puzzle solving — when start and goal configurations are known",
-      "Protein folding — searching from known configurations",
+      "Social Network Connection (finding path between two users)",
+      "Rubik's Cube solvers (meet-in-the-middle attacks)",
+      "Large-scale map routing",
+      "Word ladder puzzles",
+      "Database relationship mapping",
+      "Flight routing (hub-to-hub)",
     ],
 
     keyInsights: [
-      "Guarantees shortest path — with proper termination conditions",
-      "Exponentially faster — O(b^(d/2)) vs O(b^d) in practice",
-      "Requires reversible graph — must be able to traverse edges backward",
-      "More complex implementation — managing two frontiers and stitching",
-      "Best for long paths — overhead not worth it for short distances",
-      "Memory efficient — each frontier is smaller than unidirectional",
+      "It is significantly faster than standard A* for long paths.",
+      "Implementation is more complex (managing two states).",
+      "You must know the destination explicitly (can't search for 'nearest gas station').",
+      "The graph must be traversable backwards (undirected or reversible edges).",
+      "It visually demonstrates the power of divide-and-conquer.",
     ],
 
     whenToUse:
-      "Use Bidirectional A* for long-distance pathfinding where unidirectional A* is too slow, when the graph is undirected or edges are reversible, and when both start and goal are known upfront.",
+      "Use Bidirectional search for heavy-duty pathfinding on large graphs where you know the exact start and end points. It is the secret sauce for high-performance routing engines.",
 
     whenNotToUse:
-      "Avoid Bidirectional when paths are short (overhead outweighs benefit), when edges aren't reversible (one-way streets), when the goal is a region rather than a point, or when the graph structure makes backward search impractical.",
+      "Avoid it if the graph is directed and cannot be reversed (like one-way streets where you can't calculate the backward path) or if the implementation complexity isn't worth the speed gain.",
   },
 
   flood: {
     title: "Flood Fill",
-    tagline: "The Complete Cartographer",
-    history: `Flood Fill has its origins in early computer graphics and image processing. The algorithm is commonly associated with the "paint bucket" tool found in graphics programs since the 1970s — select a pixel, and the color spreads to fill all connected pixels of the same color.
+    tagline: "The Completionist",
+    history: `Flood Fill is a staple of computer graphics, famous for powering the "Paint Bucket" tool in MS Paint and Photoshop. While usually associated with image manipulation, in a graph context, it is simply a Breadth-First Search that has no brakes.
 
-In the context of pathfinding, Flood Fill represents a complete exploration algorithm. Rather than stopping when the goal is found, it maps the entire reachable space — like water flooding a basin to reveal its complete topology.
+It doesn't stop when it sees the goal. It keeps going until it has visited every single reachable node. It is the cartographer of algorithms.`,
 
-The algorithm is closely related to BFS but serves a different purpose. While BFS seeks a single path, Flood Fill reveals the complete "basin of attraction" from a starting point — every node that can be reached and the distance to each.`,
-
-    mechanics: `Flood Fill explores every reachable node from the start, creating a complete distance map of the accessible region. It's BFS that doesn't stop at the goal.
+    mechanics: `Flood Fill performs a complete traversal of the connected component.
 
 **The Algorithm Step-by-Step:**
 
-1. **Initialize** — add start to queue with distance 0
-2. **Mark visited** — add start to visited set
-3. **Dequeue** — remove front node from queue
-4. **Note goal** — if this is the destination, record it (but keep going!)
-5. **Expand all** — for each unvisited neighbor:
-   - Mark as visited
-   - Record parent and distance
-   - Add to queue
-6. **Repeat** until queue is empty (entire region explored)
-7. **Reconstruct** — if goal was found, trace back the path
+1. **Start**: Pick a seed node.
+2. **Spread**: Visit all valid neighbors.
+3. **Recurse/Loop**: Repeat for those neighbors.
+4. **Stop**: Only stop when there are no unvisited neighbors left.
 
-**Why Explore Everything?**
-
-Flood Fill creates a complete distance map. Once complete, you can:
-
-- Find paths to any destination instantly (trace parents)
-- Identify all nodes within a certain radius
-- Analyze connectivity and bottlenecks
-- Visualize the complete reachable region
-
-**Visualization Purpose:**
-In Yield, Flood Fill demonstrates what BFS would explore if it didn't terminate early. This helps visualize the full scope of the search space and understand the heat map pattern.
-
-**Comparison to BFS:**
-
-- BFS: "Find the shortest path to the goal"
-- Flood Fill: "Map distances to every reachable node"`,
+In Yield, we use this to generate a "Heatmap" or "Dijkstra Map." Instead of finding a path, we assign every tile a number representing its distance from the start. This creates a flow field that can guide hundreds of agents simultaneously.`,
 
     timeComplexity: {
       complexity: "O(V + E)",
       explanation:
-        "Visits every vertex once and examines every edge once. Since we're exploring everything anyway, there's no early termination benefit.",
+        "It touches every pixel or node exactly once. It is linear relative to the size of the reachable area.",
     },
     spaceComplexity: {
       complexity: "O(V)",
-      explanation:
-        "Stores visited set, distance map, and parent pointers for all reachable nodes. The queue can hold up to O(V) nodes.",
+      explanation: "Recursion stack or queue size depends on the shape of the area to be filled.",
     },
     guaranteesShortestPath: true,
-    dataStructure: "Queue (same as BFS)",
-    visualPattern: "Complete flood — fills entire reachable region before finishing",
+    dataStructure: "Queue or Stack",
+    visualPattern: "A tidal wave filling every nook and cranny",
 
     useCases: [
-      "Graphics — paint bucket tool, region filling",
-      "Image processing — connected component labeling",
-      "Game maps — fog of war reveal, territory control",
-      "Network analysis — finding all nodes within k hops",
-      "Pre-computation — building distance tables for frequent queries",
-      "Influence mapping — showing range of effect for game units",
+      "Paint Bucket tools in graphics editors",
+      "Procedural Cave Generation",
+      "Determining reachable areas in games",
+      "Flow Field pathfinding for swarm AI",
+      "Minesweeper (clearing empty squares)",
+      "Fluid simulation logic",
     ],
 
     keyInsights: [
-      "Complete exploration — visits every reachable node",
-      "Guarantees shortest path — same as BFS",
-      "Provides distance map — distances to all nodes, not just goal",
-      "Useful for visualization — shows full extent of search space",
-      "Basis for influence maps — common in game AI",
-      "No early termination — always explores entire region",
+      "It creates a map of the entire space, not just a single path.",
+      "It is useful for pre-calculating movement data.",
+      "It identifies isolated sub-graphs (islands).",
+      "It is visually satisfying to watch.",
+      "It is the brute-force approach to connectivity.",
     ],
 
     whenToUse:
-      "Use Flood Fill when you need distances to all reachable nodes, when visualizing search space extent, when building pre-computed distance tables, or when implementing region-based operations like image fills.",
+      "Use Flood Fill when you need to analyze the entire map, fill a region, or create a flow field for swarm AI movement.",
 
     whenNotToUse:
-      "Avoid Flood Fill when you only need a single path (BFS is faster), when the region is very large and you don't need complete exploration, or when real-time performance matters and early termination would help.",
+      "Do not use this for single-agent pathfinding. It is overkill to map the entire world just to walk to the grocery store.",
   },
 
   random: {
     title: "Random Walk",
-    tagline: "The Chaos Agent",
-    history: `Random walks have fascinated mathematicians since Karl Pearson coined the term in 1905, describing a walk where each step is in a random direction. The concept appears throughout science: Brownian motion in physics, stock price modeling in finance, and random sampling in statistics.
+    tagline: "The Chaos Monkey",
+    history: `The Random Walk (or "Drunkard's Walk") is a mathematical formalization of a path that consists of a succession of random steps. It dates back to Karl Pearson in 1905.
 
-In pathfinding, Random Walk serves as a pedagogical tool — a demonstration of what happens when search algorithms have no intelligence. By randomly choosing the next step, it represents the baseline against which we measure sophisticated algorithms.
+It is less of an algorithm and more of a cautionary tale. It represents entropy. In the context of Yield, it serves as the baseline control group: this is what happens when you have zero intelligence and zero strategy.`,
 
-The algorithm is also known as a "drunkard's walk," imagining someone so disoriented they move randomly. It demonstrates why heuristics matter: without guidance, finding a path becomes a matter of luck rather than logic.`,
-
-    mechanics: `Random Walk is anti-algorithmic — it has no strategy, no memory, no guidance. At each step, it picks a random valid neighbor and moves there.
+    mechanics: `It is exactly what it says on the tin. At every step, the algorithm rolls a die and picks a direction.
 
 **The Algorithm Step-by-Step:**
 
-1. **Start** at the initial position
-2. **Get neighbors** — find all valid adjacent cells
-3. **Pick randomly** — select one neighbor at random
-4. **Move** — update current position
-5. **Check goal** — if at destination, success!
-6. **Track visited** — record first-time visits for path reconstruction
-7. **Repeat** until goal found or max steps exceeded
+1. **Pick**: Look at valid neighbors.
+2. **Roll**: Choose one randomly.
+3. **Move**: Go there.
+4. **Repeat**: Until you accidentally stumble upon the goal or the universe ends.
 
-**Why Include It?**
-
-Random Walk demonstrates:
-
-- The value of intelligent search strategies
-- What happens without heuristic guidance
-- The baseline that other algorithms improve upon
-- That even random movement can eventually find a path
-
-**Expected Behavior:**
-
-- In open space: eventually finds the goal (but slowly)
-- In mazes: may take extremely long or hit step limit
-- Time complexity: unbounded (could theoretically run forever)
-
-**The Step Limit:**
-Without a maximum step count, Random Walk could run forever on some graphs. The visualizer uses a limit to ensure termination.
-
-**Monte Carlo Connection:**
-Random Walk is related to Monte Carlo methods — using randomness to explore solution spaces. While not efficient for pathfinding, similar techniques are powerful in optimization and simulation.`,
+**Why It's Here:**
+To show you why we need A*. Watching a Random Walk try to solve a maze is a painful lesson in why heuristics matter. It has no memory of where it has been, so it frequently backtracks and walks in circles.`,
 
     timeComplexity: {
-      complexity: "O(∞) / O(max_steps)",
+      complexity: "O(∞) / O(Luck)",
       explanation:
-        "Unbounded in theory — could wander forever without finding the goal. Implementations use a step limit. Expected time depends heavily on graph structure and goal placement.",
+        "Theoretically, it can run forever. In practice, on a finite grid, it will eventually hit the goal, but the time taken is effectively random.",
     },
     spaceComplexity: {
-      complexity: "O(V)",
-      explanation:
-        "Tracks visited nodes for path reconstruction. Could theoretically visit all nodes before finding the path.",
+      complexity: "O(1)",
+      explanation: "It doesn't need to remember anything. It lives in the moment.",
     },
     guaranteesShortestPath: false,
-    dataStructure: "None (stateless random choice)",
-    visualPattern: "Chaotic wandering — erratic, purposeless movement",
+    dataStructure: "None (RNG)",
+    visualPattern: "Jittery, confused, and frustratingly inefficient",
 
     useCases: [
-      "Educational — demonstrating why heuristics matter",
-      "Baseline comparison — measuring algorithm improvements",
-      "Stress testing — random exploration of large spaces",
-      "Emergent behavior — simple rules creating complex patterns",
-      "Games — creating 'confused' or 'wandering' NPC behavior",
-      "Monte Carlo sampling — exploring solution spaces randomly",
+      "Procedural Generation (creating organic tunnels)",
+      "Stock Market modeling (financial theory)",
+      "Brownian Motion simulations in physics",
+      "Stress testing other systems",
+      "Screensavers",
+      "Simulating confused NPCs",
     ],
 
     keyInsights: [
-      "No guarantee of finding path — may exceed step limit",
-      "No guarantee of shortest path — path length is essentially random",
-      "Demonstrates need for intelligence — shows value of BFS/A*",
-      "Can work on simple maps — eventually finds goal in open spaces",
-      "Fails on complex mazes — likely to wander indefinitely",
-      "Pedagogical value — the 'what not to do' example",
+      "It has no strategy.",
+      "It creates very organic, jagged shapes.",
+      "It is statistically guaranteed to visit every node on a 2D infinite grid eventually (but don't wait up for it).",
+      "It is the baseline for comparing 'intelligent' algorithms.",
+      "It creates high-frequency noise in pathing.",
     ],
 
     whenToUse:
-      "Use Random Walk for educational demonstrations, as a baseline comparison, when implementing wandering behavior in games, or when exploring spaces where any coverage pattern is acceptable.",
+      "Use Random Walk for procedural generation (like digging worm tunnels) or for artistic visualizations. It can also be used for 'wandering' AI behavior when the NPC is idle.",
 
-    whenNotToUse:
-      "Avoid Random Walk for any serious pathfinding task. It's never the right choice when you need reliable paths, predictable performance, or any form of optimality. It exists to show why we need real algorithms.",
+    whenNotToUse: "Never use this if you actually need to get somewhere.",
   },
 };
 

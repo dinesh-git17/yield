@@ -49,519 +49,425 @@ export interface SortingArticle {
 export const SORTING_ARTICLES: Record<SortingAlgorithmType, SortingArticle> = {
   bubble: {
     title: "Bubble Sort",
-    tagline: "The Floating Giant",
-    history: `Bubble Sort is one of the oldest and most intuitive sorting algorithms, with roots tracing back to the 1950s. The name comes from the way larger elements "bubble up" to their correct positions, similar to air bubbles rising in water. While its origins are somewhat unclear, it gained widespread recognition through early computer science education and Donald Knuth's seminal work "The Art of Computer Programming" (1968), where he famously noted that "the bubble sort seems to have nothing to recommend it, except a catchy name."
+    tagline: "The Participation Trophy",
+    history: `Bubble Sort is likely the first algorithm every developer learns, and the first one they are told to stop using. Its origins are in the 1950s, named for the way large elements "bubble" to the top of the list like carbonation in a soda. Donald Knuth famously remarked that "the bubble sort seems to have nothing to recommend it, except a catchy name."
 
-Despite its inefficiency, Bubble Sort remains a cornerstone of computer science education because it perfectly illustrates the concept of comparison-based sorting and algorithm analysis. It demonstrates why we need more sophisticated approaches for real-world applications.`,
+Despite the criticism, it remains the standard "Hello World" of algorithm classes because its logic maps 1:1 with how a human might inefficiently sort a deck of cards if they were tired.`,
 
-    mechanics: `Bubble Sort works by repeatedly stepping through the list, comparing adjacent pairs of elements and swapping them if they're in the wrong order. This process continues until no swaps are needed, indicating the list is sorted.
+    mechanics: `The algorithm works by frantically comparing neighbors. It steps through the list, looks at two adjacent items, and swaps them if they are in the wrong order. It repeats this until the list is clean.
 
 **The Algorithm Step-by-Step:**
 
-1. **Start at the beginning** of the array
-2. **Compare adjacent elements** at positions i and i+1
-3. **Swap if needed** — if arr[i] > arr[i+1], exchange them
-4. **Move forward** to the next pair
-5. **Repeat the pass** — after each complete pass, the largest unsorted element "bubbles" to its final position
-6. **Continue** until a complete pass requires no swaps
+1. **Scan**: Start at index 0.
+2. **Compare**: Look at item $i$ and item $i+1$.
+3. **Swap**: If the one on the left is bigger, swap them.
+4. **Repeat**: Do this for every pair in the list.
+5. **Loop**: Go back to the start and do it all again until you finish a pass without making a single swap.
 
 **The "Bubbling" Effect:**
-After the first pass, the largest element is guaranteed to be in its final position (at the end). After the second pass, the two largest elements are in place. This means each subsequent pass needs to examine fewer elements, creating an optimization opportunity.
+After the first pass, the largest number is guaranteed to be at the very end. After the second pass, the second largest is locked in. The sorted portion grows from right to left.
 
-**Optimization — Early Exit:**
-If a complete pass occurs with no swaps, the array is already sorted. This optimization allows Bubble Sort to achieve O(n) time complexity for already-sorted arrays.`,
+
+
+**Optimization (The Early Exit):**
+The only redeeming quality of Bubble Sort is that if you pass through the list and swap nothing, you know you're done. This makes it surprisingly fast for lists that are *almost* sorted.`,
 
     bestCase: {
       complexity: "O(n)",
       explanation:
-        "When the array is already sorted, only one pass is needed to confirm no swaps are required. This requires n-1 comparisons and 0 swaps.",
+        "If the array is already sorted, it does one 'sanity check' pass, realizes no swaps are needed, and quits early.",
     },
     worstCase: {
       complexity: "O(n²)",
       explanation:
-        "When the array is reverse-sorted, every element needs to bubble through the entire array. This requires (n-1) + (n-2) + ... + 1 = n(n-1)/2 comparisons and swaps.",
+        "If the array is reverse sorted, it has to move every single element across the entire array, one step at a time.",
     },
     averageCase: {
       complexity: "O(n²)",
       explanation:
-        "On random data, roughly half of all possible swaps occur, but the quadratic number of comparisons remains.",
+        "On random data, it's slow. Very slow. It performs a quadratic number of comparisons and swaps.",
     },
     spaceComplexity: {
       complexity: "O(1)",
       explanation:
-        "Bubble Sort is an in-place algorithm, requiring only a constant amount of extra memory for the swap variable.",
+        "It sorts in-place. We only need a tiny bit of memory to store the temporary variable for swapping.",
     },
 
     useCases: [
-      "Educational purposes — teaching sorting fundamentals",
-      "Detecting nearly-sorted data with minimal passes",
-      "Small datasets (n < 50) where simplicity trumps efficiency",
-      "Situations requiring a stable sort with minimal code",
-      "Graphics applications needing to sort by single layer differences",
+      "Computer Science 101 classes",
+      "Testing if a list is already sorted (sanity checks)",
+      "Tiny datasets (less than 50 items)",
+      "Computer Graphics (where swapping neighbors looks cool)",
     ],
 
     keyInsights: [
-      "Stable sort — equal elements maintain their relative order",
-      "Adaptive — can detect sorted arrays in O(n) time",
-      "In-place — requires no additional memory allocation",
-      "Easy to implement — often written correctly on first attempt",
-      "Quadratic time makes it impractical for large datasets",
+      "It is stable (doesn't reorder equal items).",
+      "It is adaptive (fast if data is nearly sorted).",
+      "It is easy to implement (hard to introduce bugs).",
+      "It is theoretically arguably the worst general-purpose sort.",
     ],
 
     whenToUse:
-      "Use Bubble Sort when you need a simple, stable sorting algorithm for very small datasets or when teaching sorting concepts. Its O(n) best-case makes it surprisingly effective for nearly-sorted data when combined with the early-exit optimization.",
+      "Use it when you are teaching someone to code, or if you need to quickly check if a list is already sorted. It's also fine for lists so small that the CPU doesn't care.",
 
     whenNotToUse:
-      "Avoid Bubble Sort for datasets larger than ~50 elements or when performance matters. Even among O(n²) algorithms, Insertion Sort typically outperforms it due to fewer swaps.",
+      "Any time performance matters. Even among the slow $O(n^2)$ algorithms, Insertion Sort is almost always better.",
   },
 
   selection: {
     title: "Selection Sort",
-    tagline: "The Minimalist's Choice",
-    history: `Selection Sort emerged in the early days of computing when memory was scarce and expensive. Its straightforward approach of finding the minimum element and placing it at the front made it intuitive for early programmers working with punch cards and limited resources.
+    tagline: "The Perfectionist",
+    history: `Selection Sort comes from an era where writing to memory was expensive. Imagine carving stone tablets rather than writing to RAM.
 
-The algorithm gained formal recognition through its analysis in various computer science texts during the 1960s. Unlike Bubble Sort, Selection Sort's appeal lies in its predictable behavior — it always performs the same number of comparisons regardless of the input order, making it easier to analyze and understand.
+It takes a "measure twice, cut once" approach. Instead of swapping constantly like Bubble Sort, Selection Sort scans the entire remaining list to find the absolute smallest item, and only then does it make a move. It is the most predictable of all sorting algorithms.`,
 
-Its key innovation was minimizing the number of swaps: at most n-1 swaps are ever needed, regardless of the initial array state. This made it valuable in scenarios where write operations were expensive, such as with flash memory or EEPROM.`,
-
-    mechanics: `Selection Sort divides the array into two parts: a sorted portion (initially empty) and an unsorted portion. It repeatedly selects the smallest element from the unsorted portion and adds it to the end of the sorted portion.
+    mechanics: `Selection Sort divides the world into two parts: the sorted kingdom (left) and the unsorted wildlands (right). It repeatedly conquers the wildlands one element at a time.
 
 **The Algorithm Step-by-Step:**
 
-1. **Set the boundary** — the sorted portion starts empty, unsorted portion is the whole array
-2. **Find the minimum** — scan through the unsorted portion to find the smallest element
-3. **Swap to position** — exchange the minimum element with the first unsorted element
-4. **Advance the boundary** — the sorted portion grows by one element
-5. **Repeat** until the unsorted portion is empty
-
-**Key Characteristics:**
-- The number of comparisons is always the same: n(n-1)/2
-- Maximum n-1 swaps regardless of input order
-- Each element is moved at most once to its final position
+1. **Search**: Look through the entire unsorted portion of the list.
+2. **Identify**: Find the index of the absolute minimum value.
+3. **Swap**: Exchange that minimum value with the first element of the unsorted portion.
+4. **Advance**: Move the boundary of the sorted kingdom one step to the right.
+5. **Repeat**: Until the wildlands are empty.
 
 **Visual Intuition:**
-Imagine laying out playing cards face up on a table. To sort them, you repeatedly scan for the lowest card and place it at the start of a new row. This is exactly what Selection Sort does.`,
+Imagine organizing a hand of cards. You look at all the cards, find the Ace, and put it at the front. Then you look at the remaining cards, find the 2, and put it next. That is Selection Sort.`,
 
     bestCase: {
       complexity: "O(n²)",
       explanation:
-        "Even when sorted, Selection Sort must scan through the unsorted portion to verify each minimum. No optimizations exist for sorted arrays.",
+        "It has zero chill. Even if the list is already sorted, it will still scan every element to make sure.",
     },
     worstCase: {
       complexity: "O(n²)",
-      explanation:
-        "Same as best case — Selection Sort always performs the same number of comparisons: n(n-1)/2.",
+      explanation: "The number of comparisons is always the same: $(n^2 - n) / 2$.",
     },
     averageCase: {
       complexity: "O(n²)",
-      explanation:
-        "The algorithm's performance is completely data-independent, always performing exactly n(n-1)/2 comparisons.",
+      explanation: "It doesn't care about the data order. It does the same work every time.",
     },
     spaceComplexity: {
       complexity: "O(1)",
-      explanation:
-        "Selection Sort is in-place, requiring only a constant amount of extra space for the minimum index and swap variable.",
+      explanation: "It's an in-place sort. Low memory footprint.",
     },
 
     useCases: [
-      "Systems where write operations are expensive (flash memory, EEPROM)",
-      "Small datasets where simplicity is valued",
-      "Situations requiring a predictable number of operations",
-      "Educational contexts demonstrating algorithm design",
-      "Embedded systems with limited memory",
+      "Systems where writing to memory is costly (Flash memory / EEPROM)",
+      "Simple embedded systems",
+      "Situations where you need consistent execution time (no spikes)",
+      "Small lists where code size matters more than speed",
     ],
 
     keyInsights: [
-      "NOT stable — equal elements may change relative order",
-      "Minimal swaps — at most n-1 swaps total",
-      "Data-independent — always O(n²) regardless of input order",
-      "In-place algorithm — O(1) extra space",
-      "Simple to implement and verify correctness",
+      "It minimizes swaps (maximum $n$ swaps).",
+      "It is usually NOT stable (might reorder equal items).",
+      "It is completely non-adaptive (doesn't care if list is sorted).",
+      "It is robust but slow.",
     ],
 
     whenToUse:
-      "Use Selection Sort when write operations are expensive (flash memory), when you need predictable performance, or when working with very small datasets. Its minimal swap count makes it efficient for memory-constrained environments.",
+      "Use it when write operations are expensive (like on cheap flash storage) or when you need the sorting time to be perfectly predictable regardless of the input.",
 
-    whenNotToUse:
-      "Avoid Selection Sort when stability matters (equal elements must maintain order), when dealing with large datasets, or when the data might already be partially sorted (no adaptive optimization exists).",
+    whenNotToUse: "If you need speed. If you need stability. If the list might already be sorted.",
   },
 
   insertion: {
     title: "Insertion Sort",
-    tagline: "The Card Player's Algorithm",
-    history: `Insertion Sort mimics the natural way humans sort playing cards in their hands — picking up cards one at a time and inserting each into its correct position among the previously sorted cards.
+    tagline: "The Human Approach",
+    history: `This is the algorithm most humans run naturally. If you pick up a messy stack of papers and try to organize them by date, you are likely running Insertion Sort.
 
-This intuitive approach has made Insertion Sort a favorite in computer science education since the field's inception. It was one of the first sorting algorithms to be analyzed mathematically, with its average-case analysis appearing in early algorithm textbooks.
+Because it mimics natural behavior, it is surprisingly efficient on data that is "natural"—meaning data that is already partially sorted. It serves as the backbone for complex modern algorithms like Timsort (used in V8 and Python).`,
 
-In practice, Insertion Sort has found lasting relevance as the algorithm of choice for small subarrays in hybrid sorting algorithms. Tim Peters chose it as the base case for Timsort (2002), and it's used similarly in many Quicksort and Mergesort implementations when partition sizes become small (typically n ≤ 10-20).`,
-
-    mechanics: `Insertion Sort builds the final sorted array one element at a time, by inserting each new element into its correct position within the already-sorted portion.
+    mechanics: `Insertion Sort builds the final sorted array one item at a time. It takes the next element and "inserts" it into the correct spot among the items you've already processed.
 
 **The Algorithm Step-by-Step:**
 
-1. **Start with the second element** — the first element is trivially sorted
-2. **Store the current element** — save it as the "key" to insert
-3. **Shift larger elements** — move elements greater than the key one position right
-4. **Insert the key** — place it in the gap created by shifting
-5. **Advance** to the next unsorted element
-6. **Repeat** until all elements are processed
+1. **Pick**: Take the first element from the unsorted section. Call it the "Key".
+2. **Compare**: Look at the elements in the sorted section (to the left).
+3. **Shift**: If a sorted element is larger than your Key, slide it one space to the right.
+4. **Drop**: Once you find a value smaller than your Key (or hit the start), drop the Key into the gap.
+5. **Repeat**.
 
 **The Shifting Mechanism:**
-Unlike Selection Sort which swaps, Insertion Sort shifts elements. When inserting a key:
-- Compare key with elements to its left
-- Shift elements rightward until finding key's correct position
-- Write key once into its final position
-
-**Adaptive Nature:**
-For nearly-sorted data, elements rarely need to shift far. This gives Insertion Sort its powerful O(n) best-case — if data is sorted, each element only requires one comparison and no shifts.`,
+Unlike Selection Sort which swaps, Insertion Sort *slides*. This is better for the CPU cache and requires fewer actual write operations when the data is nearly sorted.`,
 
     bestCase: {
       complexity: "O(n)",
       explanation:
-        "When the array is already sorted, each element only needs one comparison to confirm it's in position. No shifting occurs.",
+        "The Superstar Scenario. If the list is sorted, it just looks at each item, nods, and moves on. No shifting required.",
     },
     worstCase: {
       complexity: "O(n²)",
       explanation:
-        "When the array is reverse-sorted, each element must shift through all previously sorted elements, resulting in 1 + 2 + ... + (n-1) = n(n-1)/2 operations.",
+        "If the list is backwards, every new item has to slide all the way to the front.",
     },
     averageCase: {
       complexity: "O(n²)",
       explanation:
-        "On random data, each element shifts through roughly half of the sorted portion on average, still resulting in quadratic time.",
+        "On random data, it's quadratic. But for small $n$ (under 20), it's often faster than Quick Sort due to lower overhead.",
     },
     spaceComplexity: {
       complexity: "O(1)",
-      explanation:
-        "Insertion Sort is in-place, requiring only constant extra space for the key variable.",
+      explanation: "In-place. Very memory friendly.",
     },
 
     useCases: [
-      "Small datasets (n ≤ 20) — outperforms O(n log n) algorithms due to low overhead",
-      "Nearly-sorted data — approaches linear time",
-      "Online algorithms — can sort as data arrives",
-      "Hybrid sorting — base case for Quicksort/Mergesort on small partitions",
-      "Real-time systems requiring stable, predictable performance",
+      "Small arrays (n < 50)",
+      "Data that is being received in real-time (Online sorting)",
+      "Finishing touches on 'almost sorted' data",
+      "The base case for recursive sorts (Merge Sort / Quick Sort)",
     ],
 
     keyInsights: [
-      "Stable sort — equal elements maintain relative order",
-      "Adaptive — O(n) for nearly-sorted data",
-      "Online — can sort data as it arrives (streaming)",
-      "Low overhead — efficient for small arrays despite O(n²)",
-      "Building block — used within Timsort and introsort",
+      "It is stable.",
+      "It is extremely fast for small or nearly-sorted datasets.",
+      "It is the standard fallback for high-performance recursive sorts.",
+      "It handles live data streams well.",
     ],
 
     whenToUse:
-      "Use Insertion Sort for small datasets (n ≤ 20), nearly-sorted data, or when you need an online algorithm that can process elements as they arrive. It's also ideal as the base case in divide-and-conquer sorts.",
+      "Use it if the array is small (under 50 items) or if you know the data is already mostly sorted. This is often the default 'base case' optimization for advanced developers.",
 
-    whenNotToUse:
-      "Avoid Insertion Sort for large, randomly-ordered datasets where its O(n²) time becomes prohibitive. Switch to O(n log n) algorithms for n > 20-50 elements.",
+    whenNotToUse: "Don't use it on large, random datasets. It will choke.",
   },
 
   gnome: {
     title: "Gnome Sort",
-    tagline: "The Garden Gnome's Method",
-    history: `Gnome Sort was introduced by Hamid Sarbazi-Azad in 2000 as "Stupid Sort" before being renamed by Dick Grune. The algorithm is named after the way a garden gnome might sort a line of flower pots — moving forward when pots are in order, but stepping back to fix any disorder found.
+    tagline: "The Indecisive Gardener",
+    history: `Originally called "Stupid Sort" (no, really) by Hamid Sarbazi-Azad in 2000, it was rebranded as Gnome Sort by Dick Grune. The metaphor is a garden gnome sorting flower pots. He looks at two pots. If they are out of order, he swaps them and steps back. If they are fine, he steps forward.
 
-This algorithm is notable for being one of the simplest sorting algorithms to describe and implement. It uses only a single loop with no nested loops, making its logic remarkably straightforward despite its O(n²) complexity.
+It is essentially Insertion Sort implemented by someone who hates nested loops.`,
 
-The algorithm has pedagogical value in demonstrating that simple-looking code can hide quadratic behavior. It also serves as an interesting case study in algorithm design, showing how local comparisons and movement can achieve global sorting.`,
-
-    mechanics: `Gnome Sort uses a single index that moves through the array like a gnome walking along a row of flower pots. The gnome checks adjacent elements and either moves forward (if they're in order) or swaps and moves backward (if they're out of order).
+    mechanics: `Gnome Sort uses a single index variable. It's a state machine with just two rules: move forward if things look good, move backward if you made a swap.
 
 **The Algorithm Step-by-Step:**
 
-1. **Start at position 0** — the gnome begins at the front
-2. **If at position 0** — move forward (no element to compare with)
-3. **Compare with previous** — check if current and previous are in order
-4. **If in order** — move forward to the next position
-5. **If out of order** — swap the elements and move backward
-6. **Repeat** until reaching the end of the array
-
-**The "Gnome" Metaphor:**
-Imagine a gnome walking along flower pots. When finding two pots out of order:
-- Swap them
-- Step back to check if the swap caused a new problem
-- Keep stepping back and swapping until everything behind is sorted
-- Resume walking forward
+1. **Start**: At index 0.
+2. **Check**: Compare current pot with previous pot.
+3. **Good?**: If they are in order (or we are at start), step forward.
+4. **Bad?**: If they are out of order, swap them and step backward.
+5. **Repeat**: Until you reach the end.
 
 **Connection to Insertion Sort:**
-Gnome Sort is essentially Insertion Sort without the inner loop. Where Insertion Sort uses a nested loop to find the insertion point, Gnome Sort achieves the same effect by walking backward one step at a time.`,
+It produces the exact same sequence of swaps as Insertion Sort, but instead of an inner loop, it physically moves the "cursor" back and forth.`,
 
     bestCase: {
       complexity: "O(n)",
-      explanation:
-        "When the array is already sorted, the gnome walks straight through, making n-1 comparisons with no swaps or backward movement.",
+      explanation: "If sorted, the gnome just walks from start to finish without stopping.",
     },
     worstCase: {
       complexity: "O(n²)",
-      explanation:
-        "When the array is reverse-sorted, each new element requires walking all the way back to the front, resulting in 1 + 2 + ... + (n-1) comparisons and swaps.",
+      explanation: "The gnome spends most of his life walking backwards. It's painfully slow.",
     },
     averageCase: {
       complexity: "O(n²)",
       explanation:
-        "On random data, elements typically need to walk back through half of the sorted portion, still resulting in quadratic time.",
+        "Same as Insertion Sort, but usually slightly slower due to the overhead of variable updates.",
     },
     spaceComplexity: {
       complexity: "O(1)",
-      explanation:
-        "Gnome Sort is in-place, requiring only a single index variable and temporary swap space.",
+      explanation: "In-place. Only needs one index tracker.",
     },
 
     useCases: [
-      "Educational purposes — demonstrating hidden quadratic complexity",
-      "Code golf — extremely short implementation",
-      "Embedded systems with severe code size constraints",
-      "Understanding the relationship between simple code and efficiency",
-      "Novelty or interview discussions about unusual algorithms",
+      "Code Golf (sorting in as few lines as possible)",
+      "Teaching algorithm concepts",
+      "Situations where code complexity is the enemy, not time",
+      "Sorting arrays on very primitive hardware",
     ],
 
     keyInsights: [
-      "Stable sort — equal elements maintain relative order",
-      "Single-loop structure — no nested loops despite O(n²)",
-      "Equivalent to Insertion Sort — same swaps, different structure",
-      "Adaptive — O(n) for sorted arrays",
-      "More data movement than Insertion Sort due to swap-based approach",
+      "It has no nested loops (a rarity for $O(n^2)$ sorts).",
+      "It is stable.",
+      "It is conceptually simple but practically inefficient.",
+      "It's mostly a novelty.",
     ],
 
     whenToUse:
-      "Use Gnome Sort primarily for educational purposes or when you need the simplest possible sorting code. Its single-loop structure makes it easy to understand and verify.",
+      "When you need to write a sort function in 5 lines of code and you don't care how fast it runs. Or when you want to confuse an interviewer.",
 
-    whenNotToUse:
-      "Avoid Gnome Sort in production code — Insertion Sort provides the same functionality with better performance due to fewer swaps. Gnome Sort is purely of academic interest.",
+    whenNotToUse: "In production. Just use Insertion Sort.",
   },
 
   quick: {
     title: "Quick Sort",
-    tagline: "The Divide and Conquer Champion",
-    history: `Quick Sort was developed by Tony Hoare in 1959 while he was a visiting student at Moscow State University. Working on a machine translation project, Hoare needed to sort words and developed the algorithm that would become one of the most influential in computing history.
+    tagline: "The Standard Library Darling",
+    history: `Tony Hoare invented Quick Sort in 1959. He was a visiting student in Moscow trying to translate Russian to English, and he needed a faster way to sort words.
 
-The algorithm was published in 1961 and quickly gained recognition for its practical efficiency. Despite its O(n²) worst case, Quick Sort's average O(n log n) performance and excellent cache locality made it the sorting algorithm of choice in many standard libraries for decades.
+It is the rockstar of sorting. It's the default \`.sort()\` implementation in many languages (or a variant of it). It introduced the "Divide and Conquer" strategy to the mainstream.`,
 
-Quick Sort's influence extends beyond sorting — the partitioning strategy it introduced has been adapted for problems like the Quickselect algorithm for finding the k-th smallest element in linear average time. Hoare received the Turing Award in 1980, with Quick Sort cited as one of his major contributions.`,
+    mechanics: `Quick Sort relies on a "Pivot." It picks one element and organizes the rest of the array around it: everything smaller goes to the left, everything larger goes to the right.
 
-    mechanics: `Quick Sort uses a divide-and-conquer strategy: it selects a "pivot" element and partitions the array so that all smaller elements come before the pivot and all larger elements come after. This process is applied recursively to the sub-arrays.
+
 
 **The Algorithm Step-by-Step:**
 
-1. **Choose a pivot** — select an element (last element, random, or median-of-three)
-2. **Partition the array** — rearrange elements around the pivot
-   - Elements less than pivot → left side
-   - Elements greater than pivot → right side
-   - Pivot ends up in its final sorted position
-3. **Recurse on sub-arrays** — apply Quick Sort to left and right partitions
-4. **Base case** — arrays of size 0 or 1 are already sorted
+1. **Pick Pivot**: Select an element (middle, last, or random).
+2. **Partition**: Reorder the array so the Pivot is in its final home. All smaller items are to its left; all larger items are to its right.
+3. **Recursion**: Apply the same logic to the sub-list on the left and the sub-list on the right.
+4. **Base Case**: If a list has 0 or 1 items, it is sorted.
 
-**Partitioning Schemes:**
-- **Lomuto partition** (simpler): Uses the last element as pivot, maintains a boundary index
-- **Hoare partition** (original): Uses two pointers from both ends, fewer swaps on average
-
-**Pivot Selection Matters:**
-The choice of pivot dramatically affects performance:
-- **Last element**: Simple but vulnerable to sorted input
-- **Random**: Avoids worst case with high probability
-- **Median-of-three**: Takes median of first, middle, last — good practical choice`,
+**The Pivot Problem:**
+If you pick a bad pivot (like always picking the first item on a sorted list), Quick Sort breaks down. Modern implementations use "Median of Three" (checking start, middle, and end) to avoid this.`,
 
     bestCase: {
       complexity: "O(n log n)",
       explanation:
-        "When the pivot consistently divides the array into equal halves, we get log n levels of recursion with O(n) work at each level.",
+        "If the pivot cuts the list roughly in half every time, the recursion tree is perfectly balanced.",
     },
     worstCase: {
       complexity: "O(n²)",
       explanation:
-        "When the pivot is always the smallest or largest element (e.g., sorted array with last-element pivot), partitions become maximally unbalanced: n + (n-1) + ... + 1 = O(n²).",
+        "If the pivot is always the smallest or largest item, you essentially create a very expensive Bubble Sort.",
     },
     averageCase: {
       complexity: "O(n log n)",
       explanation:
-        "With random input or randomized pivot selection, the expected partition quality leads to O(n log n) average performance.",
+        "On random data, it is blazing fast. It often outperforms Merge Sort because it works in-place and plays nice with CPU caches.",
     },
     spaceComplexity: {
       complexity: "O(log n)",
-      explanation:
-        "Quick Sort uses O(log n) stack space for recursion in the average case. Worst case can be O(n) with poor pivots, but tail-call optimization can guarantee O(log n).",
+      explanation: "It consumes stack space for the recursion. It's not strictly O(1) space.",
     },
 
     useCases: [
-      "General-purpose sorting — the default in many C/C++ standard libraries",
-      "Cache-sensitive applications — excellent locality of reference",
-      "Virtual memory systems — minimal page faults",
-      "Parallel sorting — partitions can be sorted independently",
-      "When average-case performance matters more than worst-case",
+      "General purpose sorting",
+      "Large datasets",
+      "Systems with good cache memory",
+      "When average speed is more important than worst-case safety",
     ],
 
     keyInsights: [
-      "NOT stable — equal elements may change relative order",
-      "In-place — O(log n) space for recursion stack",
-      "Cache-friendly — excellent locality compared to Merge Sort",
-      "Pivot selection is critical — bad pivots cause O(n²)",
-      "Foundation for Introsort — Quick Sort + Heap Sort fallback",
+      "It is NOT stable (equal items might cross).",
+      "It is the king of cache locality.",
+      "It is sensitive to input order (solved by randomizing pivots).",
+      "It sorts in-place (mostly).",
     ],
 
     whenToUse:
-      "Use Quick Sort when you need fast average-case performance with good cache behavior. It's excellent for primitive types and when stability isn't required. Consider randomized pivot selection for protection against adversarial input.",
+      "Use Quick Sort for general primitive arrays (integers, floats) where stability doesn't matter and you want raw speed.",
 
     whenNotToUse:
-      "Avoid Quick Sort when stability is required, when worst-case O(n²) is unacceptable, or when the data might be adversarially constructed. Use Merge Sort or Heap Sort for guaranteed O(n log n) performance.",
+      "If you need a Stable sort, or if you are worried about malicious input data designed to trigger the worst-case scenario (DoS attacks).",
   },
 
   merge: {
     title: "Merge Sort",
-    tagline: "The Stable Divider",
-    history: `Merge Sort was invented by John von Neumann in 1945, making it one of the oldest sophisticated sorting algorithms. Von Neumann developed it while working on the EDVAC computer, one of the earliest stored-program computers.
+    tagline: "The Reliable Bureaucrat",
+    history: `Invented by the legendary John von Neumann in 1945. It was one of the first algorithms designed for the EDVAC, one of the earliest computers.
 
-The algorithm represents a landmark in algorithm design — it was one of the first to apply the divide-and-conquer paradigm systematically. Its guaranteed O(n log n) worst-case complexity and stability made it the algorithm of choice when these properties are essential.
+Merge Sort is the "slow and steady" alternative to Quick Sort. It doesn't rely on luck or pivots. It guarantees performance with a mathematical ruthlessness. It is the engine behind Python's sort and Java's object sort.`,
 
-Merge Sort's influence persists today: it forms the backbone of Timsort (Python, Java 7+), is used for sorting linked lists (where its O(n) space disadvantage disappears), and serves as a model for teaching divide-and-conquer strategies. Its merge procedure is also adapted for the external sorting of data too large to fit in memory.`,
+    mechanics: `Merge Sort is the ultimate "Divide and Conquer" algorithm. It splits the list in half until it has lists of size 1, then merges them back together in sorted order.
 
-    mechanics: `Merge Sort divides the array in half, recursively sorts each half, then merges the sorted halves together. The key insight is that merging two sorted arrays is efficient — it takes O(n) time.
+
 
 **The Algorithm Step-by-Step:**
 
-1. **Divide** — split the array into two halves
-2. **Conquer** — recursively sort each half
-3. **Combine** — merge the two sorted halves into one sorted array
-
-**The Merge Procedure:**
-Given two sorted arrays:
-1. Compare the first elements of each array
-2. Take the smaller one and add it to the result
-3. Move forward in the array from which you took
-4. Repeat until both arrays are exhausted
+1. **Divide**: Cut the array in half.
+2. **Recurse**: Do it again until you have arrays with 1 element.
+3. **Conquer (Merge)**: Take two sorted sub-arrays and zipper them together into one larger sorted array.
+4. **Repeat**: Until the whole array is reconstructed.
 
 **Why It Works:**
-- At each level, we do O(n) work (merging)
-- We have log n levels (halving creates a balanced tree)
-- Total: O(n log n) regardless of input order
-
-**Stability:**
-When merging, if elements are equal, we take from the left array first. This preserves the original relative order of equal elements.`,
+Merging two sorted lists is easy ($O(n)$). You just look at the head of both lists and pick the smaller one.`,
 
     bestCase: {
       complexity: "O(n log n)",
-      explanation:
-        "Even for sorted arrays, Merge Sort must split and merge at each level. The number of comparisons may be reduced, but the structure remains O(n log n).",
+      explanation: "It splits and merges regardless of the data. It does the full work every time.",
     },
     worstCase: {
       complexity: "O(n log n)",
-      explanation:
-        "Merge Sort always divides evenly and merges in O(n) time, guaranteeing O(n log n) performance regardless of input order.",
+      explanation: "This is its superpower. It never degrades to quadratic time. It is consistent.",
     },
     averageCase: {
       complexity: "O(n log n)",
-      explanation:
-        "The algorithm's performance is completely data-independent — it always performs the same structure of operations.",
+      explanation: "Predictable, stable, and reliable.",
     },
     spaceComplexity: {
       complexity: "O(n)",
       explanation:
-        "Standard Merge Sort requires O(n) auxiliary space for the merge procedure. In-place variants exist but are complex and often slower.",
+        "The trade-off. It needs a temporary array to hold the merged items. It burns memory to buy stability and consistency.",
     },
 
     useCases: [
-      "When stable sort is required — equal elements keep their order",
-      "Sorting linked lists — O(1) extra space with pointer manipulation",
-      "External sorting — merging sorted chunks from disk",
-      "Parallel sorting — independent subproblems enable parallelism",
-      "When worst-case O(n log n) is required (security-critical code)",
+      "Sorting Linked Lists (works well with non-contiguous memory)",
+      "External Sorting (sorting massive files that don't fit in RAM)",
+      "When Stability is critical",
+      "Parallel processing (sub-arrays can be sorted on different cores)",
     ],
 
     keyInsights: [
-      "Stable sort — equal elements maintain relative order",
-      "Guaranteed O(n log n) — no bad inputs exist",
-      "O(n) extra space — the trade-off for stability",
-      "Parallelizable — subproblems are independent",
-      "Foundation of Timsort — optimized for real-world data",
+      "It is stable.",
+      "It guarantees $O(n log n)$.",
+      "It uses extra memory (not in-place).",
+      "It is easy to parallelize.",
     ],
 
     whenToUse:
-      "Use Merge Sort when you need guaranteed O(n log n) performance, stability is required, or when sorting linked lists. It's also excellent for external sorting and parallel implementations.",
+      "Use Merge Sort when you need Stability, when you are sorting Linked Lists, or when you cannot afford a worst-case scenario.",
 
     whenNotToUse:
-      "Avoid Merge Sort when memory is constrained (its O(n) space can be prohibitive), when in-place sorting is required, or when cache performance is critical (Quick Sort often wins due to better locality).",
+      "If you are tight on RAM. The $O(n)$ auxiliary space can be a dealbreaker on embedded devices.",
   },
 
   heap: {
     title: "Heap Sort",
-    tagline: "The Priority Queue in Disguise",
-    history: `Heap Sort was invented by J.W.J. Williams in 1964, the same year he introduced the binary heap data structure. Robert Floyd later refined the algorithm with an improved heap construction method that builds the heap in O(n) time rather than O(n log n).
+    tagline: "The Space Saver",
+    history: `Introduced by J.W.J. Williams in 1964. It was a breakthrough because it offered the speed of Merge Sort ($O(n log n)$) without the memory penalty.
 
-The algorithm cleverly repurposes a priority queue for sorting. Williams recognized that a max-heap naturally provides access to the largest element, and by repeatedly extracting the maximum and rebuilding the heap, a sorted sequence emerges.
+It repurposes the "Heap" data structure—usually used for Priority Queues—to sort a list. It feels like a magic trick: you throw data into a pile, and when you pull it out, it's sorted.`,
 
-Heap Sort holds a special place in algorithm design as the first O(n log n) comparison sort with O(1) auxiliary space. While Quick Sort is often faster in practice, Heap Sort's guaranteed worst-case performance and minimal space requirements make it valuable for memory-constrained and real-time systems.`,
+    mechanics: `Heap Sort turns the array into a Binary Heap (a specific type of tree) where the parent is always larger than the children.
 
-    mechanics: `Heap Sort uses a max-heap — a complete binary tree where each parent is larger than its children. The algorithm builds a heap from the array, then repeatedly extracts the maximum element.
 
-**Understanding the Heap:**
-A binary heap is stored in an array where:
-- Parent of index i is at (i-1)/2
-- Left child is at 2i+1, right child is at 2i+2
-- Max-heap property: parent ≥ children
 
 **The Algorithm Step-by-Step:**
 
-1. **Build the max-heap** — transform the array into a valid max-heap
-   - Start from the last non-leaf node (index n/2 - 1)
-   - Heapify each node from bottom to top
-
-2. **Extract maximum repeatedly**
-   - Swap root (maximum) with the last element
-   - Reduce heap size by 1 (last element is now sorted)
-   - Heapify the root to restore heap property
-   - Repeat until heap size is 1
-
-**The Heapify Procedure:**
-Given a node that might violate the heap property:
-1. Compare with both children
-2. If larger than both, done
-3. Otherwise, swap with the larger child
-4. Recursively heapify the affected subtree`,
+1. **Heapify**: Rearrange the array so it satisfies the Max-Heap property. The largest item is now at index 0.
+2. **Swap**: Move the item at index 0 to the end of the array (it's now sorted).
+3. **Shrink**: Pretend the array is one slot shorter.
+4. **Repair**: The new item at index 0 is probably wrong. "Sift" it down until the Heap property is fixed.
+5. **Repeat**: Until the heap is empty.`,
 
     bestCase: {
       complexity: "O(n log n)",
-      explanation:
-        "Even for sorted arrays, Heap Sort must build the heap and perform n extractions, each requiring log n heapify operations.",
+      explanation: "Even on a good day, it has to build the heap and dismantle it.",
     },
     worstCase: {
       complexity: "O(n log n)",
-      explanation:
-        "Heap Sort always performs O(n log n) operations regardless of input order — it has no pathological cases like Quick Sort.",
+      explanation: "Like Merge Sort, it is consistent. No nasty surprises.",
     },
     averageCase: {
       complexity: "O(n log n)",
       explanation:
-        "The algorithm's performance is data-independent, consistently performing O(n log n) comparisons and swaps.",
+        "It is generally slower than Quick Sort due to 'cache thrashing' (jumping around memory indices), but it has better worst-case guarantees.",
     },
     spaceComplexity: {
       complexity: "O(1)",
-      explanation:
-        "Heap Sort is truly in-place — it rearranges elements within the original array using only constant extra space for the heapify recursion (which can be made iterative).",
+      explanation: "The killer feature. It sorts in-place. No extra arrays needed.",
     },
 
     useCases: [
-      "Memory-constrained systems — only O(1) extra space",
-      "Real-time systems — guaranteed O(n log n) worst case",
-      "Introsort fallback — when Quick Sort degrades",
-      "Priority queue operations — building on heap infrastructure",
-      "When cache behavior is less critical than space",
+      "Embedded systems with limited memory",
+      "Real-time systems where worst-case latency matters",
+      "Security-critical systems (to prevent timing attacks)",
+      "Introsort (used as the fallback when Quick Sort goes deep)",
     ],
 
     keyInsights: [
-      "NOT stable — equal elements may change relative order",
-      "In-place — O(1) auxiliary space",
-      "Guaranteed O(n log n) — no bad inputs",
-      "Poor cache locality — jumps around the array",
-      "Used in Introsort — provides worst-case guarantee",
+      "It is NOT stable.",
+      "It sorts in-place.",
+      "It has poor cache locality (jumps around the array).",
+      "It is excellent for 'Top K' elements problems.",
     ],
 
     whenToUse:
-      "Use Heap Sort when you need guaranteed O(n log n) performance with minimal memory overhead. It's the algorithm of choice when both worst-case time and space constraints are critical.",
+      "Use Heap Sort when you need $O(n log n)$ performance but cannot spare the memory for Merge Sort. It's the 'safe' choice for restricted environments.",
 
     whenNotToUse:
-      "Avoid Heap Sort when cache performance matters (its access pattern is less cache-friendly than Quick Sort), when stability is required, or when you can tolerate O(n) extra space (Merge Sort may be faster).",
+      "If you want raw speed (Quick Sort is faster) or stability (Merge Sort is stable).",
   },
 };
 

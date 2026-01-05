@@ -1,5 +1,7 @@
 "use client";
 
+import "katex/dist/katex.min.css";
+
 import { motion } from "framer-motion";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import Link from "next/link";
