@@ -4,8 +4,10 @@ import {
   Clock,
   Code2,
   Compass,
+  GraduationCap,
   HardDrive,
   Lightbulb,
+  Network,
   Route,
   Target,
   TreeDeciduous,
@@ -13,8 +15,10 @@ import {
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
+import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
 import { CodeTabs } from "@/features/learning/components";
+import { type GraphArticle, getGraphArticle } from "@/features/learning/content/graphs";
 import {
   getPathfindingArticle,
   type PathfindingArticle,
@@ -22,6 +26,7 @@ import {
 import { getSortingArticle, type SortingArticle } from "@/features/learning/content/sorting";
 import { getTreeArticle, type TreeArticle } from "@/features/learning/content/trees";
 import type {
+  GraphAlgorithmType,
   PathfindingAlgorithmType,
   SortingAlgorithmType,
   TreeDataStructureType,
@@ -57,6 +62,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
   "random",
 ] as const;
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
+const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
 
 function isValidMode(mode: string): mode is VisualizerMode {
   return VALID_MODES.includes(mode as VisualizerMode);
@@ -74,13 +80,18 @@ function isValidTreeStructure(structure: string): structure is TreeDataStructure
   return VALID_TREE_STRUCTURES.includes(structure as TreeDataStructureType);
 }
 
+function isValidGraphAlgorithm(algorithm: string): algorithm is GraphAlgorithmType {
+  return VALID_GRAPH_ALGORITHMS.includes(algorithm as GraphAlgorithmType);
+}
+
 /**
  * Unified article type for polymorphic page rendering.
  */
 type ArticleContent =
   | { mode: "sorting"; article: SortingArticle; algorithm: SortingAlgorithmType }
   | { mode: "pathfinding"; article: PathfindingArticle; algorithm: PathfindingAlgorithmType }
-  | { mode: "tree"; article: TreeArticle; structure: TreeDataStructureType };
+  | { mode: "tree"; article: TreeArticle; structure: TreeDataStructureType }
+  | { mode: "graph"; article: GraphArticle; algorithm: GraphAlgorithmType };
 
 /**
  * Factory function to get the appropriate article based on mode and algorithm/structure.
@@ -107,6 +118,13 @@ function getArticle(mode: string, algorithm: string): ArticleContent | null {
       structure: algorithm,
     };
   }
+  if (mode === "graph" && isValidGraphAlgorithm(algorithm)) {
+    return {
+      mode: "graph",
+      article: getGraphArticle(algorithm),
+      algorithm,
+    };
+  }
   return null;
 }
 
@@ -119,6 +137,9 @@ function getMetadata(mode: string, algorithm: string) {
   }
   if (mode === "pathfinding" && isValidPathfindingAlgorithm(algorithm)) {
     return getPathfindingAlgorithmMetadata(algorithm);
+  }
+  if (mode === "graph" && isValidGraphAlgorithm(algorithm)) {
+    return getGraphAlgorithmMetadata(algorithm);
   }
   return null;
 }
@@ -159,6 +180,10 @@ export default async function LearnPage({ params }: LearnPageProps) {
       label: "Data Structure",
       icon: <TreeDeciduous className="h-5 w-5" />,
     },
+    graph: {
+      label: "Graph Algorithm",
+      icon: <Network className="h-5 w-5" />,
+    },
   };
 
   const config = modeConfig[content.mode];
@@ -197,6 +222,27 @@ export default async function LearnPage({ params }: LearnPageProps) {
                 label="Self-Balancing"
                 value={content.article.selfBalancing ? "Yes" : "No"}
                 variant={content.article.selfBalancing ? "excellent" : "fair"}
+              />
+            </>
+          ) : content.mode === "graph" ? (
+            <>
+              <ComplexityBadge
+                icon={<Clock className="h-4 w-4" />}
+                label="Time"
+                value={content.article.timeComplexity.complexity}
+                variant={getComplexityVariant(content.article.timeComplexity.complexity)}
+              />
+              <ComplexityBadge
+                icon={<HardDrive className="h-4 w-4" />}
+                label="Space"
+                value={content.article.spaceComplexity.complexity}
+                variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
+              />
+              <ComplexityBadge
+                icon={<Network className="h-4 w-4" />}
+                label="Output"
+                value={content.article.output}
+                variant="good"
               />
             </>
           ) : (
@@ -328,6 +374,34 @@ export default async function LearnPage({ params }: LearnPageProps) {
             />
           </div>
         )}
+        {content.mode === "graph" && (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ComplexityCard
+              title="Time Complexity"
+              complexity={content.article.timeComplexity.complexity}
+              explanation={content.article.timeComplexity.explanation}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Space Complexity"
+              complexity={content.article.spaceComplexity.complexity}
+              explanation={content.article.spaceComplexity.explanation}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Data Structure"
+              complexity={content.article.dataStructure}
+              explanation={`The core data structure powering ${content.article.title}.`}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Visual Pattern"
+              complexity={content.article.visualPattern}
+              explanation="How this algorithm appears during visualization."
+              variant="neutral"
+            />
+          </div>
+        )}
       </Section>
 
       {/* Code Walkthrough Section */}
@@ -408,6 +482,19 @@ export default async function LearnPage({ params }: LearnPageProps) {
             <h3 className="font-semibold">Watch Out</h3>
           </div>
           <p className="text-primary/80 text-sm leading-relaxed">{content.article.pitfall}</p>
+        </div>
+      )}
+
+      {/* Interview Tip Section - Graphs only */}
+      {content.mode === "graph" && (
+        <div
+          className={cn("rounded-xl border border-violet-500/30 bg-violet-500/10 p-6", "space-y-3")}
+        >
+          <div className="flex items-center gap-2 text-violet-500">
+            <GraduationCap className="h-5 w-5" />
+            <h3 className="font-semibold">Interview Tip</h3>
+          </div>
+          <p className="text-primary/80 text-sm leading-relaxed">{content.article.interviewTip}</p>
         </div>
       )}
 
@@ -669,15 +756,30 @@ function ComplexityCard({ title, complexity, explanation, variant }: ComplexityC
 }
 
 function getComplexityVariant(complexity: string): "excellent" | "good" | "fair" {
-  // Handle O(log n) - excellent (guaranteed logarithmic)
-  if (complexity.includes("log n") && !complexity.includes("n log n")) {
+  // Handle O(log n) or O(log V) - excellent (guaranteed logarithmic)
+  if (
+    (complexity.includes("log n") || complexity.includes("log V")) &&
+    !complexity.includes("n log n") &&
+    !complexity.includes("E log")
+  ) {
     return "excellent";
   }
   // Handle O(h) - good (depends on tree height, can be log n if balanced)
   if (complexity === "O(h)") {
     return "good";
   }
-  if (complexity === "O(1)" || complexity === "O(n)" || complexity.includes("n log n")) {
+  // Handle linear complexities - good
+  if (
+    complexity === "O(1)" ||
+    complexity === "O(n)" ||
+    complexity === "O(V)" ||
+    complexity === "O(V + E)" ||
+    complexity.includes("n log n")
+  ) {
+    return "good";
+  }
+  // Handle graph log complexities - good (E log V, E log E are efficient)
+  if (complexity.includes("E log V") || complexity.includes("E log E")) {
     return "good";
   }
   return "fair";
@@ -717,6 +819,7 @@ export async function generateMetadata({ params }: LearnPageProps) {
       sorting: "Sorting",
       pathfinding: "Pathfinding",
       tree: "Data Structures",
+      graph: "Graph Algorithms",
     } as const;
     const modeLabel = modeLabels[content.mode];
     return {
@@ -747,5 +850,10 @@ export function generateStaticParams() {
     algorithm: structure,
   }));
 
-  return [...sortingParams, ...pathfindingParams, ...treeParams];
+  const graphParams = VALID_GRAPH_ALGORITHMS.map((algorithm) => ({
+    mode: "graph",
+    algorithm,
+  }));
+
+  return [...sortingParams, ...pathfindingParams, ...treeParams, ...graphParams];
 }
