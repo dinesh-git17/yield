@@ -274,7 +274,7 @@ function getComplexityVariant(complexity: string): ComplexityCardProps["variant"
   return "fair";
 }
 
-function getTimeDescription(complexity: string, mode: "sorting" | "pathfinding"): string {
+function getTimeDescription(complexity: string, mode: "sorting" | "pathfinding" | "tree"): string {
   if (mode === "pathfinding") {
     if (complexity.includes("V + E")) {
       return "Visits each vertex and edge once. Scales linearly with graph size.";
@@ -283,6 +283,15 @@ function getTimeDescription(complexity: string, mode: "sorting" | "pathfinding")
       return "Priority queue operations add logarithmic factor per vertex.";
     }
     return "Execution time depends on graph structure.";
+  }
+  if (mode === "tree") {
+    if (complexity.includes("log n")) {
+      return "Balanced tree operations are logarithmic in height. Degrades to O(n) if skewed.";
+    }
+    if (complexity === "O(n)") {
+      return "Traversals visit each node exactly once.";
+    }
+    return "Execution time depends on tree structure.";
   }
   if (complexity === "O(n²)") {
     return "Performance degrades quickly as input size grows. Suitable for small datasets.";
@@ -293,12 +302,21 @@ function getTimeDescription(complexity: string, mode: "sorting" | "pathfinding")
   return "Execution time varies with input.";
 }
 
-function getSpaceDescription(complexity: string, mode: "sorting" | "pathfinding"): string {
+function getSpaceDescription(complexity: string, mode: "sorting" | "pathfinding" | "tree"): string {
   if (mode === "pathfinding") {
     if (complexity === "O(V)") {
       return "Stores visited nodes and parent pointers proportional to vertices.";
     }
     return "Memory usage depends on graph structure.";
+  }
+  if (mode === "tree") {
+    if (complexity.includes("log n") || complexity.includes("h")) {
+      return "Stack space proportional to tree height for recursive operations.";
+    }
+    if (complexity === "O(n)") {
+      return "Queue or result storage proportional to number of nodes.";
+    }
+    return "Memory usage depends on tree structure.";
   }
   if (complexity === "O(1)") {
     return "Constant memory. Sorts in-place without extra allocation.";

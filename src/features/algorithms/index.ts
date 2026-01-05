@@ -14,3 +14,14 @@ export {
   useSortingController,
 } from "./hooks";
 export { bubbleSort, type SortStep } from "./sorting";
+export {
+  bstDelete,
+  bstInsert,
+  bstSearch,
+  inOrderTraversal,
+  levelOrderTraversal,
+  postOrderTraversal,
+  preOrderTraversal,
+  type TreeContext,
+  type TreeStep,
+} from "./tree";

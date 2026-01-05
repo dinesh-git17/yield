@@ -24,3 +24,5 @@ export type { BarState, SortingBarProps } from "./SortingBar";
 export { SortingBar } from "./SortingBar";
 export type { SortingStageProps } from "./SortingStage";
 export { SortingStage } from "./SortingStage";
+export type { TreeStageProps } from "./TreeStage";
+export { TreeStage } from "./TreeStage";
