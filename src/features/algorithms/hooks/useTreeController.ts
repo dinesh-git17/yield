@@ -5,6 +5,8 @@ import {
   bstDelete,
   bstInsert,
   bstSearch,
+  heapExtractMax,
+  heapInsert,
   inOrderTraversal,
   levelOrderTraversal,
   postOrderTraversal,
@@ -12,7 +14,7 @@ import {
   type TreeContext,
   type TreeStep,
 } from "@/features/algorithms/tree";
-import type { TreeAlgorithmType, TreeState } from "@/lib/store";
+import type { TreeAlgorithmType, TreeDataStructureType, TreeState } from "@/lib/store";
 
 /**
  * Visual state for a tree node during algorithm execution.
@@ -25,7 +27,12 @@ export type TreeNodeState =
   | "not-found"
   | "inserting"
   | "deleting"
-  | "traversed";
+  | "traversed"
+  // Heap-specific states
+  | "bubbling-up"
+  | "sinking-down"
+  | "swapping"
+  | "extracting";
 
 /**
  * Playback status for the tree controller.
@@ -79,12 +86,31 @@ const DEFAULT_SPEED = 300;
 
 /**
  * Returns the appropriate generator for a tree algorithm.
+ * Routes to different implementations based on data structure type.
  */
 function getTreeGenerator(
   algorithm: TreeAlgorithmType,
   context: TreeContext,
+  dataStructure: TreeDataStructureType,
   value?: number
 ): Generator<TreeStep, void, unknown> | null {
+  // Max Heap uses different generators for insert/delete
+  if (dataStructure === "max-heap") {
+    switch (algorithm) {
+      case "insert":
+        if (value === undefined) return null;
+        return heapInsert(context, value);
+      case "delete":
+        // Heap delete is actually extract-max (no value needed)
+        return heapExtractMax(context);
+      case "bfs":
+        return levelOrderTraversal(context);
+      default:
+        return null;
+    }
+  }
+
+  // BST and AVL use the same generators (AVL will have its own later)
   switch (algorithm) {
     case "insert":
       if (value === undefined) return null;
@@ -112,10 +138,12 @@ function getTreeGenerator(
  * Hook for controlling tree algorithm execution and visualization.
  *
  * @param treeState - The current tree state from the store
+ * @param dataStructure - The tree data structure type (bst, avl, max-heap)
  * @param speed - Playback speed in milliseconds per step
  */
 export function useTreeController(
   treeState: TreeState,
+  dataStructure: TreeDataStructureType = "bst",
   speed: number = DEFAULT_SPEED
 ): UseTreeControllerReturn {
   const [status, setStatus] = useState<TreePlaybackStatus>("idle");
@@ -233,6 +261,74 @@ export function useTreeController(
         });
         setLastResult("deleted");
         break;
+
+      // ───────────────────────────────────────────────────────────────────────
+      // Heap-specific steps
+      // ───────────────────────────────────────────────────────────────────────
+      case "bubble-up":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          // Clear previous bubble/sink states
+          for (const [id, state] of next) {
+            if (state === "bubbling-up" || state === "swapping") {
+              next.set(id, "idle");
+            }
+          }
+          // Highlight the node bubbling up and its parent
+          next.set(step.nodeId, "bubbling-up");
+          next.set(step.parentId, "comparing");
+          return next;
+        });
+        break;
+
+      case "sink-down":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          // Clear previous states
+          for (const [id, state] of next) {
+            if (state === "sinking-down" || state === "swapping" || state === "comparing") {
+              next.set(id, "idle");
+            }
+          }
+          // Highlight the node sinking down
+          next.set(step.nodeId, "sinking-down");
+          // Highlight children being compared
+          for (const childId of step.childIds) {
+            next.set(childId, "comparing");
+          }
+          // Highlight the larger child if it will be swapped with
+          if (step.largerChildId && step.willSwap) {
+            next.set(step.largerChildId, "swapping");
+          }
+          return next;
+        });
+        break;
+
+      case "swap":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          // Clear previous states
+          for (const [id, state] of next) {
+            if (state === "bubbling-up" || state === "sinking-down" || state === "comparing") {
+              next.set(id, "idle");
+            }
+          }
+          // Highlight both nodes being swapped
+          next.set(step.nodeId1, "swapping");
+          next.set(step.nodeId2, "swapping");
+          return next;
+        });
+        break;
+
+      case "extract-max":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          // Mark the root as being extracted
+          next.set(step.nodeId, "extracting");
+          return next;
+        });
+        setLastResult("deleted"); // Extract-max is a form of deletion
+        break;
     }
   }, []);
 
@@ -298,14 +394,14 @@ export function useTreeController(
       treeStateSnapshotRef.current = treeState;
       const context: TreeContext = { treeState: treeStateSnapshotRef.current };
 
-      // Get the generator for the algorithm
-      const generator = getTreeGenerator(algorithm, context, value);
+      // Get the generator for the algorithm (data-structure-aware)
+      const generator = getTreeGenerator(algorithm, context, dataStructure, value);
       if (!generator) return false;
 
       iteratorRef.current = generator;
       return true;
     },
-    [treeState, reset]
+    [treeState, dataStructure, reset]
   );
 
   /**

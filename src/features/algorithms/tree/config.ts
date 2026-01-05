@@ -1,4 +1,4 @@
-import type { TreeAlgorithmType } from "@/lib/store";
+import type { TreeAlgorithmType, TreeDataStructureType } from "@/lib/store";
 import type { TreeStep } from "./types";
 
 /**
@@ -337,10 +337,169 @@ export const TREE_ALGO_METADATA: Record<TreeAlgorithmType, TreeAlgorithmMetadata
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Max Heap Algorithm Metadata
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Heap-specific algorithm metadata.
+ * Used when treeDataStructure is "max-heap".
+ */
+export const HEAP_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithmMetadata>> = {
+  insert: {
+    label: "Heap Insert",
+    shortLabel: "Insert",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Inserts at the next available position to maintain complete tree property, then bubbles up comparing with parent until heap property (parent ≥ children) is restored.",
+    isTraversal: false,
+    visualPattern: "Elevator rise",
+    code: [
+      "function* heapInsert(heap, value) {",
+      "  // 1. Insert at next available position",
+      "  const index = heap.size;",
+      "  heap.nodes[index] = value;",
+      "  yield { type: 'insert', value, position: index };",
+      "",
+      "  // 2. Bubble up until heap property restored",
+      "  let current = index;",
+      "  while (current > 0) {",
+      "    const parent = Math.floor((current - 1) / 2);",
+      "",
+      "    if (heap.nodes[current] <= heap.nodes[parent]) {",
+      "      // Heap property satisfied",
+      "      break;",
+      "    }",
+      "",
+      "    // Child > Parent: swap and continue up",
+      "    yield { type: 'bubble-up', nodeId: current, parentId: parent };",
+      "    yield { type: 'swap', nodeId1: current, nodeId2: parent };",
+      "    swap(heap.nodes, current, parent);",
+      "    current = parent;",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      insert: 4,
+      "bubble-up": 17,
+      swap: 18,
+    },
+  },
+
+  delete: {
+    label: "Extract Max",
+    shortLabel: "Extract",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Removes and returns the maximum element (root). Replaces root with last element, then sinks down comparing with children until heap property is restored.",
+    isTraversal: false,
+    visualPattern: "Elevator descent",
+    code: [
+      "function* heapExtractMax(heap) {",
+      "  if (heap.size === 0) return null;",
+      "",
+      "  // 1. Save max value (root)",
+      "  const max = heap.nodes[0];",
+      "  yield { type: 'extract-max', nodeId: 0, value: max };",
+      "",
+      "  // 2. Move last element to root",
+      "  const last = heap.nodes[heap.size - 1];",
+      "  heap.nodes[0] = last;",
+      "  yield { type: 'swap', nodeId1: 0, nodeId2: heap.size - 1 };",
+      "  heap.size--;",
+      "",
+      "  // 3. Sink down until heap property restored",
+      "  let current = 0;",
+      "  while (true) {",
+      "    const left = 2 * current + 1;",
+      "    const right = 2 * current + 2;",
+      "    let largest = current;",
+      "",
+      "    // Find largest among parent and children",
+      "    if (left < heap.size && heap.nodes[left] > heap.nodes[largest]) {",
+      "      largest = left;",
+      "    }",
+      "    if (right < heap.size && heap.nodes[right] > heap.nodes[largest]) {",
+      "      largest = right;",
+      "    }",
+      "",
+      "    if (largest === current) break; // Heap property satisfied",
+      "",
+      "    yield { type: 'sink-down', nodeId: current, largerChildId: largest };",
+      "    yield { type: 'swap', nodeId1: current, nodeId2: largest };",
+      "    swap(heap.nodes, current, largest);",
+      "    current = largest;",
+      "  }",
+      "",
+      "  return max;",
+      "}",
+    ],
+    lineMapping: {
+      "extract-max": 5,
+      swap: 10,
+      "sink-down": 30,
+      delete: 11,
+    },
+  },
+
+  bfs: {
+    label: "Level-Order (BFS)",
+    shortLabel: "Level-Order",
+    complexity: "O(n)",
+    spaceComplexity: "O(n)",
+    description:
+      "Visits nodes level by level using a queue. For a heap, this traverses nodes in their array order (index 0, 1, 2, ...).",
+    isTraversal: true,
+    visualPattern: "Top-to-bottom layers",
+    code: [
+      "function* levelOrderTraversal(root) {",
+      "  if (root === null) return;",
+      "",
+      "  const queue = [root];",
+      "",
+      "  while (queue.length > 0) {",
+      "    // Dequeue front node",
+      "    const node = queue.shift();",
+      "",
+      "    // Visit current node",
+      "    yield { type: 'visit', nodeId: node.id };",
+      "    yield { type: 'traverse-output', value: node.value };",
+      "",
+      "    // Enqueue children (left first, then right)",
+      "    if (node.left) queue.push(node.left);",
+      "    if (node.right) queue.push(node.right);",
+      "  }",
+      "}",
+      "",
+      "// For Max Heap: values decrease by level",
+      "// Example: [90, 75, 60, 50, 25, 30, 10]",
+    ],
+    lineMapping: {
+      visit: 10,
+      "traverse-output": 11,
+    },
+  },
+};
+
 /**
  * Get metadata for a specific tree algorithm.
- * Falls back to insert if algorithm not found.
+ * Returns data-structure-specific metadata when available.
+ *
+ * @param algorithm - The algorithm type
+ * @param dataStructure - The tree data structure (bst, avl, max-heap)
  */
-export function getTreeAlgorithmMetadata(algorithm: TreeAlgorithmType): TreeAlgorithmMetadata {
+export function getTreeAlgorithmMetadata(
+  algorithm: TreeAlgorithmType,
+  dataStructure: TreeDataStructureType = "bst"
+): TreeAlgorithmMetadata {
+  // Use heap-specific metadata for max-heap
+  if (dataStructure === "max-heap") {
+    const heapMetadata = HEAP_ALGO_METADATA[algorithm];
+    if (heapMetadata) return heapMetadata;
+  }
+
+  // Fall back to BST/AVL metadata
   return TREE_ALGO_METADATA[algorithm] ?? TREE_ALGO_METADATA.insert;
 }

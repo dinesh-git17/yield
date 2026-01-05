@@ -7,6 +7,7 @@ import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
   type PathfindingAlgorithmType,
   type SortingAlgorithmType,
+  type TreeDataStructureType,
   useYieldStore,
   type VisualizerMode,
 } from "@/lib/store";
@@ -44,6 +45,16 @@ const PATHFINDING_ALGORITHMS: {
   { id: "random", label: "Random Walk", enabled: true },
 ];
 
+const TREE_DATA_STRUCTURES: {
+  id: TreeDataStructureType;
+  label: string;
+  enabled: boolean;
+}[] = [
+  { id: "bst", label: "Binary Search Tree", enabled: true },
+  { id: "avl", label: "AVL Tree", enabled: false },
+  { id: "max-heap", label: "Max Heap", enabled: true },
+];
+
 export function Sidebar({ className, onCollapse }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
@@ -54,6 +65,8 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
   const setSortingAlgorithm = useYieldStore((state) => state.setSortingAlgorithm);
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
   const setPathfindingAlgorithm = useYieldStore((state) => state.setPathfindingAlgorithm);
+  const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
+  const setTreeDataStructure = useYieldStore((state) => state.setTreeDataStructure);
 
   const handleModeSelect = useCallback(
     (newMode: VisualizerMode) => {
@@ -74,6 +87,13 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
       setPathfindingAlgorithm(algo);
     },
     [setPathfindingAlgorithm]
+  );
+
+  const handleTreeDataStructureSelect = useCallback(
+    (structure: TreeDataStructureType) => {
+      setTreeDataStructure(structure);
+    },
+    [setTreeDataStructure]
   );
 
   const openComplexityModal = useCallback(() => {
@@ -244,24 +264,48 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
           </>
         )}
 
-        {/* Tree Algorithms List */}
+        {/* Tree Data Structures List */}
         {mode === "tree" && (
           <>
             <div className="mb-2">
               <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
-                Tree Algorithms
+                Data Structures
               </span>
             </div>
 
             <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
-              <SidebarItem
-                id="algo-traversal"
-                label="Traversal"
-                isActive={true}
-                hoveredItem={hoveredItem}
-                onHover={setHoveredItem}
-              />
+              {TREE_DATA_STRUCTURES.map((ds) => (
+                <SidebarItem
+                  key={ds.id}
+                  id={`tree-${ds.id}`}
+                  label={ds.label}
+                  isActive={treeDataStructure === ds.id}
+                  disabled={!ds.enabled}
+                  hoveredItem={hoveredItem}
+                  onHover={setHoveredItem}
+                  onClick={() => ds.enabled && handleTreeDataStructureSelect(ds.id)}
+                />
+              ))}
             </SidebarGroup>
+
+            <div className="border-border-subtle my-4 border-t" />
+
+            {/* Complexity Trigger */}
+            <motion.button
+              type="button"
+              onClick={openComplexityModal}
+              whileHover={buttonInteraction.hover}
+              whileTap={buttonInteraction.tap}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                "border border-white/10 bg-white/5 backdrop-blur-sm",
+                "text-primary hover:bg-white/10 transition-colors",
+                "dark:border-white/5 dark:bg-black/20"
+              )}
+            >
+              <BadgeHelp className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm font-medium">Complexity</span>
+            </motion.button>
           </>
         )}
       </nav>

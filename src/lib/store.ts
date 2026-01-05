@@ -314,6 +314,266 @@ const defaultGridConfig: GridConfig = {
   cols: PATHFINDING_CONFIG.GRID_COLS_DEFAULT,
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Heap Helper Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Gets all nodes in level-order (BFS order) for heap operations.
+ */
+function getNodesInLevelOrder(treeState: TreeState): string[] {
+  if (treeState.rootId === null) return [];
+
+  const result: string[] = [];
+  const queue: string[] = [treeState.rootId];
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift();
+    if (!nodeId) continue;
+
+    const node = treeState.nodes[nodeId];
+    if (!node) continue;
+
+    result.push(nodeId);
+
+    if (node.leftId) queue.push(node.leftId);
+    if (node.rightId) queue.push(node.rightId);
+  }
+
+  return result;
+}
+
+/**
+ * Finds the insertion point for a new node in a complete binary tree (heap).
+ */
+function findHeapInsertionPoint(
+  treeState: TreeState
+): { parentId: string; position: "left" | "right" } | null {
+  if (treeState.rootId === null) return null;
+
+  const queue: string[] = [treeState.rootId];
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift();
+    if (!nodeId) continue;
+
+    const node = treeState.nodes[nodeId];
+    if (!node) continue;
+
+    if (node.leftId === null) {
+      return { parentId: nodeId, position: "left" };
+    }
+
+    if (node.rightId === null) {
+      return { parentId: nodeId, position: "right" };
+    }
+
+    queue.push(node.leftId);
+    queue.push(node.rightId);
+  }
+
+  return null;
+}
+
+/**
+ * Inserts a value into a Max Heap and maintains heap property.
+ * 1. Insert at next available position (complete tree property)
+ * 2. Bubble up to restore heap property
+ */
+function insertHeapNode(
+  treeState: TreeState,
+  value: number,
+  onInsert: (id: string) => void
+): { treeState: TreeState } {
+  const insertionPoint = findHeapInsertionPoint(treeState);
+  if (!insertionPoint) {
+    // This shouldn't happen if we enforce max node limit
+    return { treeState };
+  }
+
+  const newId = generateNodeId();
+  onInsert(newId);
+
+  const newNode: TreeNode = {
+    id: newId,
+    value,
+    leftId: null,
+    rightId: null,
+    parentId: insertionPoint.parentId,
+  };
+
+  // Create new nodes map with the inserted node
+  let nodes = {
+    ...treeState.nodes,
+    [newId]: newNode,
+  };
+
+  // Update parent to point to new node
+  const parent = nodes[insertionPoint.parentId];
+  if (parent) {
+    if (insertionPoint.position === "left") {
+      nodes[insertionPoint.parentId] = { ...parent, leftId: newId };
+    } else {
+      nodes[insertionPoint.parentId] = { ...parent, rightId: newId };
+    }
+  }
+
+  // Bubble up to restore heap property
+  let currentId = newId;
+  const currentValue = value;
+
+  while (true) {
+    const current = nodes[currentId];
+    if (!current || !current.parentId) break;
+
+    const parentNode = nodes[current.parentId];
+    if (!parentNode) break;
+
+    // Max heap: if current > parent, swap values
+    if (currentValue > parentNode.value) {
+      // Swap values (not structure)
+      const currentNode = nodes[currentId];
+      if (currentNode) {
+        nodes = {
+          ...nodes,
+          [currentId]: { ...currentNode, value: parentNode.value },
+          [current.parentId]: { ...parentNode, value: currentValue },
+        };
+      }
+      // Continue bubbling up with the same value
+      currentId = current.parentId;
+    } else {
+      // Heap property satisfied
+      break;
+    }
+  }
+
+  return {
+    treeState: {
+      ...treeState,
+      nodes,
+    },
+  };
+}
+
+/**
+ * Extracts the maximum value from a Max Heap.
+ * 1. Remove root value
+ * 2. Replace root with last node's value
+ * 3. Remove last node
+ * 4. Sink down to restore heap property
+ */
+function extractHeapMax(treeState: TreeState): { treeState: TreeState; extracted: boolean } {
+  if (treeState.rootId === null) {
+    return { treeState, extracted: false };
+  }
+
+  const nodesInOrder = getNodesInLevelOrder(treeState);
+
+  // Only one node - just remove it
+  if (nodesInOrder.length === 1) {
+    return {
+      treeState: createEmptyTreeState(),
+      extracted: true,
+    };
+  }
+
+  // Get the last node
+  const lastNodeId = nodesInOrder[nodesInOrder.length - 1];
+  if (!lastNodeId) {
+    return { treeState, extracted: false };
+  }
+
+  const lastNode = treeState.nodes[lastNodeId];
+  const rootNode = treeState.nodes[treeState.rootId];
+  if (!lastNode || !rootNode) {
+    return { treeState, extracted: false };
+  }
+
+  // Create new nodes map
+  let nodes = { ...treeState.nodes };
+
+  // Move last node's value to root
+  nodes[treeState.rootId] = { ...rootNode, value: lastNode.value };
+
+  // Remove last node and update its parent
+  if (lastNode.parentId) {
+    const lastParent = nodes[lastNode.parentId];
+    if (lastParent) {
+      if (lastParent.leftId === lastNodeId) {
+        nodes[lastNode.parentId] = { ...lastParent, leftId: null };
+      } else {
+        nodes[lastNode.parentId] = { ...lastParent, rightId: null };
+      }
+    }
+  }
+  delete nodes[lastNodeId];
+
+  // Sink down to restore heap property
+  let currentId: string | null = treeState.rootId;
+  const sinkValue = lastNode.value;
+
+  while (currentId !== null) {
+    const current: TreeNode | undefined = nodes[currentId];
+    if (!current) break;
+
+    const leftId: string | null = current.leftId;
+    const rightId: string | null = current.rightId;
+
+    // No children - done
+    if (leftId === null && rightId === null) {
+      break;
+    }
+
+    const leftNode = leftId ? nodes[leftId] : null;
+    const rightNode = rightId ? nodes[rightId] : null;
+
+    const leftValue = leftNode?.value ?? Number.NEGATIVE_INFINITY;
+    const rightValue = rightNode?.value ?? Number.NEGATIVE_INFINITY;
+
+    // Find larger child
+    let largerChildId: string | null = null;
+    let largerChildValue: number = Number.NEGATIVE_INFINITY;
+
+    if (leftValue >= rightValue && leftId) {
+      largerChildId = leftId;
+      largerChildValue = leftValue;
+    } else if (rightId) {
+      largerChildId = rightId;
+      largerChildValue = rightValue;
+    }
+
+    if (!largerChildId) break;
+
+    // Check if swap is needed
+    if (sinkValue < largerChildValue) {
+      // Swap values
+      const largerChild = nodes[largerChildId];
+      if (largerChild) {
+        nodes = {
+          ...nodes,
+          [currentId]: { ...current, value: largerChildValue },
+          [largerChildId]: { ...largerChild, value: sinkValue },
+        };
+        currentId = largerChildId;
+      } else {
+        break;
+      }
+    } else {
+      // Heap property satisfied
+      break;
+    }
+  }
+
+  return {
+    treeState: {
+      rootId: treeState.rootId,
+      nodes,
+    },
+    extracted: true,
+  };
+}
+
 export const useYieldStore = create<YieldStore>((set) => ({
   // Global initial state
   mode: "sorting",
@@ -434,7 +694,7 @@ export const useYieldStore = create<YieldStore>((set) => ({
     let insertedId: string | null = null;
 
     set((state) => {
-      const { treeState } = state;
+      const { treeState, treeDataStructure } = state;
       const nodeCount = Object.keys(treeState.nodes).length;
 
       // Enforce max node limit
@@ -442,7 +702,7 @@ export const useYieldStore = create<YieldStore>((set) => ({
         return state;
       }
 
-      // Empty tree - insert as root
+      // Empty tree - insert as root (same for all data structures)
       if (treeState.rootId === null) {
         const newId = generateNodeId();
         insertedId = newId;
@@ -461,7 +721,14 @@ export const useYieldStore = create<YieldStore>((set) => ({
         };
       }
 
-      // Find insertion point using BST property
+      // Max Heap: Insert at next available position, then bubble up
+      if (treeDataStructure === "max-heap") {
+        return insertHeapNode(treeState, value, (id) => {
+          insertedId = id;
+        });
+      }
+
+      // BST/AVL: Find insertion point using BST property
       let currentId: string | null = treeState.rootId;
       while (currentId !== null) {
         const current: TreeNode | undefined = treeState.nodes[currentId];
@@ -533,11 +800,18 @@ export const useYieldStore = create<YieldStore>((set) => ({
     let deleted = false;
 
     set((state) => {
-      const { treeState } = state;
+      const { treeState, treeDataStructure } = state;
 
       // Empty tree
       if (treeState.rootId === null) {
         return state;
+      }
+
+      // Max Heap: Extract max (ignore value parameter - always removes root)
+      if (treeDataStructure === "max-heap") {
+        const result = extractHeapMax(treeState);
+        deleted = result.extracted;
+        return { treeState: result.treeState };
       }
 
       // Find the node to delete

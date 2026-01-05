@@ -562,6 +562,27 @@ const NODE_STATE_STYLES: Record<TreeNodeState, { border: string; shadow: string;
     shadow: "shadow-orange-400/30",
     bg: "bg-orange-500/10",
   },
+  // Heap-specific states
+  "bubbling-up": {
+    border: "border-sky-400",
+    shadow: "shadow-sky-400/30",
+    bg: "bg-sky-500/10",
+  },
+  "sinking-down": {
+    border: "border-indigo-400",
+    shadow: "shadow-indigo-400/30",
+    bg: "bg-indigo-500/10",
+  },
+  swapping: {
+    border: "border-fuchsia-400",
+    shadow: "shadow-fuchsia-400/40",
+    bg: "bg-fuchsia-500/20",
+  },
+  extracting: {
+    border: "border-rose-500",
+    shadow: "shadow-rose-500/50",
+    bg: "bg-rose-500/30",
+  },
 };
 
 /**
