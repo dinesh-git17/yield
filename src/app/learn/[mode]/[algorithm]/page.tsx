@@ -425,7 +425,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
               <span className="bg-accent/20 text-accent mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium">
                 {index + 1}
               </span>
-              <span className="text-primary/80">{useCase}</span>
+              <span className="text-primary/80">{parseTextWithMath(useCase)}</span>
             </li>
           ))}
         </ul>
@@ -444,7 +444,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
               )}
             >
               <Lightbulb className="text-accent mt-0.5 h-4 w-4 shrink-0" />
-              <span className="text-primary/80 text-sm">{insight}</span>
+              <span className="text-primary/80 text-sm">{parseTextWithMath(insight)}</span>
             </li>
           ))}
         </ul>
@@ -462,7 +462,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
             <Target className="h-5 w-5" />
             <h3 className="font-semibold">When to Use</h3>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">{article.whenToUse}</p>
+          <p className="text-primary/80 text-sm leading-relaxed">
+            {parseTextWithMath(article.whenToUse)}
+          </p>
         </div>
 
         <div className={cn("rounded-xl border border-rose-500/30 bg-rose-500/10 p-6", "space-y-3")}>
@@ -470,7 +472,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
             <XCircle className="h-5 w-5" />
             <h3 className="font-semibold">When NOT to Use</h3>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">{article.whenNotToUse}</p>
+          <p className="text-primary/80 text-sm leading-relaxed">
+            {parseTextWithMath(article.whenNotToUse)}
+          </p>
         </div>
       </div>
 
@@ -483,7 +487,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
             <AlertTriangle className="h-5 w-5" />
             <h3 className="font-semibold">Watch Out</h3>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">{content.article.pitfall}</p>
+          <p className="text-primary/80 text-sm leading-relaxed">
+            {parseTextWithMath(content.article.pitfall)}
+          </p>
         </div>
       )}
 
@@ -496,7 +502,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
             <GraduationCap className="h-5 w-5" />
             <h3 className="font-semibold">Interview Tip</h3>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">{content.article.interviewTip}</p>
+          <p className="text-primary/80 text-sm leading-relaxed">
+            {parseTextWithMath(content.article.interviewTip)}
+          </p>
         </div>
       )}
 
@@ -570,27 +578,11 @@ function Prose({ content }: ProseProps) {
         }
 
         if (paragraph.startsWith("- ") || paragraph.startsWith("1. ")) {
-          // It's a list
-          const items = paragraph.split("\n").filter(Boolean);
+          // It's a list - handle nested lists via indentation
+          const lines = paragraph.split("\n").filter(Boolean);
           const isOrdered = paragraph.startsWith("1. ");
-          const ListTag = isOrdered ? "ol" : "ul";
 
-          return (
-            <ListTag
-              key={key}
-              className={cn("space-y-2", isOrdered ? "list-decimal pl-6" : "list-disc pl-6")}
-            >
-              {items.map((item) => {
-                const cleanedItem = item.replace(/^[-\d]+\.\s*/, "");
-                const itemKey = `li-${cleanedItem.slice(0, 30).replace(/\W/g, "")}`;
-                return (
-                  <li key={itemKey} className="text-primary/80 leading-relaxed">
-                    {parseTextWithMath(cleanedItem)}
-                  </li>
-                );
-              })}
-            </ListTag>
-          );
+          return <NestedList key={key} lines={lines} isOrdered={isOrdered} />;
         }
 
         // Regular paragraph - process bold text inline without dangerouslySetInnerHTML
@@ -688,6 +680,91 @@ function parseTextWithMath(text: string): React.ReactNode[] {
  */
 function ProseParagraph({ text }: { text: string }) {
   return <p className="text-primary/80 leading-relaxed">{parseTextWithMath(text)}</p>;
+}
+
+/**
+ * Represents a parsed list item with potential children for nested lists.
+ */
+interface ListNode {
+  content: string;
+  children: ListNode[];
+  isOrdered: boolean;
+}
+
+/**
+ * Renders nested lists by parsing indentation levels.
+ * Handles mixed ordered/unordered sublists.
+ */
+function NestedList({ lines, isOrdered }: { lines: string[]; isOrdered: boolean }) {
+  // Parse lines into a tree structure based on indentation
+  const rootNodes: ListNode[] = [];
+  const stack: { node: ListNode; indent: number }[] = [];
+
+  for (const line of lines) {
+    // Measure leading whitespace
+    const leadingSpaces = line.match(/^(\s*)/)?.[1]?.length ?? 0;
+    // Determine if this line is an unordered sub-item (starts with - after whitespace)
+    const isSubItemUnordered = /^\s+-\s/.test(line);
+    // Clean the line content
+    const cleanedContent = line.replace(/^\s*(?:-\s*|\d+\.\s*)/, "");
+
+    const newNode: ListNode = {
+      content: cleanedContent,
+      children: [],
+      isOrdered: !isSubItemUnordered && isOrdered,
+    };
+
+    if (leadingSpaces === 0) {
+      // Top-level item
+      rootNodes.push(newNode);
+      stack.length = 0;
+      stack.push({ node: newNode, indent: 0 });
+    } else {
+      // Nested item - find parent by indentation
+      while (stack.length > 0 && (stack[stack.length - 1]?.indent ?? 0) >= leadingSpaces) {
+        stack.pop();
+      }
+
+      if (stack.length > 0) {
+        const parent = stack[stack.length - 1];
+        if (parent) {
+          parent.node.children.push(newNode);
+        }
+      } else {
+        // Fallback: treat as top-level if no valid parent
+        rootNodes.push(newNode);
+      }
+
+      stack.push({ node: newNode, indent: leadingSpaces });
+    }
+  }
+
+  // Render the tree
+  const renderNodes = (nodes: ListNode[], parentOrdered: boolean) => {
+    if (nodes.length === 0) return null;
+
+    // Check if we should render as ordered or unordered
+    // Use the first node's isOrdered property to determine list type
+    const firstNode = nodes[0];
+    const useOrdered = firstNode?.isOrdered ?? parentOrdered;
+    const ListTag = useOrdered ? "ol" : "ul";
+
+    return (
+      <ListTag className={cn("space-y-2", useOrdered ? "list-decimal pl-6" : "list-disc pl-6")}>
+        {nodes.map((node, idx) => {
+          const itemKey = `li-${idx}-${node.content.slice(0, 20).replace(/\W/g, "")}`;
+          return (
+            <li key={itemKey} className="text-primary/80 leading-relaxed">
+              {parseTextWithMath(node.content)}
+              {node.children.length > 0 && renderNodes(node.children, node.isOrdered)}
+            </li>
+          );
+        })}
+      </ListTag>
+    );
+  };
+
+  return renderNodes(rootNodes, isOrdered);
 }
 
 interface ComplexityBadgeProps {
