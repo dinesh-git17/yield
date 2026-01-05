@@ -38,7 +38,7 @@ function buildTree(values: number[]): TreeState {
     // BST insert
     let currentId: string | null = rootId;
     while (currentId !== null) {
-      const current = nodes[currentId];
+      const current: TreeNode | undefined = nodes[currentId];
       if (!current) break;
 
       if (value < current.value) {
