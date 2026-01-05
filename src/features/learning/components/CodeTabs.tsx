@@ -6,6 +6,7 @@ import { Check, ChevronDown, Copy } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { FaGolang, FaJava, FaPython, FaRust } from "react-icons/fa6";
 import { SiCplusplus, SiJavascript } from "react-icons/si";
+import { getPathfindingImplementation } from "@/features/learning/code/pathfinding";
 import {
   getSortingImplementation,
   LANGUAGE_INFO,
@@ -13,7 +14,7 @@ import {
   type Language,
 } from "@/features/learning/code/sorting";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
-import type { SortingAlgorithmType } from "@/lib/store";
+import type { PathfindingAlgorithmType, SortingAlgorithmType } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -48,21 +49,37 @@ const LanguageIcon = memo(function LanguageIcon({ language, className }: Languag
 });
 
 export interface CodeTabsProps {
-  /** The sorting algorithm to display code for */
-  algorithm: SortingAlgorithmType;
+  /** The visualization mode */
+  mode: "sorting" | "pathfinding";
+  /** The algorithm to display code for */
+  algorithm: string;
   /** Optional additional class names */
   className?: string;
 }
 
 /**
- * Tabbed code viewer component with language switching and copy functionality.
- * Displays sorting algorithm implementations in multiple programming languages.
+ * Get code implementation based on mode and algorithm.
  */
-export const CodeTabs = memo(function CodeTabs({ algorithm, className }: CodeTabsProps) {
+function getImplementation(
+  mode: "sorting" | "pathfinding",
+  algorithm: string,
+  language: Language
+): string {
+  if (mode === "sorting") {
+    return getSortingImplementation(algorithm as SortingAlgorithmType, language);
+  }
+  return getPathfindingImplementation(algorithm as PathfindingAlgorithmType, language);
+}
+
+/**
+ * Tabbed code viewer component with language switching and copy functionality.
+ * Displays algorithm implementations in multiple programming languages.
+ */
+export const CodeTabs = memo(function CodeTabs({ mode, algorithm, className }: CodeTabsProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<Language>("python");
   const [copied, setCopied] = useState(false);
 
-  const code = getSortingImplementation(algorithm, selectedLanguage);
+  const code = getImplementation(mode, algorithm, selectedLanguage);
   const languageInfo = LANGUAGE_INFO[selectedLanguage];
 
   const handleCopy = useCallback(async () => {

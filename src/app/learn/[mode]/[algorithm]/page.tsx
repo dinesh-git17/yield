@@ -1,9 +1,15 @@
-import { Clock, Code2, HardDrive, Lightbulb, Target, XCircle } from "lucide-react";
+import katex from "katex";
+import { Clock, Code2, Compass, HardDrive, Lightbulb, Route, Target, XCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
+import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
 import { CodeTabs } from "@/features/learning/components";
-import { getSortingArticle } from "@/features/learning/content/sorting";
-import type { SortingAlgorithmType, VisualizerMode } from "@/lib/store";
+import {
+  getPathfindingArticle,
+  type PathfindingArticle,
+} from "@/features/learning/content/pathfinding";
+import { getSortingArticle, type SortingArticle } from "@/features/learning/content/sorting";
+import type { PathfindingAlgorithmType, SortingAlgorithmType, VisualizerMode } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 interface LearnPageProps {
@@ -23,6 +29,16 @@ const VALID_SORTING_ALGORITHMS = [
   "merge",
   "heap",
 ] as const;
+const VALID_PATHFINDING_ALGORITHMS = [
+  "bfs",
+  "dfs",
+  "dijkstra",
+  "astar",
+  "greedy",
+  "bidirectional",
+  "flood",
+  "random",
+] as const;
 
 function isValidMode(mode: string): mode is VisualizerMode {
   return VALID_MODES.includes(mode as VisualizerMode);
@@ -32,6 +48,51 @@ function isValidSortingAlgorithm(algorithm: string): algorithm is SortingAlgorit
   return VALID_SORTING_ALGORITHMS.includes(algorithm as SortingAlgorithmType);
 }
 
+function isValidPathfindingAlgorithm(algorithm: string): algorithm is PathfindingAlgorithmType {
+  return VALID_PATHFINDING_ALGORITHMS.includes(algorithm as PathfindingAlgorithmType);
+}
+
+/**
+ * Unified article type for polymorphic page rendering.
+ */
+type ArticleContent =
+  | { mode: "sorting"; article: SortingArticle; algorithm: SortingAlgorithmType }
+  | { mode: "pathfinding"; article: PathfindingArticle; algorithm: PathfindingAlgorithmType };
+
+/**
+ * Factory function to get the appropriate article based on mode and algorithm.
+ */
+function getArticle(mode: string, algorithm: string): ArticleContent | null {
+  if (mode === "sorting" && isValidSortingAlgorithm(algorithm)) {
+    return {
+      mode: "sorting",
+      article: getSortingArticle(algorithm),
+      algorithm,
+    };
+  }
+  if (mode === "pathfinding" && isValidPathfindingAlgorithm(algorithm)) {
+    return {
+      mode: "pathfinding",
+      article: getPathfindingArticle(algorithm),
+      algorithm,
+    };
+  }
+  return null;
+}
+
+/**
+ * Get algorithm metadata (time/space complexity) based on mode.
+ */
+function getMetadata(mode: string, algorithm: string) {
+  if (mode === "sorting" && isValidSortingAlgorithm(algorithm)) {
+    return getAlgorithmMetadata(algorithm);
+  }
+  if (mode === "pathfinding" && isValidPathfindingAlgorithm(algorithm)) {
+    return getPathfindingAlgorithmMetadata(algorithm);
+  }
+  return null;
+}
+
 export default async function LearnPage({ params }: LearnPageProps) {
   const { mode, algorithm } = await params;
 
@@ -39,22 +100,35 @@ export default async function LearnPage({ params }: LearnPageProps) {
     notFound();
   }
 
-  // Currently only sorting content is available
-  if (mode !== "sorting" || !isValidSortingAlgorithm(algorithm)) {
+  const content = getArticle(mode, algorithm);
+  const metadata = getMetadata(mode, algorithm);
+
+  if (!content || !metadata) {
     notFound();
   }
 
-  const article = getSortingArticle(algorithm);
-  const metadata = getAlgorithmMetadata(algorithm);
+  const { article } = content;
+
+  // Mode-specific labels and icons
+  const modeConfig = {
+    sorting: {
+      label: "Sorting Algorithm",
+      icon: <Target className="h-5 w-5" />,
+    },
+    pathfinding: {
+      label: "Pathfinding Algorithm",
+      icon: <Compass className="h-5 w-5" />,
+    },
+  };
+
+  const config = modeConfig[content.mode];
 
   return (
     <article className="space-y-16">
       {/* Hero Section */}
       <header className="space-y-6 text-center">
         <div className="space-y-2">
-          <p className="text-accent text-sm font-medium uppercase tracking-wider">
-            Sorting Algorithm
-          </p>
+          <p className="text-accent text-sm font-medium uppercase tracking-wider">{config.label}</p>
           <h1 className="text-primary text-4xl font-bold tracking-tight sm:text-5xl">
             {article.title}
           </h1>
@@ -75,6 +149,15 @@ export default async function LearnPage({ params }: LearnPageProps) {
             value={metadata.spaceComplexity}
             variant={getComplexityVariant(metadata.spaceComplexity)}
           />
+          {/* Pathfinding-specific: Shortest Path Guarantee */}
+          {content.mode === "pathfinding" && (
+            <ComplexityBadge
+              icon={<Route className="h-4 w-4" />}
+              label="Shortest Path"
+              value={content.article.guaranteesShortestPath ? "Guaranteed" : "Not Guaranteed"}
+              variant={content.article.guaranteesShortestPath ? "excellent" : "fair"}
+            />
+          )}
         </div>
       </header>
 
@@ -84,44 +167,74 @@ export default async function LearnPage({ params }: LearnPageProps) {
       </Section>
 
       {/* How it Works Section */}
-      <Section title="How It Works" icon={<Target className="h-5 w-5" />}>
+      <Section title="How It Works" icon={config.icon}>
         <Prose content={article.mechanics} />
 
-        {/* Complexity Details */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <ComplexityCard
-            title="Best Case"
-            complexity={article.bestCase.complexity}
-            explanation={article.bestCase.explanation}
-            variant="good"
-          />
-          <ComplexityCard
-            title="Worst Case"
-            complexity={article.worstCase.complexity}
-            explanation={article.worstCase.explanation}
-            variant="fair"
-          />
-          <ComplexityCard
-            title="Average Case"
-            complexity={article.averageCase.complexity}
-            explanation={article.averageCase.explanation}
-            variant="neutral"
-          />
-          <ComplexityCard
-            title="Space"
-            complexity={article.spaceComplexity.complexity}
-            explanation={article.spaceComplexity.explanation}
-            variant={article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
-          />
-        </div>
+        {/* Complexity Details - Sorting has 4 cases, Pathfinding has 2 */}
+        {content.mode === "sorting" ? (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ComplexityCard
+              title="Best Case"
+              complexity={content.article.bestCase.complexity}
+              explanation={content.article.bestCase.explanation}
+              variant="good"
+            />
+            <ComplexityCard
+              title="Worst Case"
+              complexity={content.article.worstCase.complexity}
+              explanation={content.article.worstCase.explanation}
+              variant="fair"
+            />
+            <ComplexityCard
+              title="Average Case"
+              complexity={content.article.averageCase.complexity}
+              explanation={content.article.averageCase.explanation}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Space"
+              complexity={content.article.spaceComplexity.complexity}
+              explanation={content.article.spaceComplexity.explanation}
+              variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+            />
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ComplexityCard
+              title="Time Complexity"
+              complexity={content.article.timeComplexity.complexity}
+              explanation={content.article.timeComplexity.explanation}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Space Complexity"
+              complexity={content.article.spaceComplexity.complexity}
+              explanation={content.article.spaceComplexity.explanation}
+              variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+            />
+            <ComplexityCard
+              title="Data Structure"
+              complexity={content.article.dataStructure}
+              explanation={`The core data structure powering ${content.article.title}.`}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Visual Pattern"
+              complexity={content.article.visualPattern}
+              explanation="How this algorithm appears during visualization."
+              variant="neutral"
+            />
+          </div>
+        )}
       </Section>
 
       {/* Code Walkthrough Section */}
       <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
         <p className="text-muted mb-4 text-sm">
-          Real implementations in 6 programming languages. Select a language to view idiomatic code.
+          Real implementations in multiple programming languages. Select a language to view
+          idiomatic code.
         </p>
-        <CodeTabs algorithm={algorithm} />
+        <CodeTabs mode={content.mode} algorithm={algorithm} />
       </Section>
 
       {/* Real World Use Cases Section */}
@@ -241,12 +354,12 @@ function Prose({ content }: ProseProps) {
           // It's a subheading
           const parts = paragraph.split(":**");
           const heading = parts[0] ?? "";
-          const rest = parts.slice(1);
+          const rest = parts.slice(1).join(":**");
           const headingText = heading.replace(/\*\*/g, "");
           return (
             <div key={key} className="space-y-2">
               <h4 className="text-primary font-semibold">{headingText}</h4>
-              <p className="text-primary/80 leading-relaxed">{rest.join(":**")}</p>
+              <p className="text-primary/80 leading-relaxed">{parseTextWithMath(rest)}</p>
             </div>
           );
         }
@@ -262,11 +375,15 @@ function Prose({ content }: ProseProps) {
               key={key}
               className={cn("space-y-2", isOrdered ? "list-decimal pl-6" : "list-disc pl-6")}
             >
-              {items.map((item) => (
-                <li key={item.slice(0, 30)} className="text-primary/80 leading-relaxed">
-                  {item.replace(/^[-\d]+\.\s*/, "").replace(/\*\*(.*?)\*\*/g, "$1")}
-                </li>
-              ))}
+              {items.map((item) => {
+                const cleanedItem = item.replace(/^[-\d]+\.\s*/, "");
+                const itemKey = `li-${cleanedItem.slice(0, 30).replace(/\W/g, "")}`;
+                return (
+                  <li key={itemKey} className="text-primary/80 leading-relaxed">
+                    {parseTextWithMath(cleanedItem)}
+                  </li>
+                );
+              })}
             </ListTag>
           );
         }
@@ -279,30 +396,93 @@ function Prose({ content }: ProseProps) {
 }
 
 /**
- * Renders a paragraph with inline bold text processing.
- * Avoids dangerouslySetInnerHTML by parsing markdown bold syntax into React elements.
+ * Renders LaTeX math expression to HTML string using KaTeX.
+ * Returns the original text if parsing fails.
+ */
+function renderMath(latex: string, displayMode: boolean): string {
+  try {
+    return katex.renderToString(latex, {
+      displayMode,
+      throwOnError: false,
+      strict: false,
+    });
+  } catch {
+    return latex;
+  }
+}
+
+/**
+ * Parses text with markdown bold and LaTeX math, returning an array of React elements.
+ * Supports:
+ * - Inline math: $...$
+ * - Display math: $$...$$
+ * - Bold text: **...**
+ */
+function parseTextWithMath(text: string): React.ReactNode[] {
+  const elements: React.ReactNode[] = [];
+  // Pattern matches: $$...$$, $...$, or **...**
+  const pattern = /(\$\$[\s\S]*?\$\$|\$[^$\n]+?\$|\*\*.*?\*\*)/g;
+  let lastIndex = 0;
+  let keyIndex = 0;
+
+  for (let match = pattern.exec(text); match !== null; match = pattern.exec(text)) {
+    // Add text before this match
+    if (match.index > lastIndex) {
+      const before = text.slice(lastIndex, match.index);
+      elements.push(<span key={`text-${keyIndex++}`}>{before}</span>);
+    }
+
+    const matched = match[0];
+
+    if (matched.startsWith("$$") && matched.endsWith("$$")) {
+      // Display math
+      const latex = matched.slice(2, -2).trim();
+      const html = renderMath(latex, true);
+      elements.push(
+        <span
+          key={`math-${keyIndex++}`}
+          className="block my-4"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: KaTeX sanitizes output
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      );
+    } else if (matched.startsWith("$") && matched.endsWith("$")) {
+      // Inline math
+      const latex = matched.slice(1, -1);
+      const html = renderMath(latex, false);
+      elements.push(
+        <span
+          key={`math-${keyIndex++}`}
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: KaTeX sanitizes output
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      );
+    } else if (matched.startsWith("**") && matched.endsWith("**")) {
+      // Bold text
+      const boldText = matched.slice(2, -2);
+      elements.push(
+        <strong key={`bold-${keyIndex++}`} className="text-primary font-semibold">
+          {boldText}
+        </strong>
+      );
+    }
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  // Add remaining text after last match
+  if (lastIndex < text.length) {
+    elements.push(<span key={`text-${keyIndex++}`}>{text.slice(lastIndex)}</span>);
+  }
+
+  return elements;
+}
+
+/**
+ * Renders a paragraph with inline bold text and LaTeX math processing.
  */
 function ProseParagraph({ text }: { text: string }) {
-  // Split by **...** patterns and render bold segments as <strong>
-  const parts = text.split(/(\*\*.*?\*\*)/g);
-
-  return (
-    <p className="text-primary/80 leading-relaxed">
-      {parts.map((part) => {
-        // Use content as key since parts are unique text segments
-        const key = `part-${part.slice(0, 20).replace(/\W/g, "") || "empty"}`;
-        if (part.startsWith("**") && part.endsWith("**")) {
-          const boldText = part.slice(2, -2);
-          return (
-            <strong key={key} className="text-primary font-semibold">
-              {boldText}
-            </strong>
-          );
-        }
-        return <span key={key}>{part}</span>;
-      })}
-    </p>
-  );
+  return <p className="text-primary/80 leading-relaxed">{parseTextWithMath(text)}</p>;
 }
 
 interface ComplexityBadgeProps {
@@ -389,11 +569,13 @@ function getComplexityVariant(complexity: string): "excellent" | "good" | "fair"
 export async function generateMetadata({ params }: LearnPageProps) {
   const { mode, algorithm } = await params;
 
-  if (mode === "sorting" && isValidSortingAlgorithm(algorithm)) {
-    const article = getSortingArticle(algorithm);
+  const content = getArticle(mode, algorithm);
+
+  if (content) {
+    const modeLabel = content.mode === "sorting" ? "Sorting" : "Pathfinding";
     return {
-      title: `${article.title} | Learn | Yield`,
-      description: `Learn about ${article.title}: ${article.tagline}. ${article.mechanics.slice(0, 150)}...`,
+      title: `${content.article.title} | ${modeLabel} | Learn | Yield`,
+      description: `Learn about ${content.article.title}: ${content.article.tagline}. ${content.article.mechanics.slice(0, 150)}...`,
     };
   }
 
@@ -404,8 +586,15 @@ export async function generateMetadata({ params }: LearnPageProps) {
 }
 
 export function generateStaticParams() {
-  return VALID_SORTING_ALGORITHMS.map((algorithm) => ({
+  const sortingParams = VALID_SORTING_ALGORITHMS.map((algorithm) => ({
     mode: "sorting",
     algorithm,
   }));
+
+  const pathfindingParams = VALID_PATHFINDING_ALGORITHMS.map((algorithm) => ({
+    mode: "pathfinding",
+    algorithm,
+  }));
+
+  return [...sortingParams, ...pathfindingParams];
 }
