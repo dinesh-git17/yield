@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { GraphStage } from "./GraphStage";
 import { PathfindingStage } from "./PathfindingStage";
 import { SortingStage } from "./SortingStage";
 import { TreeStage } from "./TreeStage";
@@ -87,6 +88,19 @@ export function Canvas({ className }: CanvasProps) {
             className="h-full"
           >
             <TreeStage className="h-full" />
+          </motion.div>
+        );
+      case "graph":
+        return (
+          <motion.div
+            key="graph-stage"
+            variants={stageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="h-full"
+          >
+            <GraphStage className="h-full" />
           </motion.div>
         );
     }

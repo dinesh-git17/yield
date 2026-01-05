@@ -1,4 +1,16 @@
 export {
+  type GraphContextValue,
+  type GraphControllerActions,
+  type GraphControllerState,
+  type GraphEdgeState,
+  type GraphInteractionMode,
+  type GraphNodeState,
+  type GraphPlaybackStatus,
+  GraphProvider,
+  type GraphProviderProps,
+  useGraph,
+} from "./GraphContext";
+export {
   type PathfindingContextValue,
   PathfindingProvider,
   type PathfindingProviderProps,

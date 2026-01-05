@@ -5,9 +5,9 @@ import { create } from "zustand";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * The three visualization domains supported by Yield.
+ * The four visualization domains supported by Yield.
  */
-export type VisualizerMode = "sorting" | "pathfinding" | "tree";
+export type VisualizerMode = "sorting" | "pathfinding" | "tree" | "graph";
 
 /**
  * Supported sorting algorithms.
@@ -70,6 +70,14 @@ export type TreeAlgorithmType =
   | "bfs"
   | "invert"
   | "heapify";
+
+/**
+ * Supported graph algorithms.
+ * - prim: Prim's algorithm for Minimum Spanning Tree
+ * - kruskal: Kruskal's algorithm for Minimum Spanning Tree
+ * - kahn: Kahn's algorithm for Topological Sort (DAG only)
+ */
+export type GraphAlgorithmType = "prim" | "kruskal" | "kahn";
 
 /**
  * Playback speed multipliers.
@@ -136,6 +144,19 @@ export const TREE_OPERATIONS: Record<TreeDataStructureType, TreeAlgorithmType[]>
   ],
   splay: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
 };
+
+export const GRAPH_CONFIG = {
+  /** Maximum number of nodes allowed in the graph */
+  MAX_NODES: 50,
+  /** Maximum number of edges allowed in the graph */
+  MAX_EDGES: 100,
+  /** Default algorithm when entering graph mode */
+  ALGORITHM_DEFAULT: "prim" as GraphAlgorithmType,
+  /** Default edge weight for new edges */
+  DEFAULT_WEIGHT: 1,
+  /** Node label alphabet for auto-generation */
+  NODE_LABELS: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+} as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pathfinding State Types
@@ -245,6 +266,135 @@ export function resetNodeIdCounter(): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Graph State Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * A node in the graph with position coordinates.
+ * Positions use normalized coordinates (0-100) for responsive scaling.
+ */
+export interface GraphNode {
+  /** Unique identifier for this node */
+  id: string;
+  /** X position as percentage (0-100) */
+  x: number;
+  /** Y position as percentage (0-100) */
+  y: number;
+  /** Display label for the node */
+  label: string;
+}
+
+/**
+ * An edge connecting two nodes in the graph.
+ */
+export interface GraphEdge {
+  /** Unique identifier for this edge */
+  id: string;
+  /** ID of the source node */
+  sourceId: string;
+  /** ID of the target node */
+  targetId: string;
+  /** Edge weight (for weighted graph algorithms like MST) */
+  weight: number;
+}
+
+/**
+ * Complete graph state using adjacency list representation.
+ * Edges are stored as a flat list for efficient iteration.
+ * Use getAdjacencyList() selector to derive adjacency structure.
+ */
+export interface GraphState {
+  /** Map of node IDs to their data */
+  nodes: Record<string, GraphNode>;
+  /** Map of edge IDs to their data */
+  edges: Record<string, GraphEdge>;
+  /** Whether edges are directed (affects algorithm behavior) */
+  isDirected: boolean;
+}
+
+/**
+ * Creates an empty graph state.
+ */
+export function createEmptyGraphState(): GraphState {
+  return {
+    nodes: {},
+    edges: {},
+    isDirected: false,
+  };
+}
+
+/**
+ * Generates a unique graph node ID.
+ */
+let graphNodeIdCounter = 0;
+export function generateGraphNodeId(): string {
+  graphNodeIdCounter += 1;
+  return `gnode-${graphNodeIdCounter}`;
+}
+
+/**
+ * Generates a unique graph edge ID.
+ */
+let graphEdgeIdCounter = 0;
+export function generateGraphEdgeId(): string {
+  graphEdgeIdCounter += 1;
+  return `gedge-${graphEdgeIdCounter}`;
+}
+
+/**
+ * Resets the graph ID counters (useful for testing).
+ */
+export function resetGraphIdCounters(): void {
+  graphNodeIdCounter = 0;
+  graphEdgeIdCounter = 0;
+}
+
+/**
+ * Derives an adjacency list from the graph state.
+ * For undirected graphs, each edge appears in both directions.
+ * @returns Map of node ID to list of { neighborId, edgeId, weight }
+ */
+export function getAdjacencyList(
+  graphState: GraphState
+): Map<string, Array<{ neighborId: string; edgeId: string; weight: number }>> {
+  const adjacencyList = new Map<
+    string,
+    Array<{ neighborId: string; edgeId: string; weight: number }>
+  >();
+
+  // Initialize empty lists for all nodes
+  for (const nodeId of Object.keys(graphState.nodes)) {
+    adjacencyList.set(nodeId, []);
+  }
+
+  // Add edges
+  for (const edge of Object.values(graphState.edges)) {
+    const sourceList = adjacencyList.get(edge.sourceId);
+    if (sourceList) {
+      sourceList.push({
+        neighborId: edge.targetId,
+        edgeId: edge.id,
+        weight: edge.weight,
+      });
+    }
+
+    // For undirected graphs, add reverse edge
+    if (!graphState.isDirected) {
+      const targetList = adjacencyList.get(edge.targetId);
+      if (targetList) {
+        targetList.push({
+          neighborId: edge.sourceId,
+          edgeId: edge.id,
+          weight: edge.weight,
+        });
+      }
+    }
+  }
+
+  return adjacencyList;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Store Interface
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -274,6 +424,10 @@ export interface YieldStore {
   treeDataStructure: TreeDataStructureType;
   treeAlgorithm: TreeAlgorithmType;
   treeState: TreeState;
+
+  // Graph state (preserved when switching modes)
+  graphAlgorithm: GraphAlgorithmType;
+  graphState: GraphState;
 
   // Global actions
   setMode: (mode: VisualizerMode) => void;
@@ -330,6 +484,50 @@ export interface YieldStore {
    * Used by the heapify visualization to update the actual tree state.
    */
   heapifySwap: (parentId: string, childId: string) => void;
+
+  // Graph actions
+  setGraphAlgorithm: (algo: GraphAlgorithmType) => void;
+  /**
+   * Adds a node to the graph at the specified position.
+   * Auto-generates a label based on the number of existing nodes.
+   * Returns the ID of the newly created node, or null if max nodes reached.
+   */
+  addGraphNode: (x: number, y: number, label?: string) => string | null;
+  /**
+   * Adds an edge between two nodes.
+   * Returns the ID of the newly created edge, or null if invalid or max edges reached.
+   */
+  addGraphEdge: (sourceId: string, targetId: string, weight?: number) => string | null;
+  /**
+   * Updates the position of a graph node (for drag interactions).
+   */
+  updateGraphNodePosition: (nodeId: string, x: number, y: number) => void;
+  /**
+   * Updates the weight of an edge.
+   */
+  updateGraphEdgeWeight: (edgeId: string, weight: number) => void;
+  /**
+   * Removes a node and all its connected edges from the graph.
+   * Returns true if the node was found and deleted.
+   */
+  removeGraphNode: (nodeId: string) => boolean;
+  /**
+   * Removes an edge from the graph.
+   * Returns true if the edge was found and deleted.
+   */
+  removeGraphEdge: (edgeId: string) => boolean;
+  /**
+   * Toggles whether the graph is directed.
+   */
+  setGraphDirected: (isDirected: boolean) => void;
+  /**
+   * Clears the entire graph (all nodes and edges).
+   */
+  clearGraph: () => void;
+  /**
+   * Sets the entire graph state (useful for loading presets).
+   */
+  setGraphState: (state: GraphState) => void;
 }
 
 /**
@@ -1362,6 +1560,10 @@ export const useYieldStore = create<YieldStore>((set) => ({
   treeAlgorithm: TREE_CONFIG.ALGORITHM_DEFAULT,
   treeState: createEmptyTreeState(),
 
+  // Graph initial state
+  graphAlgorithm: GRAPH_CONFIG.ALGORITHM_DEFAULT,
+  graphState: createEmptyGraphState(),
+
   // Global actions
   setMode: (mode) => set({ mode }),
 
@@ -1852,6 +2054,218 @@ export const useYieldStore = create<YieldStore>((set) => ({
         },
       };
     }),
+
+  // Graph actions
+  setGraphAlgorithm: (algo) => set({ graphAlgorithm: algo }),
+
+  addGraphNode: (x, y, label) => {
+    let insertedId: string | null = null;
+
+    set((state) => {
+      const nodeCount = Object.keys(state.graphState.nodes).length;
+
+      // Enforce max node limit
+      if (nodeCount >= GRAPH_CONFIG.MAX_NODES) {
+        return state;
+      }
+
+      const newId = generateGraphNodeId();
+      insertedId = newId;
+
+      // Auto-generate label if not provided
+      const nodeLabel = label ?? GRAPH_CONFIG.NODE_LABELS[nodeCount] ?? `N${nodeCount + 1}`;
+
+      const newNode: GraphNode = {
+        id: newId,
+        x,
+        y,
+        label: nodeLabel,
+      };
+
+      return {
+        graphState: {
+          ...state.graphState,
+          nodes: {
+            ...state.graphState.nodes,
+            [newId]: newNode,
+          },
+        },
+      };
+    });
+
+    return insertedId;
+  },
+
+  addGraphEdge: (sourceId, targetId, weight) => {
+    let insertedId: string | null = null;
+
+    set((state) => {
+      const { graphState } = state;
+      const edgeCount = Object.keys(graphState.edges).length;
+
+      // Enforce max edge limit
+      if (edgeCount >= GRAPH_CONFIG.MAX_EDGES) {
+        return state;
+      }
+
+      // Validate that both nodes exist
+      if (!graphState.nodes[sourceId] || !graphState.nodes[targetId]) {
+        return state;
+      }
+
+      // Prevent self-loops
+      if (sourceId === targetId) {
+        return state;
+      }
+
+      // Check for duplicate edges
+      const existingEdge = Object.values(graphState.edges).find((edge) => {
+        if (graphState.isDirected) {
+          return edge.sourceId === sourceId && edge.targetId === targetId;
+        }
+        // For undirected graphs, check both directions
+        return (
+          (edge.sourceId === sourceId && edge.targetId === targetId) ||
+          (edge.sourceId === targetId && edge.targetId === sourceId)
+        );
+      });
+
+      if (existingEdge) {
+        return state;
+      }
+
+      const newId = generateGraphEdgeId();
+      insertedId = newId;
+
+      const newEdge: GraphEdge = {
+        id: newId,
+        sourceId,
+        targetId,
+        weight: weight ?? GRAPH_CONFIG.DEFAULT_WEIGHT,
+      };
+
+      return {
+        graphState: {
+          ...graphState,
+          edges: {
+            ...graphState.edges,
+            [newId]: newEdge,
+          },
+        },
+      };
+    });
+
+    return insertedId;
+  },
+
+  updateGraphNodePosition: (nodeId, x, y) =>
+    set((state) => {
+      const node = state.graphState.nodes[nodeId];
+      if (!node) return state;
+
+      return {
+        graphState: {
+          ...state.graphState,
+          nodes: {
+            ...state.graphState.nodes,
+            [nodeId]: { ...node, x, y },
+          },
+        },
+      };
+    }),
+
+  updateGraphEdgeWeight: (edgeId, weight) =>
+    set((state) => {
+      const edge = state.graphState.edges[edgeId];
+      if (!edge) return state;
+
+      return {
+        graphState: {
+          ...state.graphState,
+          edges: {
+            ...state.graphState.edges,
+            [edgeId]: { ...edge, weight },
+          },
+        },
+      };
+    }),
+
+  removeGraphNode: (nodeId) => {
+    let deleted = false;
+
+    set((state) => {
+      const { graphState } = state;
+
+      if (!graphState.nodes[nodeId]) {
+        return state;
+      }
+
+      deleted = true;
+
+      // Remove the node
+      const newNodes = { ...graphState.nodes };
+      delete newNodes[nodeId];
+
+      // Remove all edges connected to this node
+      const newEdges: Record<string, GraphEdge> = {};
+      for (const [edgeId, edge] of Object.entries(graphState.edges)) {
+        if (edge.sourceId !== nodeId && edge.targetId !== nodeId) {
+          newEdges[edgeId] = edge;
+        }
+      }
+
+      return {
+        graphState: {
+          ...graphState,
+          nodes: newNodes,
+          edges: newEdges,
+        },
+      };
+    });
+
+    return deleted;
+  },
+
+  removeGraphEdge: (edgeId) => {
+    let deleted = false;
+
+    set((state) => {
+      const { graphState } = state;
+
+      if (!graphState.edges[edgeId]) {
+        return state;
+      }
+
+      deleted = true;
+
+      const newEdges = { ...graphState.edges };
+      delete newEdges[edgeId];
+
+      return {
+        graphState: {
+          ...graphState,
+          edges: newEdges,
+        },
+      };
+    });
+
+    return deleted;
+  },
+
+  setGraphDirected: (isDirected) =>
+    set((state) => ({
+      graphState: {
+        ...state.graphState,
+        isDirected,
+      },
+    })),
+
+  clearGraph: () =>
+    set({
+      graphState: createEmptyGraphState(),
+    }),
+
+  setGraphState: (newGraphState) => set({ graphState: newGraphState }),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────

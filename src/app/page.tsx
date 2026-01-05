@@ -1,6 +1,7 @@
 import {
   Canvas,
   CodePanel,
+  GraphProvider,
   MainLayout,
   PathfindingProvider,
   Sidebar,
@@ -13,7 +14,9 @@ export default function Home() {
     <SortingProvider>
       <PathfindingProvider>
         <TreeProvider>
-          <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+          <GraphProvider>
+            <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+          </GraphProvider>
         </TreeProvider>
       </PathfindingProvider>
     </SortingProvider>
