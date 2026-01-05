@@ -24,7 +24,12 @@ import {
   type TreeContext,
   type TreeStep,
 } from "@/features/algorithms/tree";
-import type { TreeAlgorithmType, TreeDataStructureType, TreeState } from "@/lib/store";
+import {
+  type TreeAlgorithmType,
+  type TreeDataStructureType,
+  type TreeState,
+  useYieldStore,
+} from "@/lib/store";
 
 /**
  * Visual state for a tree node during algorithm execution.
@@ -715,9 +720,11 @@ export function useTreeController(
       // Reset state before starting new operation
       reset();
 
-      // Take a snapshot of the current tree state
-      treeStateSnapshotRef.current = treeState;
-      const context: TreeContext = { treeState: treeStateSnapshotRef.current };
+      // Get fresh tree state directly from store to avoid stale closure issues
+      // This is critical for heapify which runs after fillRandomHeap updates the store
+      const freshTreeState = useYieldStore.getState().treeState;
+      treeStateSnapshotRef.current = freshTreeState;
+      const context: TreeContext = { treeState: freshTreeState };
 
       // Get the generator for the algorithm (data-structure-aware)
       const generator = getTreeGenerator(algorithm, context, dataStructure, value);
@@ -726,7 +733,7 @@ export function useTreeController(
       iteratorRef.current = generator;
       return true;
     },
-    [treeState, dataStructure, reset]
+    [dataStructure, reset]
   );
 
   /**
