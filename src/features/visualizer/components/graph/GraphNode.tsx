@@ -63,11 +63,15 @@ const NODE_STATE_STYLES: Record<GraphNodeState, { border: string; shadow: string
 export interface GraphNodeComponentProps {
   node: GraphNodeType;
   visualState: GraphNodeState;
-  isConnecting?: boolean;
-  onMouseDown?: (e: React.MouseEvent) => void;
-  onMouseUp?: (e: React.MouseEvent) => void;
-  onMouseEnter?: () => void;
-  onDoubleClick?: () => void;
+  isConnecting?: boolean | undefined;
+  /** Set ID for Union-Find visualization (Kruskal's algorithm) */
+  setId?: number | undefined;
+  /** Custom set color for Union-Find visualization */
+  setColor?: string | undefined;
+  onMouseDown?: ((e: React.MouseEvent) => void) | undefined;
+  onMouseUp?: ((e: React.MouseEvent) => void) | undefined;
+  onMouseEnter?: (() => void) | undefined;
+  onDoubleClick?: (() => void) | undefined;
 }
 
 /**
@@ -84,6 +88,8 @@ export const GraphNodeComponent = memo(
     node,
     visualState,
     isConnecting = false,
+    setId,
+    setColor,
     onMouseDown,
     onMouseUp,
     onMouseEnter,
@@ -106,6 +112,12 @@ export const GraphNodeComponent = memo(
       }
     };
 
+    // Use set color for border if provided and in idle/processing state
+    // This allows Kruskal's Union-Find visualization to show different connected components
+    const showSetColor =
+      setColor &&
+      (visualState === "idle" || visualState === "processing" || visualState === "visiting");
+
     return (
       <motion.div
         layout
@@ -121,6 +133,12 @@ export const GraphNodeComponent = memo(
           top: `${node.y}%`,
           width: LAYOUT.NODE_SIZE,
           height: LAYOUT.NODE_SIZE,
+          ...(showSetColor
+            ? {
+                borderColor: setColor,
+                boxShadow: `0 0 12px ${setColor}40`,
+              }
+            : {}),
         }}
         className={cn(
           "absolute flex items-center justify-center",
@@ -130,8 +148,9 @@ export const GraphNodeComponent = memo(
           "transition-colors duration-200",
           "cursor-grab active:cursor-grabbing",
           "select-none",
-          styles.border,
-          styles.shadow,
+          // Only use class-based styles if not using set color
+          !showSetColor && styles.border,
+          !showSetColor && styles.shadow,
           styles.bg,
           // Highlight when connecting
           isConnecting && "ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-transparent"
@@ -142,7 +161,7 @@ export const GraphNodeComponent = memo(
         onDoubleClick={onDoubleClick}
         role="button"
         tabIndex={0}
-        aria-label={`Graph node ${node.label}, state: ${visualState}`}
+        aria-label={`Graph node ${node.label}, state: ${visualState}${setId !== undefined ? `, set ${setId}` : ""}`}
       >
         <span className="text-primary text-sm font-semibold">{node.label}</span>
       </motion.div>
@@ -154,5 +173,7 @@ export const GraphNodeComponent = memo(
     prev.node.x === next.node.x &&
     prev.node.y === next.node.y &&
     prev.visualState === next.visualState &&
-    prev.isConnecting === next.isConnecting
+    prev.isConnecting === next.isConnecting &&
+    prev.setId === next.setId &&
+    prev.setColor === next.setColor
 );

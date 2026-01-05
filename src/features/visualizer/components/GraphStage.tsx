@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useCallback, useMemo, useRef } from "react";
+import { getSetColor } from "@/features/algorithms/graph";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
   GRAPH_CONFIG,
@@ -35,8 +36,8 @@ export interface GraphStageProps {
  * Algorithm labels for the dropdown.
  */
 const GRAPH_ALGORITHMS: { id: GraphAlgorithmType; label: string; enabled: boolean }[] = [
-  { id: "prim", label: "Prim's MST", enabled: false },
-  { id: "kruskal", label: "Kruskal's MST", enabled: false },
+  { id: "prim", label: "Prim's MST", enabled: true },
+  { id: "kruskal", label: "Kruskal's MST", enabled: true },
   { id: "kahn", label: "Topological Sort", enabled: false },
 ];
 
@@ -465,9 +466,23 @@ export function GraphStage({ className }: GraphStageProps) {
   const handleAlgorithmSelect = useCallback(
     (algo: GraphAlgorithmType) => {
       setGraphAlgorithm(algo);
+      // Reset any running algorithm when switching
+      controller.reset();
     },
-    [setGraphAlgorithm]
+    [setGraphAlgorithm, controller]
   );
+
+  /**
+   * Handles running the selected algorithm.
+   */
+  const handleRunAlgorithm = useCallback(() => {
+    const selectedAlgo = GRAPH_ALGORITHMS.find((a) => a.id === graphAlgorithm);
+    if (!selectedAlgo?.enabled || isEmpty) return;
+
+    // For Prim's, use the first node as start (or selected if available)
+    const startNodeId = controller.selectedNodeId ?? nodes[0]?.id;
+    controller.runAlgorithm(graphAlgorithm, graphState, startNodeId);
+  }, [graphAlgorithm, graphState, isEmpty, nodes, controller]);
 
   /**
    * Handles clearing the graph.
@@ -645,8 +660,11 @@ export function GraphStage({ className }: GraphStageProps) {
             <PlayPauseButton
               isPlaying={isPlaying}
               hasStarted={controller.currentStepIndex > 0 && !isComplete}
-              onClick={isPlaying ? controller.pause : controller.play}
-              disabled={isEmpty || isIdle}
+              onClick={isPlaying ? controller.pause : isIdle ? handleRunAlgorithm : controller.play}
+              disabled={
+                isEmpty ||
+                (isIdle && !GRAPH_ALGORITHMS.find((a) => a.id === graphAlgorithm)?.enabled)
+              }
             />
           </div>
         </div>
@@ -702,20 +720,25 @@ export function GraphStage({ className }: GraphStageProps) {
             {/* HTML Layer: Nodes */}
             <div className="absolute inset-0">
               <AnimatePresence mode="popLayout">
-                {nodes.map((node) => (
-                  <GraphNodeComponent
-                    key={node.id}
-                    node={node}
-                    visualState={controller.nodeStates.get(node.id) ?? "idle"}
-                    isConnecting={
-                      controller.interactionMode.type === "drawing-edge" &&
-                      controller.interactionMode.sourceId !== node.id
-                    }
-                    onMouseDown={(e) => handleNodeMouseDown(node.id, e)}
-                    onMouseUp={() => handleNodeMouseUp(node.id)}
-                    onDoubleClick={() => handleNodeDoubleClick(node.id)}
-                  />
-                ))}
+                {nodes.map((node) => {
+                  const setId = controller.nodeSetIds.get(node.id);
+                  return (
+                    <GraphNodeComponent
+                      key={node.id}
+                      node={node}
+                      visualState={controller.nodeStates.get(node.id) ?? "idle"}
+                      isConnecting={
+                        controller.interactionMode.type === "drawing-edge" &&
+                        controller.interactionMode.sourceId !== node.id
+                      }
+                      setId={setId}
+                      setColor={setId !== undefined ? getSetColor(setId) : undefined}
+                      onMouseDown={(e) => handleNodeMouseDown(node.id, e)}
+                      onMouseUp={() => handleNodeMouseUp(node.id)}
+                      onDoubleClick={() => handleNodeDoubleClick(node.id)}
+                    />
+                  );
+                })}
               </AnimatePresence>
             </div>
           </>
@@ -725,6 +748,10 @@ export function GraphStage({ className }: GraphStageProps) {
         <StatusOverlay
           stepCount={controller.currentStepIndex}
           interactionMode={controller.interactionMode}
+          mstTotalWeight={controller.mstTotalWeight}
+          mstEdgeCount={controller.mstEdgeCount}
+          isDisconnected={controller.isDisconnected}
+          isComplete={isComplete}
         />
 
         {/* Interaction Hint */}
@@ -751,14 +778,58 @@ export function GraphStage({ className }: GraphStageProps) {
 interface StatusOverlayProps {
   stepCount: number;
   interactionMode: GraphInteractionMode;
+  mstTotalWeight: number | null;
+  mstEdgeCount: number | null;
+  isDisconnected: boolean;
+  isComplete: boolean;
 }
 
-function StatusOverlay({ stepCount, interactionMode }: StatusOverlayProps) {
+function StatusOverlay({
+  stepCount,
+  interactionMode,
+  mstTotalWeight,
+  mstEdgeCount,
+  isDisconnected,
+  isComplete,
+}: StatusOverlayProps) {
   return (
     <div className="absolute top-4 left-4 flex flex-col gap-2">
       <div className="flex items-center gap-3">
         {stepCount > 0 && <span className="text-muted text-xs">Steps: {stepCount}</span>}
       </div>
+
+      {/* MST Result */}
+      <AnimatePresence>
+        {isComplete && mstTotalWeight !== null && (
+          <motion.div
+            key="mst-result"
+            initial={{ opacity: 0, y: -10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            transition={SPRING_PRESETS.snappy}
+            className="border border-emerald-500/30 bg-emerald-500/10 rounded-lg px-3 py-2 text-xs font-medium text-emerald-400"
+          >
+            <span className="font-bold">MST Complete</span>
+            <span className="text-emerald-300 ml-2">
+              Weight: {mstTotalWeight} · Edges: {mstEdgeCount}
+            </span>
+          </motion.div>
+        )}
+
+        {isComplete && isDisconnected && (
+          <motion.div
+            key="disconnected-warning"
+            initial={{ opacity: 0, y: -10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            transition={SPRING_PRESETS.snappy}
+            className="border border-rose-500/30 bg-rose-500/10 rounded-lg px-3 py-2 text-xs font-medium text-rose-400"
+          >
+            <span className="font-bold">Graph Not Connected</span>
+            <span className="text-rose-300 ml-2">Cannot form MST</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Interaction mode indicator */}
       <AnimatePresence>
