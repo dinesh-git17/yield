@@ -5,6 +5,7 @@ import type { TreeStep } from "./types";
  * Step type labels for display in the UI.
  */
 export const TREE_STEP_LABELS: Record<TreeStep["type"], string> = {
+  // Common operations
   compare: "Comparing values",
   visit: "Visiting node",
   insert: "Inserting node",
@@ -12,6 +13,15 @@ export const TREE_STEP_LABELS: Record<TreeStep["type"], string> = {
   "not-found": "Not found",
   delete: "Deleting node",
   "traverse-output": "Output node",
+  // AVL operations
+  unbalanced: "Unbalanced node",
+  rotate: "Rotating tree",
+  "update-height": "Updating height",
+  // Heap operations
+  "bubble-up": "Bubbling up",
+  "sink-down": "Sinking down",
+  swap: "Swapping nodes",
+  "extract-max": "Extracting max",
 };
 
 /**

@@ -67,8 +67,10 @@ export interface TreeControllerActions {
   step: () => void;
   /** Reset to initial state */
   reset: () => void;
-  /** Execute an operation (insert/search/delete) with a value */
+  /** Execute an operation (insert/search/delete) with a value, auto-plays */
   executeOperation: (algorithm: TreeAlgorithmType, value?: number) => void;
+  /** Prepare an operation without auto-playing (user must click Play) */
+  prepareOperation: (algorithm: TreeAlgorithmType, value?: number) => void;
 }
 
 export type UseTreeControllerReturn = TreeControllerState & TreeControllerActions;
@@ -285,10 +287,10 @@ export function useTreeController(
   }, []);
 
   /**
-   * Executes an operation with the given algorithm and optional value.
+   * Internal helper to set up an operation.
    */
-  const executeOperation = useCallback(
-    (algorithm: TreeAlgorithmType, value?: number) => {
+  const setupOperation = useCallback(
+    (algorithm: TreeAlgorithmType, value?: number): boolean => {
       // Reset state before starting new operation
       reset();
 
@@ -298,19 +300,45 @@ export function useTreeController(
 
       // Get the generator for the algorithm
       const generator = getTreeGenerator(algorithm, context, value);
-      if (!generator) return;
+      if (!generator) return false;
 
       iteratorRef.current = generator;
-      setStatus("playing");
+      return true;
     },
     [treeState, reset]
+  );
+
+  /**
+   * Executes an operation with the given algorithm and optional value.
+   * Auto-plays immediately after setup.
+   */
+  const executeOperation = useCallback(
+    (algorithm: TreeAlgorithmType, value?: number) => {
+      if (setupOperation(algorithm, value)) {
+        setStatus("playing");
+      }
+    },
+    [setupOperation]
+  );
+
+  /**
+   * Prepares an operation without auto-playing.
+   * The user must click Play to start the visualization.
+   */
+  const prepareOperation = useCallback(
+    (algorithm: TreeAlgorithmType, value?: number) => {
+      if (setupOperation(algorithm, value)) {
+        setStatus("paused");
+      }
+    },
+    [setupOperation]
   );
 
   /**
    * Starts or resumes playback.
    */
   const play = useCallback(() => {
-    if (status === "complete") return;
+    if (status === "complete" || status === "idle") return;
     if (status === "paused") {
       setStatus("playing");
     }
@@ -348,5 +376,6 @@ export function useTreeController(
     step,
     reset,
     executeOperation,
+    prepareOperation,
   };
 }

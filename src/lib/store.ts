@@ -49,6 +49,14 @@ export const HEURISTIC_ALGORITHMS: PathfindingAlgorithmType[] = [
 ];
 
 /**
+ * Tree data structure variants.
+ * - bst: Binary Search Tree (unbalanced)
+ * - avl: AVL Tree (self-balancing, height difference ≤ 1)
+ * - max-heap: Max Binary Heap (parent ≥ children, complete tree)
+ */
+export type TreeDataStructureType = "bst" | "avl" | "max-heap";
+
+/**
  * Supported tree operations and traversals.
  */
 export type TreeAlgorithmType =
@@ -94,12 +102,24 @@ export const SPEED_CONFIG = {
 export const TREE_CONFIG = {
   /** Maximum number of nodes allowed in the tree */
   MAX_NODES: 31,
+  /** Data structure shown by default when entering tree mode */
+  DATA_STRUCTURE_DEFAULT: "bst" as TreeDataStructureType,
   /** Algorithm shown by default when entering tree mode */
   ALGORITHM_DEFAULT: "insert" as TreeAlgorithmType,
   /** Value range for random tree generation */
   VALUE_MIN: 1,
   VALUE_MAX: 99,
 } as const;
+
+/**
+ * Operations available for each tree data structure.
+ * Heaps have different operations than BST/AVL.
+ */
+export const TREE_OPERATIONS: Record<TreeDataStructureType, TreeAlgorithmType[]> = {
+  bst: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
+  avl: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
+  "max-heap": ["insert", "delete", "bfs"],
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pathfinding State Types
@@ -148,8 +168,9 @@ export interface GridConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * A single node in the binary search tree.
+ * A single node in the tree.
  * Uses ID references instead of nested objects to enable efficient updates.
+ * Supports BST, AVL, and Heap data structures.
  */
 export interface TreeNode {
   /** Unique identifier for this node */
@@ -162,6 +183,12 @@ export interface TreeNode {
   rightId: string | null;
   /** ID of the parent node, or null if this is the root */
   parentId: string | null;
+  /**
+   * Height of the node for AVL trees.
+   * Calculated as max(height(left), height(right)) + 1.
+   * Leaf nodes have height 1, null children have height 0.
+   */
+  height?: number;
 }
 
 /**
@@ -228,6 +255,7 @@ export interface YieldStore {
   isGeneratingMaze: boolean;
 
   // Tree state (preserved when switching modes)
+  treeDataStructure: TreeDataStructureType;
   treeAlgorithm: TreeAlgorithmType;
   treeState: TreeState;
 
@@ -252,6 +280,7 @@ export interface YieldStore {
   setIsGeneratingMaze: (isGenerating: boolean) => void;
 
   // Tree actions
+  setTreeDataStructure: (structure: TreeDataStructureType) => void;
   setTreeAlgorithm: (algo: TreeAlgorithmType) => void;
   /**
    * Inserts a value into the BST, maintaining BST property.
@@ -302,6 +331,7 @@ export const useYieldStore = create<YieldStore>((set) => ({
   isGeneratingMaze: false,
 
   // Tree initial state
+  treeDataStructure: TREE_CONFIG.DATA_STRUCTURE_DEFAULT,
   treeAlgorithm: TREE_CONFIG.ALGORITHM_DEFAULT,
   treeState: createEmptyTreeState(),
 
@@ -384,6 +414,20 @@ export const useYieldStore = create<YieldStore>((set) => ({
   setIsGeneratingMaze: (isGenerating) => set({ isGeneratingMaze: isGenerating }),
 
   // Tree actions
+  setTreeDataStructure: (structure) =>
+    set((state) => {
+      // Reset tree and algorithm when switching data structure
+      const availableAlgorithms = TREE_OPERATIONS[structure];
+      const newAlgorithm = availableAlgorithms.includes(state.treeAlgorithm)
+        ? state.treeAlgorithm
+        : (availableAlgorithms[0] ?? TREE_CONFIG.ALGORITHM_DEFAULT);
+      return {
+        treeDataStructure: structure,
+        treeAlgorithm: newAlgorithm,
+        treeState: createEmptyTreeState(),
+      };
+    }),
+
   setTreeAlgorithm: (algo) => set({ treeAlgorithm: algo }),
 
   insertNode: (value) => {

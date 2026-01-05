@@ -123,7 +123,6 @@ function buildPositionedNodes(treeState: TreeState): PositionedNode[] {
  */
 export function TreeStage({ className }: TreeStageProps) {
   const treeState = useYieldStore((state) => state.treeState);
-  const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
   const insertNode = useYieldStore((state) => state.insertNode);
   const resetTree = useYieldStore((state) => state.resetTree);
   const setTreeAlgorithm = useYieldStore((state) => state.setTreeAlgorithm);
@@ -145,17 +144,18 @@ export function TreeStage({ className }: TreeStageProps) {
   const isComplete = controller.status === "complete";
   const isIdle = controller.status === "idle";
 
-  // State for traversal dropdown
-  const [selectedTraversal, setSelectedTraversal] = useState<TreeAlgorithmType>("inorder");
+  // State for traversal dropdown - null means no traversal selected yet
+  const [selectedTraversal, setSelectedTraversal] = useState<TreeAlgorithmType | null>(null);
 
   /**
-   * Handles executing a traversal from the dropdown.
+   * Handles selecting a traversal from the dropdown.
+   * Prepares the traversal but doesn't auto-play - user must click Play.
    */
-  const handleTraversalExecute = useCallback(
+  const handleTraversalSelect = useCallback(
     (traversal: TreeAlgorithmType) => {
       setSelectedTraversal(traversal);
       setTreeAlgorithm(traversal);
-      controller.executeOperation(traversal);
+      controller.prepareOperation(traversal);
     },
     [setTreeAlgorithm, controller]
   );
@@ -188,9 +188,21 @@ export function TreeStage({ className }: TreeStageProps) {
   );
 
   /**
-   * Resets the tree and controller.
+   * Resets just the visualization (playback controls Reset).
+   * Keeps the selected traversal so user can replay.
    */
-  const handleReset = useCallback(() => {
+  const handleVisualizationReset = useCallback(() => {
+    controller.reset();
+    // Re-prepare the traversal if one was selected
+    if (selectedTraversal) {
+      controller.prepareOperation(selectedTraversal);
+    }
+  }, [controller, selectedTraversal]);
+
+  /**
+   * Resets the tree and controller completely (Clear button).
+   */
+  const handleClearAll = useCallback(() => {
     // Clear any balanced insertion in progress
     if (balancedInsertionIntervalRef.current) {
       clearInterval(balancedInsertionIntervalRef.current);
@@ -198,6 +210,9 @@ export function TreeStage({ className }: TreeStageProps) {
     }
     balancedInsertionRef.current = [];
     balancedInsertionIndexRef.current = 0;
+
+    // Reset traversal selection
+    setSelectedTraversal(null);
 
     controller.reset();
     resetTree();
@@ -207,8 +222,8 @@ export function TreeStage({ className }: TreeStageProps) {
    * Generates a balanced tree with animated insertion.
    */
   const handleGenerateBalanced = useCallback(() => {
-    // Reset first
-    handleReset();
+    // Clear everything first
+    handleClearAll();
 
     // Generate the insertion order for a balanced tree (15 nodes = nice 4-level tree)
     const values = generateBalancedInsertionOrder(15);
@@ -231,7 +246,7 @@ export function TreeStage({ className }: TreeStageProps) {
       insertNode(value);
       balancedInsertionIndexRef.current += 1;
     }, 150);
-  }, [handleReset, insertNode]);
+  }, [handleClearAll, insertNode]);
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -258,7 +273,7 @@ export function TreeStage({ className }: TreeStageProps) {
                 )}
               >
                 <span>
-                  {TRAVERSALS.find((t) => t.value === selectedTraversal)?.label ?? "Traversal"}
+                  {TRAVERSALS.find((t) => t.value === selectedTraversal)?.label ?? "Traversals"}
                 </span>
                 <ChevronDown className="h-3 w-3" />
               </motion.button>
@@ -274,7 +289,7 @@ export function TreeStage({ className }: TreeStageProps) {
                 {TRAVERSALS.map((traversal) => (
                   <DropdownMenu.Item
                     key={traversal.value}
-                    onSelect={() => handleTraversalExecute(traversal.value)}
+                    onSelect={() => handleTraversalSelect(traversal.value)}
                     className={cn(
                       "text-primary flex cursor-pointer items-center rounded-md px-2 py-1.5 text-xs font-medium outline-none",
                       "hover:bg-surface focus:bg-surface",
@@ -302,7 +317,7 @@ export function TreeStage({ className }: TreeStageProps) {
             <ActionButton
               label="Clear"
               icon={<Trash2 className="h-3.5 w-3.5" />}
-              onClick={handleReset}
+              onClick={handleClearAll}
               disabled={isPlaying || isEmpty}
               variant="destructive"
             />
@@ -321,13 +336,20 @@ export function TreeStage({ className }: TreeStageProps) {
             <ControlButton
               label="Reset"
               icon={<RotateCcw className="h-3.5 w-3.5" />}
-              onClick={() => controller.reset()}
+              onClick={handleVisualizationReset}
               disabled={isIdle}
             />
             <PlayPauseButton
               isPlaying={isPlaying}
-              onClick={isPlaying ? controller.pause : controller.play}
-              disabled={isComplete || isIdle}
+              hasStarted={controller.currentStepIndex > 0 && !isComplete}
+              onClick={
+                isPlaying
+                  ? controller.pause
+                  : isComplete && selectedTraversal
+                    ? () => controller.executeOperation(selectedTraversal)
+                    : controller.play
+              }
+              disabled={isIdle}
             />
           </div>
         </div>
@@ -697,14 +719,17 @@ function ControlButton({ label, icon, onClick, disabled }: ControlButtonProps) {
  */
 interface PlayPauseButtonProps {
   isPlaying: boolean;
+  hasStarted: boolean;
   onClick: () => void;
   disabled?: boolean;
 }
 
-function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps) {
+function PlayPauseButton({ isPlaying, hasStarted, onClick, disabled }: PlayPauseButtonProps) {
   const interactionProps = disabled
     ? {}
     : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };
+
+  const label = isPlaying ? "Pause" : hasStarted ? "Resume" : "Play";
 
   return (
     <motion.button
@@ -719,7 +744,7 @@ function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps)
         "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed"
       )}
-      aria-label={isPlaying ? "Pause" : "Play"}
+      aria-label={label}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
@@ -733,7 +758,7 @@ function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps)
           {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </motion.span>
       </AnimatePresence>
-      {isPlaying ? "Pause" : "Resume"}
+      {label}
     </motion.button>
   );
 }
