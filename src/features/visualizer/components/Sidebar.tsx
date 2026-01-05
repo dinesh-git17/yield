@@ -5,6 +5,7 @@ import { BadgeHelp, ChevronsLeft } from "lucide-react";
 import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
+  type GraphAlgorithmType,
   type PathfindingAlgorithmType,
   type SortingAlgorithmType,
   type TreeDataStructureType,
@@ -56,6 +57,16 @@ const TREE_DATA_STRUCTURES: {
   { id: "max-heap", label: "Max Heap", enabled: true },
 ];
 
+const GRAPH_ALGORITHMS: {
+  id: GraphAlgorithmType;
+  label: string;
+  enabled: boolean;
+}[] = [
+  { id: "prim", label: "Prim's MST", enabled: false },
+  { id: "kruskal", label: "Kruskal's MST", enabled: false },
+  { id: "kahn", label: "Topological Sort", enabled: false },
+];
+
 export function Sidebar({ className, onCollapse }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
@@ -68,6 +79,8 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
   const setPathfindingAlgorithm = useYieldStore((state) => state.setPathfindingAlgorithm);
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const setTreeDataStructure = useYieldStore((state) => state.setTreeDataStructure);
+  const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
+  const setGraphAlgorithm = useYieldStore((state) => state.setGraphAlgorithm);
 
   const handleModeSelect = useCallback(
     (newMode: VisualizerMode) => {
@@ -95,6 +108,13 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
       setTreeDataStructure(structure);
     },
     [setTreeDataStructure]
+  );
+
+  const handleGraphAlgorithmSelect = useCallback(
+    (algo: GraphAlgorithmType) => {
+      setGraphAlgorithm(algo);
+    },
+    [setGraphAlgorithm]
   );
 
   const openComplexityModal = useCallback(() => {
@@ -167,9 +187,10 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
           <SidebarItem
             id="cat-graphs"
             label="Graphs"
-            disabled
+            isActive={mode === "graph"}
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
+            onClick={() => handleModeSelect("graph")}
           />
         </SidebarGroup>
 
@@ -309,11 +330,47 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             </motion.button>
           </>
         )}
+
+        {/* Graph Algorithms List */}
+        {mode === "graph" && (
+          <>
+            <div className="mb-2">
+              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
+                Graph Algorithms
+              </span>
+            </div>
+
+            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+              {GRAPH_ALGORITHMS.map((algo) => (
+                <SidebarItem
+                  key={algo.id}
+                  id={`graph-${algo.id}`}
+                  label={algo.label}
+                  isActive={graphAlgorithm === algo.id}
+                  disabled={!algo.enabled}
+                  hoveredItem={hoveredItem}
+                  onHover={setHoveredItem}
+                  onClick={() => algo.enabled && handleGraphAlgorithmSelect(algo.id)}
+                />
+              ))}
+            </SidebarGroup>
+
+            <div className="border-border-subtle my-4 border-t" />
+
+            {/* Info text for Phase 7 */}
+            <div className="text-muted px-2 text-xs">
+              <p className="mb-2">Graph algorithms coming in Phase 7.3</p>
+              <p className="text-muted/60">Double-click to add nodes. Shift+drag to connect.</p>
+            </div>
+          </>
+        )}
       </nav>
 
       {/* Footer */}
       <div className="border-border-subtle border-t p-3">
-        <div className="text-muted text-xs">Phase 6: Trees</div>
+        <div className="text-muted text-xs">
+          {mode === "graph" ? "Phase 7: Graphs" : "Phase 6: Trees"}
+        </div>
       </div>
 
       {/* Complexity Modal */}
