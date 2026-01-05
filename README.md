@@ -1,155 +1,212 @@
 # Yield
 
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React_19-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_v4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![License: FSL-1.1](https://img.shields.io/badge/License-FSL--1.1-blue.svg?style=flat)](LICENSE)
 
-**Yield** is an interactive, modern algorithm visualizer built to make Computer Science concepts intuitive, beautiful, and slightly less terrifying than a whiteboard interview.
+**An interactive algorithm visualizer that makes data structures and algorithms intuitive, beautiful, and slightly less terrifying than a whiteboard interview.**
 
-> **Note:** `yield` is a keyword in JavaScript generators. It pauses execution. This project does the exact opposite—it speeds up your understanding.
+> `yield` is a JavaScript keyword that pauses generator execution. This project does the opposite: it accelerates your understanding.
 
----
+<br />
 
-## The Story
+## Overview
 
-This project started as a personal portfolio piece. I was grinding LeetCode and reading *Introduction to Algorithms* (CLRS), and I realized that reading about "rotating an AVL tree" is roughly as exciting as reading a terms of service agreement.
+Yield began as a personal learning tool born from the realization that reading about "rotating an AVL tree" in CLRS is roughly as exciting as reading a terms of service agreement.
 
-I built **Yield** to visualize what was happening inside the CPU. It started as a way to help me learn, but I realized the visualizations were actually... kind of mesmerizing.
+The goal was simple: build something that shows what actually happens inside these algorithms. What started as a study aid turned into something genuinely mesmerizing to watch. Bubble Sort struggling through a reverse-sorted array has never looked so good.
 
-I’ve decided to **open source** it for the community. Whether you're a student trying to pass CS101, a bootcamp grad prepping for interviews, or a senior engineer who just likes watching Bubble Sort struggle, this is for you.
+This project is now open source for anyone who wants to learn, teach, or just watch algorithms do their thing.
 
----
+<br />
 
 ## Features
 
-Yield isn't just a bunch of moving bars. It's a full educational suite.
-
-### Pathfinding
-Visualizations on a 2D grid. Watch algorithms navigate mazes, get stuck in corners, and find the optimal route.
-* **Algorithms:** A*, Dijkstra, Breadth-First Search (BFS), Depth-First Search (DFS), Greedy Best-First, Bidirectional A*.
-* **Features:** Maze generation (Recursive Division), wall drawing, and weight painting.
+Yield is not just moving bars. It is a complete visualization suite across four algorithm domains.
 
 ### Sorting
-The classic "satisfying bars" visualization, but with detailed explanations.
-* **Algorithms:** Quick Sort, Merge Sort, Heap Sort, Bubble Sort (for shaming purposes), Insertion Sort, Selection Sort, Gnome Sort.
-* **Features:** Adjustable speed and array size. Watch the time complexity unfold in real-time.
+
+The classic visualization, done right.
+
+| Algorithm | Time Complexity | Notes |
+|-----------|-----------------|-------|
+| Quick Sort | O(n log n) avg | Lomuto partition scheme |
+| Merge Sort | O(n log n) | Divide and conquer |
+| Heap Sort | O(n log n) | In-place, not stable |
+| Insertion Sort | O(n^2) | Good for nearly sorted |
+| Selection Sort | O(n^2) | Minimal swaps |
+| Bubble Sort | O(n^2) | For educational shaming purposes |
+| Gnome Sort | O(n^2) | The zipper pattern |
+
+Adjustable array size (5 to 50 elements) and playback speed (0.5x to 4x). Step through one operation at a time or let it run.
+
+### Pathfinding
+
+Watch algorithms navigate, get stuck, and find their way through a 2D grid.
+
+| Algorithm | Optimal Path | Pattern |
+|-----------|--------------|---------|
+| A* | Yes | Directed expansion with heuristic |
+| Dijkstra | Yes | Radial expansion |
+| BFS | Yes (unweighted) | Flood fill |
+| DFS | No | Deep snake exploration |
+| Greedy Best-First | No | Heuristic-only, fast but blind |
+| Bidirectional A* | Yes | Dual frontier meeting in the middle |
+| Flood Fill | N/A | Complete coverage |
+| Random Walk | No | Chaos mode |
+
+Includes maze generation algorithms: Recursive Division (chamber-style) and Recursive Backtracker (perfect mazes with long corridors).
 
 ### Trees
-Interactive hierarchical data structures.
-* **Structures:** Binary Search Trees (BST), AVL Trees (Self-balancing), Max Heaps, Splay Trees.
-* **Features:** Insert, Delete, and Search operations visualized with proper node animations. Watch an AVL tree perform a rotation to save its dignity.
+
+Interactive hierarchical data structures with full operation visualization.
+
+| Structure | Operations | Special Features |
+|-----------|------------|------------------|
+| Binary Search Tree | Insert, Search, Delete | Standard BST rules |
+| AVL Tree | Insert, Search, Delete | Auto-balancing rotations (LL, RR, LR, RL) |
+| Max Heap | Insert, Extract Max | Bubble up and sink down |
+| Splay Tree | Insert, Search, Delete | Move-to-root via zig, zig-zig, zig-zag |
+
+All four traversal orders (in-order, pre-order, post-order, level-order) are available with step-by-step execution.
 
 ### Graphs
-Node-based visualizations for connectivity and dependencies.
-* **Algorithms:** Prim's (MST), Kruskal's (MST with Union-Find), Kahn's (Topological Sort).
-* **Features:** Cycle detection and dependency resolution.
 
----
+Node-based algorithms for connectivity, spanning trees, and ordering.
+
+| Algorithm | Category | Use Case |
+|-----------|----------|----------|
+| Prim's | Minimum Spanning Tree | Greedy edge selection from growing tree |
+| Kruskal's | Minimum Spanning Tree | Union-Find with sorted edges |
+| Kahn's | Topological Sort | Dependency resolution, cycle detection |
+
+<br />
 
 ## Tech Stack
 
-Built with a focus on performance, type safety, and smooth animations.
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| Framework | Next.js 16 | App Router, server components |
+| Language | TypeScript (strict) | Type safety, zero `any` tolerance |
+| Styling | Tailwind CSS v4 | Utility-first, CSS variables for theming |
+| State | Zustand | Lightweight global state |
+| Animation | Framer Motion | GPU-accelerated transforms |
+| Testing | Vitest | Fast unit tests for all algorithms |
+| Linting | Biome | Formatting and linting in one |
 
-<p align="left">
-  <a href="https://nextjs.org/" target="_blank">
-    <img src="https://img.shields.io/badge/Next.js-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
-  </a>
-  <a href="https://www.typescriptlang.org/" target="_blank">
-    <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  </a>
-  <a href="https://tailwindcss.com/" target="_blank">
-    <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
-  </a>
-  <a href="https://www.framer.com/motion/" target="_blank">
-    <img src="https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
-  </a>
-  <a href="https://github.com/pmndrs/zustand" target="_blank">
-    <img src="https://img.shields.io/badge/Zustand-orange?style=for-the-badge&logo=react&logoColor=white" alt="Zustand" />
-  </a>
-</p>
-
-* **Framework:** Next.js 14 (App Router)
-* **Language:** TypeScript (Strict mode)
-* **Styling:** Tailwind CSS
-* **State Management:** Zustand
-* **Animations:** Framer Motion
-
----
+<br />
 
 ## Getting Started
 
-Prerequisites: You need Node.js installed.
+Prerequisites: Node.js 18 or higher and pnpm (or npm).
 
-1.  **Clone the repo**
-    ```bash
-    git clone [https://github.com/your-username/yield.git](https://github.com/your-username/yield.git)
-    cd yield
-    ```
+```bash
+# Clone the repository
+git clone https://github.com/dinesh-git17/yield.git
+cd yield
 
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
+# Install dependencies
+pnpm install
 
-3.  **Run the development server**
-    ```bash
-    npm run dev
-    ```
+# Start development server
+pnpm dev
 
-4.  **Open your browser**
-    Navigate to `http://localhost:3000`.
+# Run tests
+pnpm test
 
----
+# Type check
+npx tsc
+
+# Lint
+pnpm lint:check
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+<br />
 
 ## Project Structure
 
-A quick map of the territory so you don't get lost in the `src` folder.
+Feature-Sliced Design keeps concerns separated. Algorithms know nothing about React. Visualizers know nothing about algorithm internals. State flows through Zustand.
 
-```text
+```
 src/
-├── app/                  # Next.js App Router pages
-├── features/             # The meat of the application
-│   ├── algorithms/       # The actual math. Pure TS logic.
-│   │   ├── sorting/      # Sorting implementations
-│   │   ├── pathfinding/  # Pathfinding logic & grids
-│   │   ├── tree/         # Tree data structures
-│   │   └── graph/        # Graph algorithms
-│   ├── visualizer/       # React components for the canvas/stage
-│   ├── controls/         # The UI buttons (Speed, Play/Pause)
-│   └── learning/         # The educational text content
-└── lib/                  # Shared utilities and global store
+├── app/                      # Next.js routing layer
+├── features/
+│   ├── algorithms/           # Pure TypeScript generators
+│   │   ├── sorting/          # Bubble, Quick, Merge, Heap, etc.
+│   │   ├── pathfinding/      # BFS, DFS, A*, Dijkstra, etc.
+│   │   ├── tree/             # BST, AVL, Heap, Splay
+│   │   ├── graph/            # Prim, Kruskal, Kahn
+│   │   ├── maze/             # Recursive Division, Backtracker
+│   │   └── hooks/            # Controller hooks for each domain
+│   ├── visualizer/           # React components for rendering
+│   │   ├── components/       # Stage components per domain
+│   │   └── context/          # React contexts for state sharing
+│   ├── controls/             # Playback UI, algorithm selectors
+│   └── learning/             # Educational content and tooltips
+├── lib/                      # Zustand store, utilities
+└── ui/                       # Generic Radix-based components
 ```
 
----
+Every algorithm is a generator function. Every step is a yielded object describing the operation. The controller consumes steps and updates visual state. No side effects in algorithm code.
+
+<br />
+
+## Design Philosophy
+
+**Generators are the engine.** Every algorithm yields discrete steps (compare, swap, visit, rotate). This enables pause, step, rewind, and speed control without reimplementing logic.
+
+**Separation of concerns.** Algorithm code is framework-agnostic. You could run it in Node, in a worker, or in the browser. The visualizer subscribes to state and renders.
+
+**Type everything.** Every generator has explicit `Yield`, `Return`, and `Next` types. Every step type is a discriminated union. TypeScript catches mismatches at compile time.
+
+**Performance matters.** Visualizers render at 60fps during sorting. Memoization is mandatory. Layout thrashing is forbidden. Framer Motion uses transform properties for GPU acceleration.
+
+**Ship less code.** No abstractions for hypothetical future requirements. No feature flags for code you can just change. Three similar lines of code is better than a premature abstraction.
+
+<br />
 
 ## Contributing
 
-Contributions are welcome! I developed this solo, so there are undoubtedly bugs.
+Contributions are welcome. This was built solo, so there are certainly rough edges.
 
-* **Found a bug?** Open an issue.
-* **Want to add an algorithm?** Fork the repo and submit a PR.
-* **Fixed a typo?** You are the real MVP.
+**Found a bug?** Open an issue with reproduction steps.
 
-**Development Philosophy:**
-1.  **Type Safety:** `any` is forbidden.
-2.  **Performance:** If the visualizer lags at 100 array items, it needs optimization.
-3.  **Fun:** Keep the variable names professional, but the comments can have personality.
+**Adding an algorithm?** Fork the repo, implement as a generator, add tests, submit a PR.
 
----
+**Fixed a typo?** You are the real MVP.
 
-## Complexity
+### Development Guidelines
 
-For those keeping score, the time complexity of building this project was roughly `O(n!)` relative to my sleep schedule.
+1. **No `any`.** Use `unknown` and narrow with type guards.
+2. **Performance first.** If the visualizer lags at 50 elements, something is wrong.
+3. **Test edge cases.** Empty arrays, single elements, already sorted, reverse sorted.
+4. **Biome is the authority.** Run `pnpm lint` before committing.
 
-However, the space complexity is `O(1)` because it lives rent-free in my head.
+<br />
 
----
+## Complexity Analysis
+
+The time complexity of building this project was roughly O(n!) relative to my sleep schedule.
+
+The space complexity is O(1) because it lives rent-free in my head.
+
+<br />
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Functional Source License 1.1 (FSL-1.1-Apache-2.0).
+
+You can view, fork, and contribute to this project. You cannot use it to create a competing commercial product or service. On January 1, 2029, the license converts to Apache 2.0.
+
+See [LICENSE](LICENSE) for full terms.
+
+<br />
 
 ---
 
-*Built by [Your Name]*
+Built with unreasonable attention to detail.
