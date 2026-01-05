@@ -7,6 +7,7 @@ export {
 export {
   type BarData,
   type PlaybackStatus,
+  type RotationInfo,
   type SortingControllerActions,
   type SortingControllerState,
   type StepType,

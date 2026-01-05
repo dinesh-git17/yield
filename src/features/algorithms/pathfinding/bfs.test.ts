@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bfs } from "./bfs";
-import { type PathfindingContext, toKey } from "./types";
+import type { PathfindingContext } from "./types";
 
 /**
  * Helper to collect all steps from a generator.

@@ -14,7 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
-import type { TraversalOutput, TreeNodeState } from "@/features/algorithms";
+import type { RotationInfo, TraversalOutput, TreeNodeState } from "@/features/algorithms";
 import { generateBalancedInsertionOrder } from "@/features/algorithms/tree";
 import { TreeControlBar } from "@/features/controls";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
@@ -121,9 +121,15 @@ function buildPositionedNodes(treeState: TreeState): PositionedNode[] {
  * - Layer 2 (Front): Animated circular nodes with values
  * - Layer 3 (Bottom): TreeControlBar and traversal output
  */
+const DATA_STRUCTURE_LABELS = {
+  bst: "Binary Search Tree",
+  avl: "AVL Tree",
+  "max-heap": "Max Heap",
+} as const;
+
 export function TreeStage({ className }: TreeStageProps) {
   const treeState = useYieldStore((state) => state.treeState);
-  const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
+  const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const insertNode = useYieldStore((state) => state.insertNode);
   const resetTree = useYieldStore((state) => state.resetTree);
   const setTreeAlgorithm = useYieldStore((state) => state.setTreeAlgorithm);
@@ -145,17 +151,18 @@ export function TreeStage({ className }: TreeStageProps) {
   const isComplete = controller.status === "complete";
   const isIdle = controller.status === "idle";
 
-  // State for traversal dropdown
-  const [selectedTraversal, setSelectedTraversal] = useState<TreeAlgorithmType>("inorder");
+  // State for traversal dropdown - null means no traversal selected yet
+  const [selectedTraversal, setSelectedTraversal] = useState<TreeAlgorithmType | null>(null);
 
   /**
-   * Handles executing a traversal from the dropdown.
+   * Handles selecting a traversal from the dropdown.
+   * Prepares the traversal but doesn't auto-play - user must click Play.
    */
-  const handleTraversalExecute = useCallback(
+  const handleTraversalSelect = useCallback(
     (traversal: TreeAlgorithmType) => {
       setSelectedTraversal(traversal);
       setTreeAlgorithm(traversal);
-      controller.executeOperation(traversal);
+      controller.prepareOperation(traversal);
     },
     [setTreeAlgorithm, controller]
   );
@@ -188,9 +195,21 @@ export function TreeStage({ className }: TreeStageProps) {
   );
 
   /**
-   * Resets the tree and controller.
+   * Resets just the visualization (playback controls Reset).
+   * Keeps the selected traversal so user can replay.
    */
-  const handleReset = useCallback(() => {
+  const handleVisualizationReset = useCallback(() => {
+    controller.reset();
+    // Re-prepare the traversal if one was selected
+    if (selectedTraversal) {
+      controller.prepareOperation(selectedTraversal);
+    }
+  }, [controller, selectedTraversal]);
+
+  /**
+   * Resets the tree and controller completely (Clear button).
+   */
+  const handleClearAll = useCallback(() => {
     // Clear any balanced insertion in progress
     if (balancedInsertionIntervalRef.current) {
       clearInterval(balancedInsertionIntervalRef.current);
@@ -198,6 +217,9 @@ export function TreeStage({ className }: TreeStageProps) {
     }
     balancedInsertionRef.current = [];
     balancedInsertionIndexRef.current = 0;
+
+    // Reset traversal selection
+    setSelectedTraversal(null);
 
     controller.reset();
     resetTree();
@@ -207,8 +229,8 @@ export function TreeStage({ className }: TreeStageProps) {
    * Generates a balanced tree with animated insertion.
    */
   const handleGenerateBalanced = useCallback(() => {
-    // Reset first
-    handleReset();
+    // Clear everything first
+    handleClearAll();
 
     // Generate the insertion order for a balanced tree (15 nodes = nice 4-level tree)
     const values = generateBalancedInsertionOrder(15);
@@ -231,14 +253,16 @@ export function TreeStage({ className }: TreeStageProps) {
       insertNode(value);
       balancedInsertionIndexRef.current += 1;
     }, 150);
-  }, [handleReset, insertNode]);
+  }, [handleClearAll, insertNode]);
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header Bar */}
       <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">Binary Search Tree</h1>
+          <h1 className="text-primary text-sm font-medium">
+            {DATA_STRUCTURE_LABELS[treeDataStructure]}
+          </h1>
         </div>
 
         {/* Controls */}
@@ -258,7 +282,7 @@ export function TreeStage({ className }: TreeStageProps) {
                 )}
               >
                 <span>
-                  {TRAVERSALS.find((t) => t.value === selectedTraversal)?.label ?? "Traversal"}
+                  {TRAVERSALS.find((t) => t.value === selectedTraversal)?.label ?? "Traversals"}
                 </span>
                 <ChevronDown className="h-3 w-3" />
               </motion.button>
@@ -274,7 +298,7 @@ export function TreeStage({ className }: TreeStageProps) {
                 {TRAVERSALS.map((traversal) => (
                   <DropdownMenu.Item
                     key={traversal.value}
-                    onSelect={() => handleTraversalExecute(traversal.value)}
+                    onSelect={() => handleTraversalSelect(traversal.value)}
                     className={cn(
                       "text-primary flex cursor-pointer items-center rounded-md px-2 py-1.5 text-xs font-medium outline-none",
                       "hover:bg-surface focus:bg-surface",
@@ -302,7 +326,7 @@ export function TreeStage({ className }: TreeStageProps) {
             <ActionButton
               label="Clear"
               icon={<Trash2 className="h-3.5 w-3.5" />}
-              onClick={handleReset}
+              onClick={handleClearAll}
               disabled={isPlaying || isEmpty}
               variant="destructive"
             />
@@ -321,13 +345,20 @@ export function TreeStage({ className }: TreeStageProps) {
             <ControlButton
               label="Reset"
               icon={<RotateCcw className="h-3.5 w-3.5" />}
-              onClick={() => controller.reset()}
+              onClick={handleVisualizationReset}
               disabled={isIdle}
             />
             <PlayPauseButton
               isPlaying={isPlaying}
-              onClick={isPlaying ? controller.pause : controller.play}
-              disabled={isComplete || isIdle}
+              hasStarted={controller.currentStepIndex > 0 && !isComplete}
+              onClick={
+                isPlaying
+                  ? controller.pause
+                  : isComplete && selectedTraversal
+                    ? () => controller.executeOperation(selectedTraversal)
+                    : controller.play
+              }
+              disabled={isIdle}
             />
           </div>
         </div>
@@ -371,6 +402,7 @@ export function TreeStage({ className }: TreeStageProps) {
         <StatusOverlay
           status={controller.status}
           lastResult={controller.lastResult}
+          currentRotation={controller.currentRotation}
           stepCount={controller.currentStepIndex}
           nodeCount={positionedNodes.length}
           maxDepth={
@@ -402,17 +434,37 @@ export function TreeStage({ className }: TreeStageProps) {
 }
 
 /**
+ * Human-readable labels for rotation types.
+ */
+const ROTATION_LABELS: Record<string, { name: string; description: string }> = {
+  LL: { name: "Right Rotation", description: "Single right rotation to fix left-left imbalance" },
+  RR: { name: "Left Rotation", description: "Single left rotation to fix right-right imbalance" },
+  LR: { name: "Left-Right Rotation", description: "Double rotation: left then right" },
+  RL: { name: "Right-Left Rotation", description: "Double rotation: right then left" },
+};
+
+/**
  * Status overlay showing current operation state.
  */
 interface StatusOverlayProps {
   status: "idle" | "playing" | "paused" | "complete";
   lastResult: "found" | "not-found" | "inserted" | "deleted" | null;
+  currentRotation: RotationInfo | null;
   stepCount: number;
   nodeCount: number;
   maxDepth: number;
 }
 
-function StatusOverlay({ status, lastResult, stepCount, nodeCount, maxDepth }: StatusOverlayProps) {
+function StatusOverlay({
+  status,
+  lastResult,
+  currentRotation,
+  stepCount,
+  nodeCount,
+  maxDepth,
+}: StatusOverlayProps) {
+  const rotationInfo = currentRotation ? ROTATION_LABELS[currentRotation.rotationType] : null;
+
   return (
     <div className="absolute top-4 left-4 flex flex-col gap-2">
       <div className="flex items-center gap-3">
@@ -423,10 +475,43 @@ function StatusOverlay({ status, lastResult, stepCount, nodeCount, maxDepth }: S
         {stepCount > 0 && <span className="text-muted text-xs">Steps: {stepCount}</span>}
       </div>
 
+      {/* Rotation indicator */}
+      <AnimatePresence>
+        {currentRotation && rotationInfo && (
+          <motion.div
+            key="rotation-indicator"
+            initial={{ opacity: 0, y: -10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            transition={SPRING_PRESETS.snappy}
+            className="flex flex-col gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 py-2"
+          >
+            <div className="flex items-center gap-2">
+              {/* Rotation type badge */}
+              <span className="rounded bg-purple-500/30 px-1.5 py-0.5 font-mono text-xs font-bold text-purple-300">
+                {currentRotation.rotationType}
+              </span>
+              <span className="text-xs font-medium text-purple-200">{rotationInfo.name}</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-purple-500" />
+                <span className="text-purple-300">Pivot (down)</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-teal-400" />
+                <span className="text-teal-300">New root (up)</span>
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Result indicator */}
       <AnimatePresence>
         {status === "complete" && lastResult && (
           <motion.div
+            key="result-indicator"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -540,6 +625,48 @@ const NODE_STATE_STYLES: Record<TreeNodeState, { border: string; shadow: string;
     shadow: "shadow-orange-400/30",
     bg: "bg-orange-500/10",
   },
+  // Heap-specific states
+  "bubbling-up": {
+    border: "border-sky-400",
+    shadow: "shadow-sky-400/30",
+    bg: "bg-sky-500/10",
+  },
+  "sinking-down": {
+    border: "border-indigo-400",
+    shadow: "shadow-indigo-400/30",
+    bg: "bg-indigo-500/10",
+  },
+  swapping: {
+    border: "border-fuchsia-400",
+    shadow: "shadow-fuchsia-400/40",
+    bg: "bg-fuchsia-500/20",
+  },
+  extracting: {
+    border: "border-rose-500",
+    shadow: "shadow-rose-500/50",
+    bg: "bg-rose-500/30",
+  },
+  // AVL-specific states
+  unbalanced: {
+    border: "border-red-500",
+    shadow: "shadow-red-500/50",
+    bg: "bg-red-500/20",
+  },
+  "rotating-pivot": {
+    border: "border-purple-500",
+    shadow: "shadow-purple-500/50",
+    bg: "bg-purple-500/20",
+  },
+  "rotating-new-root": {
+    border: "border-teal-400",
+    shadow: "shadow-teal-400/50",
+    bg: "bg-teal-500/20",
+  },
+  "updating-height": {
+    border: "border-blue-400",
+    shadow: "shadow-blue-400/30",
+    bg: "bg-blue-500/10",
+  },
 };
 
 /**
@@ -555,13 +682,29 @@ interface TreeNodeCircleProps {
 const TreeNodeCircle = memo(
   function TreeNodeCircle({ node, x, y, visualState }: TreeNodeCircleProps) {
     const styles = NODE_STATE_STYLES[visualState];
+    const isRotating = visualState === "rotating-pivot" || visualState === "rotating-new-root";
+
+    // Determine scale based on visual state
+    const getScale = () => {
+      switch (visualState) {
+        case "comparing":
+        case "visiting":
+        case "unbalanced":
+          return 1.1;
+        case "rotating-pivot":
+        case "rotating-new-root":
+          return 1.15;
+        default:
+          return 1;
+      }
+    };
 
     return (
       <motion.div
         layout
         initial={{ scale: 0, opacity: 0 }}
         animate={{
-          scale: visualState === "comparing" || visualState === "visiting" ? 1.1 : 1,
+          scale: getScale(),
           opacity: 1,
         }}
         exit={{ scale: 0, opacity: 0 }}
@@ -580,12 +723,29 @@ const TreeNodeCircle = memo(
           "transition-colors duration-200",
           styles.border,
           styles.shadow,
-          styles.bg
+          styles.bg,
+          // Pulse animation for rotating nodes
+          isRotating && "animate-pulse"
         )}
         role="img"
         aria-label={`Node with value ${node.value}, state: ${visualState}`}
       >
         <span className="text-primary text-sm font-semibold tabular-nums">{node.value}</span>
+        {/* Rotation direction indicator */}
+        {isRotating && (
+          <motion.div
+            className={cn(
+              "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-bold",
+              visualState === "rotating-pivot" && "bg-purple-500 text-white",
+              visualState === "rotating-new-root" && "bg-teal-400 text-white"
+            )}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
+          >
+            {visualState === "rotating-pivot" ? "↓" : "↑"}
+          </motion.div>
+        )}
       </motion.div>
     );
   },
@@ -697,14 +857,17 @@ function ControlButton({ label, icon, onClick, disabled }: ControlButtonProps) {
  */
 interface PlayPauseButtonProps {
   isPlaying: boolean;
+  hasStarted: boolean;
   onClick: () => void;
   disabled?: boolean;
 }
 
-function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps) {
+function PlayPauseButton({ isPlaying, hasStarted, onClick, disabled }: PlayPauseButtonProps) {
   const interactionProps = disabled
     ? {}
     : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };
+
+  const label = isPlaying ? "Pause" : hasStarted ? "Resume" : "Play";
 
   return (
     <motion.button
@@ -719,7 +882,7 @@ function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps)
         "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed"
       )}
-      aria-label={isPlaying ? "Pause" : "Play"}
+      aria-label={label}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
@@ -733,7 +896,7 @@ function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps)
           {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </motion.span>
       </AnimatePresence>
-      {isPlaying ? "Pause" : "Resume"}
+      {label}
     </motion.button>
   );
 }

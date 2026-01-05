@@ -27,13 +27,14 @@ export interface TreeProviderProps {
 
 export function TreeProvider({ children }: TreeProviderProps) {
   const treeState = useYieldStore((state) => state.treeState);
+  const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
 
   // Calculate interval from speed multiplier
   const intervalMs = useMemo(() => speedMultiplierToInterval(playbackSpeed), [playbackSpeed]);
 
-  // Use the tree controller
-  const controller = useTreeController(treeState, intervalMs);
+  // Use the tree controller (data-structure-aware)
+  const controller = useTreeController(treeState, treeDataStructure, intervalMs);
 
   const value: TreeContextValue = useMemo(
     () => ({

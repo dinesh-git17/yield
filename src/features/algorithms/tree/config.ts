@@ -1,10 +1,11 @@
-import type { TreeAlgorithmType } from "@/lib/store";
+import type { TreeAlgorithmType, TreeDataStructureType } from "@/lib/store";
 import type { TreeStep } from "./types";
 
 /**
  * Step type labels for display in the UI.
  */
 export const TREE_STEP_LABELS: Record<TreeStep["type"], string> = {
+  // Common operations
   compare: "Comparing values",
   visit: "Visiting node",
   insert: "Inserting node",
@@ -12,6 +13,15 @@ export const TREE_STEP_LABELS: Record<TreeStep["type"], string> = {
   "not-found": "Not found",
   delete: "Deleting node",
   "traverse-output": "Output node",
+  // AVL operations
+  unbalanced: "Unbalanced node",
+  rotate: "Rotating tree",
+  "update-height": "Updating height",
+  // Heap operations
+  "bubble-up": "Bubbling up",
+  "sink-down": "Sinking down",
+  swap: "Swapping nodes",
+  "extract-max": "Extracting max",
 };
 
 /**
@@ -327,10 +337,334 @@ export const TREE_ALGO_METADATA: Record<TreeAlgorithmType, TreeAlgorithmMetadata
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AVL Tree Algorithm Metadata
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * AVL-specific algorithm metadata.
+ * Used when treeDataStructure is "avl".
+ */
+export const AVL_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithmMetadata>> = {
+  insert: {
+    label: "AVL Insert",
+    shortLabel: "Insert",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Inserts like BST, then unwinds the path checking balance factors. If imbalanced (|bf| > 1), performs rotation to restore balance.",
+    isTraversal: false,
+    visualPattern: "Insert → Check → Rotate",
+    code: [
+      "function* avlInsert(tree, value) {",
+      "  // 1. Standard BST insert",
+      "  let path = [];",
+      "  let current = tree.root;",
+      "",
+      "  while (current !== null) {",
+      "    path.push(current);",
+      "    if (value < current.value) {",
+      "      yield { type: 'compare', result: 'left' };",
+      "      current = current.left;",
+      "    } else {",
+      "      yield { type: 'compare', result: 'right' };",
+      "      current = current.right;",
+      "    }",
+      "  }",
+      "",
+      "  yield { type: 'insert', value };",
+      "",
+      "  // 2. Unwind path, check balance",
+      "  while (path.length > 0) {",
+      "    const node = path.pop();",
+      "    updateHeight(node);",
+      "    yield { type: 'update-height', nodeId: node.id };",
+      "",
+      "    const bf = balanceFactor(node);",
+      "    if (Math.abs(bf) > 1) {",
+      "      yield { type: 'unbalanced', nodeId: node.id, bf };",
+      "",
+      "      // 3. Determine rotation type",
+      "      if (bf > 1 && balanceFactor(node.left) >= 0) {",
+      "        yield { type: 'rotate', rotationType: 'LL' };",
+      "        rotateRight(node);",
+      "      } else if (bf < -1 && balanceFactor(node.right) <= 0) {",
+      "        yield { type: 'rotate', rotationType: 'RR' };",
+      "        rotateLeft(node);",
+      "      } else if (bf > 1 && balanceFactor(node.left) < 0) {",
+      "        yield { type: 'rotate', rotationType: 'LR' };",
+      "        rotateLeft(node.left);",
+      "        rotateRight(node);",
+      "      } else {",
+      "        yield { type: 'rotate', rotationType: 'RL' };",
+      "        rotateRight(node.right);",
+      "        rotateLeft(node);",
+      "      }",
+      "      break; // Insert needs at most one rotation",
+      "    }",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      compare: 8,
+      insert: 16,
+      "update-height": 21,
+      unbalanced: 25,
+      rotate: 29,
+    },
+  },
+
+  search: {
+    label: "AVL Search",
+    shortLabel: "Search",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Identical to BST search. AVL's balance guarantee ensures O(log n) worst case, unlike BST which can degrade to O(n).",
+    isTraversal: false,
+    visualPattern: "Binary descent",
+    code: [
+      "function* avlSearch(tree, value) {",
+      "  // Same as BST search",
+      "  // AVL guarantees O(log n) due to balance property",
+      "  let current = tree.root;",
+      "",
+      "  while (current !== null) {",
+      "    if (value < current.value) {",
+      "      yield { type: 'compare', result: 'left' };",
+      "      current = current.left;",
+      "    } else if (value > current.value) {",
+      "      yield { type: 'compare', result: 'right' };",
+      "      current = current.right;",
+      "    } else {",
+      "      yield { type: 'found', nodeId: current.id };",
+      "      return;",
+      "    }",
+      "  }",
+      "",
+      "  yield { type: 'not-found', value };",
+      "}",
+    ],
+    lineMapping: {
+      compare: 7,
+      found: 13,
+      "not-found": 18,
+    },
+  },
+
+  delete: {
+    label: "AVL Delete",
+    shortLabel: "Delete",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Deletes like BST, then unwinds checking balance. Unlike insert, delete may require multiple rotations up the tree.",
+    isTraversal: false,
+    visualPattern: "Delete → Check → Rotate (multiple)",
+    code: [
+      "function* avlDelete(tree, value) {",
+      "  // 1. Standard BST delete (find node, handle 3 cases)",
+      "  let path = findAndDelete(tree, value);",
+      "",
+      "  // 2. Unwind path, check balance at each node",
+      "  // Unlike insert, delete may need multiple rotations",
+      "  while (path.length > 0) {",
+      "    const node = path.pop();",
+      "    updateHeight(node);",
+      "    yield { type: 'update-height', nodeId: node.id };",
+      "",
+      "    const bf = balanceFactor(node);",
+      "    if (Math.abs(bf) > 1) {",
+      "      yield { type: 'unbalanced', nodeId: node.id, bf };",
+      "",
+      "      // Determine and apply rotation",
+      "      const rotationType = determineRotation(node, bf);",
+      "      yield { type: 'rotate', rotationType };",
+      "      applyRotation(node, rotationType);",
+      "      // Continue checking up the tree (no break!)",
+      "    }",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      compare: 2,
+      "update-height": 9,
+      unbalanced: 13,
+      rotate: 17,
+      delete: 2,
+    },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Max Heap Algorithm Metadata
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Heap-specific algorithm metadata.
+ * Used when treeDataStructure is "max-heap".
+ */
+export const HEAP_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithmMetadata>> = {
+  insert: {
+    label: "Heap Insert",
+    shortLabel: "Insert",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Inserts at the next available position to maintain complete tree property, then bubbles up comparing with parent until heap property (parent ≥ children) is restored.",
+    isTraversal: false,
+    visualPattern: "Elevator rise",
+    code: [
+      "function* heapInsert(heap, value) {",
+      "  // 1. Insert at next available position",
+      "  const index = heap.size;",
+      "  heap.nodes[index] = value;",
+      "  yield { type: 'insert', value, position: index };",
+      "",
+      "  // 2. Bubble up until heap property restored",
+      "  let current = index;",
+      "  while (current > 0) {",
+      "    const parent = Math.floor((current - 1) / 2);",
+      "",
+      "    if (heap.nodes[current] <= heap.nodes[parent]) {",
+      "      // Heap property satisfied",
+      "      break;",
+      "    }",
+      "",
+      "    // Child > Parent: swap and continue up",
+      "    yield { type: 'bubble-up', nodeId: current, parentId: parent };",
+      "    yield { type: 'swap', nodeId1: current, nodeId2: parent };",
+      "    swap(heap.nodes, current, parent);",
+      "    current = parent;",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      insert: 4,
+      "bubble-up": 17,
+      swap: 18,
+    },
+  },
+
+  delete: {
+    label: "Extract Max",
+    shortLabel: "Extract",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Removes and returns the maximum element (root). Replaces root with last element, then sinks down comparing with children until heap property is restored.",
+    isTraversal: false,
+    visualPattern: "Elevator descent",
+    code: [
+      "function* heapExtractMax(heap) {",
+      "  if (heap.size === 0) return null;",
+      "",
+      "  // 1. Save max value (root)",
+      "  const max = heap.nodes[0];",
+      "  yield { type: 'extract-max', nodeId: 0, value: max };",
+      "",
+      "  // 2. Move last element to root",
+      "  const last = heap.nodes[heap.size - 1];",
+      "  heap.nodes[0] = last;",
+      "  yield { type: 'swap', nodeId1: 0, nodeId2: heap.size - 1 };",
+      "  heap.size--;",
+      "",
+      "  // 3. Sink down until heap property restored",
+      "  let current = 0;",
+      "  while (true) {",
+      "    const left = 2 * current + 1;",
+      "    const right = 2 * current + 2;",
+      "    let largest = current;",
+      "",
+      "    // Find largest among parent and children",
+      "    if (left < heap.size && heap.nodes[left] > heap.nodes[largest]) {",
+      "      largest = left;",
+      "    }",
+      "    if (right < heap.size && heap.nodes[right] > heap.nodes[largest]) {",
+      "      largest = right;",
+      "    }",
+      "",
+      "    if (largest === current) break; // Heap property satisfied",
+      "",
+      "    yield { type: 'sink-down', nodeId: current, largerChildId: largest };",
+      "    yield { type: 'swap', nodeId1: current, nodeId2: largest };",
+      "    swap(heap.nodes, current, largest);",
+      "    current = largest;",
+      "  }",
+      "",
+      "  return max;",
+      "}",
+    ],
+    lineMapping: {
+      "extract-max": 5,
+      swap: 10,
+      "sink-down": 30,
+      delete: 11,
+    },
+  },
+
+  bfs: {
+    label: "Level-Order (BFS)",
+    shortLabel: "Level-Order",
+    complexity: "O(n)",
+    spaceComplexity: "O(n)",
+    description:
+      "Visits nodes level by level using a queue. For a heap, this traverses nodes in their array order (index 0, 1, 2, ...).",
+    isTraversal: true,
+    visualPattern: "Top-to-bottom layers",
+    code: [
+      "function* levelOrderTraversal(root) {",
+      "  if (root === null) return;",
+      "",
+      "  const queue = [root];",
+      "",
+      "  while (queue.length > 0) {",
+      "    // Dequeue front node",
+      "    const node = queue.shift();",
+      "",
+      "    // Visit current node",
+      "    yield { type: 'visit', nodeId: node.id };",
+      "    yield { type: 'traverse-output', value: node.value };",
+      "",
+      "    // Enqueue children (left first, then right)",
+      "    if (node.left) queue.push(node.left);",
+      "    if (node.right) queue.push(node.right);",
+      "  }",
+      "}",
+      "",
+      "// For Max Heap: values decrease by level",
+      "// Example: [90, 75, 60, 50, 25, 30, 10]",
+    ],
+    lineMapping: {
+      visit: 10,
+      "traverse-output": 11,
+    },
+  },
+};
+
 /**
  * Get metadata for a specific tree algorithm.
- * Falls back to insert if algorithm not found.
+ * Returns data-structure-specific metadata when available.
+ *
+ * @param algorithm - The algorithm type
+ * @param dataStructure - The tree data structure (bst, avl, max-heap)
  */
-export function getTreeAlgorithmMetadata(algorithm: TreeAlgorithmType): TreeAlgorithmMetadata {
+export function getTreeAlgorithmMetadata(
+  algorithm: TreeAlgorithmType,
+  dataStructure: TreeDataStructureType = "bst"
+): TreeAlgorithmMetadata {
+  // Use heap-specific metadata for max-heap
+  if (dataStructure === "max-heap") {
+    const heapMetadata = HEAP_ALGO_METADATA[algorithm];
+    if (heapMetadata) return heapMetadata;
+  }
+
+  // Use AVL-specific metadata for avl
+  if (dataStructure === "avl") {
+    const avlMetadata = AVL_ALGO_METADATA[algorithm];
+    if (avlMetadata) return avlMetadata;
+  }
+
+  // Fall back to BST metadata
   return TREE_ALGO_METADATA[algorithm] ?? TREE_ALGO_METADATA.insert;
 }

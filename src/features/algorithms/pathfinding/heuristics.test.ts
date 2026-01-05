@@ -122,11 +122,7 @@ describe("heuristics", () => {
 
     it("is greater than or equal to euclidean (for integer coords)", () => {
       const a: GridCoord = [0, 0];
-      const b: GridCoord = [3, 4];
-      // Chebyshev = 4, Euclidean = 5, so this specific case is opposite
-      // but generally chebyshev >= euclidean for same point
-      // Actually for 3,4: euclidean = 5, chebyshev = 4, so euclidean > chebyshev here
-      // Let's test a square diagonal
+      // Let's test a square diagonal where chebyshev < euclidean
       const c: GridCoord = [5, 5];
       // Chebyshev = 5, Euclidean = sqrt(50) ≈ 7.07
       expect(chebyshev(a, c)).toBeLessThan(euclidean(a, c));
