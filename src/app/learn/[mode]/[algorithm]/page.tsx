@@ -343,6 +343,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
               complexity={content.article.visualPattern}
               explanation="How this algorithm appears during visualization."
               variant="neutral"
+              stacked
             />
           </div>
         )}
@@ -399,6 +400,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
               complexity={content.article.visualPattern}
               explanation="How this algorithm appears during visualization."
               variant="neutral"
+              stacked
             />
           </div>
         )}
@@ -722,6 +724,7 @@ interface ComplexityCardProps {
   complexity: string;
   explanation: string;
   variant: "good" | "fair" | "neutral";
+  stacked?: boolean;
 }
 
 const CARD_VARIANTS = {
@@ -736,20 +739,34 @@ const CARD_BADGE_VARIANTS = {
   neutral: "text-accent bg-accent/20",
 } as const;
 
-function ComplexityCard({ title, complexity, explanation, variant }: ComplexityCardProps) {
+function ComplexityCard({ title, complexity, explanation, variant, stacked }: ComplexityCardProps) {
   return (
     <div className={cn("rounded-xl border p-4 space-y-2", CARD_VARIANTS[variant])}>
-      <div className="flex items-center justify-between">
-        <span className="text-muted text-sm font-medium">{title}</span>
-        <span
-          className={cn(
-            "rounded-md px-2 py-1 font-mono text-sm font-semibold",
-            CARD_BADGE_VARIANTS[variant]
-          )}
-        >
-          {complexity}
-        </span>
-      </div>
+      {stacked ? (
+        <div className="space-y-2">
+          <span className="text-muted text-sm font-medium">{title}</span>
+          <span
+            className={cn(
+              "block w-fit rounded-md px-2 py-1 font-mono text-sm font-semibold",
+              CARD_BADGE_VARIANTS[variant]
+            )}
+          >
+            {complexity}
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <span className="text-muted text-sm font-medium">{title}</span>
+          <span
+            className={cn(
+              "rounded-md px-2 py-1 font-mono text-sm font-semibold",
+              CARD_BADGE_VARIANTS[variant]
+            )}
+          >
+            {complexity}
+          </span>
+        </div>
+      )}
       <p className="text-primary/70 text-sm leading-relaxed">{explanation}</p>
     </div>
   );
