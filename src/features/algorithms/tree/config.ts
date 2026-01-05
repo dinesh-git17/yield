@@ -338,6 +338,165 @@ export const TREE_ALGO_METADATA: Record<TreeAlgorithmType, TreeAlgorithmMetadata
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AVL Tree Algorithm Metadata
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * AVL-specific algorithm metadata.
+ * Used when treeDataStructure is "avl".
+ */
+export const AVL_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithmMetadata>> = {
+  insert: {
+    label: "AVL Insert",
+    shortLabel: "Insert",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Inserts like BST, then unwinds the path checking balance factors. If imbalanced (|bf| > 1), performs rotation to restore balance.",
+    isTraversal: false,
+    visualPattern: "Insert → Check → Rotate",
+    code: [
+      "function* avlInsert(tree, value) {",
+      "  // 1. Standard BST insert",
+      "  let path = [];",
+      "  let current = tree.root;",
+      "",
+      "  while (current !== null) {",
+      "    path.push(current);",
+      "    if (value < current.value) {",
+      "      yield { type: 'compare', result: 'left' };",
+      "      current = current.left;",
+      "    } else {",
+      "      yield { type: 'compare', result: 'right' };",
+      "      current = current.right;",
+      "    }",
+      "  }",
+      "",
+      "  yield { type: 'insert', value };",
+      "",
+      "  // 2. Unwind path, check balance",
+      "  while (path.length > 0) {",
+      "    const node = path.pop();",
+      "    updateHeight(node);",
+      "    yield { type: 'update-height', nodeId: node.id };",
+      "",
+      "    const bf = balanceFactor(node);",
+      "    if (Math.abs(bf) > 1) {",
+      "      yield { type: 'unbalanced', nodeId: node.id, bf };",
+      "",
+      "      // 3. Determine rotation type",
+      "      if (bf > 1 && balanceFactor(node.left) >= 0) {",
+      "        yield { type: 'rotate', rotationType: 'LL' };",
+      "        rotateRight(node);",
+      "      } else if (bf < -1 && balanceFactor(node.right) <= 0) {",
+      "        yield { type: 'rotate', rotationType: 'RR' };",
+      "        rotateLeft(node);",
+      "      } else if (bf > 1 && balanceFactor(node.left) < 0) {",
+      "        yield { type: 'rotate', rotationType: 'LR' };",
+      "        rotateLeft(node.left);",
+      "        rotateRight(node);",
+      "      } else {",
+      "        yield { type: 'rotate', rotationType: 'RL' };",
+      "        rotateRight(node.right);",
+      "        rotateLeft(node);",
+      "      }",
+      "      break; // Insert needs at most one rotation",
+      "    }",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      compare: 8,
+      insert: 16,
+      "update-height": 21,
+      unbalanced: 25,
+      rotate: 29,
+    },
+  },
+
+  search: {
+    label: "AVL Search",
+    shortLabel: "Search",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Identical to BST search. AVL's balance guarantee ensures O(log n) worst case, unlike BST which can degrade to O(n).",
+    isTraversal: false,
+    visualPattern: "Binary descent",
+    code: [
+      "function* avlSearch(tree, value) {",
+      "  // Same as BST search",
+      "  // AVL guarantees O(log n) due to balance property",
+      "  let current = tree.root;",
+      "",
+      "  while (current !== null) {",
+      "    if (value < current.value) {",
+      "      yield { type: 'compare', result: 'left' };",
+      "      current = current.left;",
+      "    } else if (value > current.value) {",
+      "      yield { type: 'compare', result: 'right' };",
+      "      current = current.right;",
+      "    } else {",
+      "      yield { type: 'found', nodeId: current.id };",
+      "      return;",
+      "    }",
+      "  }",
+      "",
+      "  yield { type: 'not-found', value };",
+      "}",
+    ],
+    lineMapping: {
+      compare: 7,
+      found: 13,
+      "not-found": 18,
+    },
+  },
+
+  delete: {
+    label: "AVL Delete",
+    shortLabel: "Delete",
+    complexity: "O(log n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Deletes like BST, then unwinds checking balance. Unlike insert, delete may require multiple rotations up the tree.",
+    isTraversal: false,
+    visualPattern: "Delete → Check → Rotate (multiple)",
+    code: [
+      "function* avlDelete(tree, value) {",
+      "  // 1. Standard BST delete (find node, handle 3 cases)",
+      "  let path = findAndDelete(tree, value);",
+      "",
+      "  // 2. Unwind path, check balance at each node",
+      "  // Unlike insert, delete may need multiple rotations",
+      "  while (path.length > 0) {",
+      "    const node = path.pop();",
+      "    updateHeight(node);",
+      "    yield { type: 'update-height', nodeId: node.id };",
+      "",
+      "    const bf = balanceFactor(node);",
+      "    if (Math.abs(bf) > 1) {",
+      "      yield { type: 'unbalanced', nodeId: node.id, bf };",
+      "",
+      "      // Determine and apply rotation",
+      "      const rotationType = determineRotation(node, bf);",
+      "      yield { type: 'rotate', rotationType };",
+      "      applyRotation(node, rotationType);",
+      "      // Continue checking up the tree (no break!)",
+      "    }",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      compare: 2,
+      "update-height": 9,
+      unbalanced: 13,
+      rotate: 17,
+      delete: 2,
+    },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Max Heap Algorithm Metadata
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -500,6 +659,12 @@ export function getTreeAlgorithmMetadata(
     if (heapMetadata) return heapMetadata;
   }
 
-  // Fall back to BST/AVL metadata
+  // Use AVL-specific metadata for avl
+  if (dataStructure === "avl") {
+    const avlMetadata = AVL_ALGO_METADATA[algorithm];
+    if (avlMetadata) return avlMetadata;
+  }
+
+  // Fall back to BST metadata
   return TREE_ALGO_METADATA[algorithm] ?? TREE_ALGO_METADATA.insert;
 }

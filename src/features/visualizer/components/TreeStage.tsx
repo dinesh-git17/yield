@@ -121,8 +121,15 @@ function buildPositionedNodes(treeState: TreeState): PositionedNode[] {
  * - Layer 2 (Front): Animated circular nodes with values
  * - Layer 3 (Bottom): TreeControlBar and traversal output
  */
+const DATA_STRUCTURE_LABELS = {
+  bst: "Binary Search Tree",
+  avl: "AVL Tree",
+  "max-heap": "Max Heap",
+} as const;
+
 export function TreeStage({ className }: TreeStageProps) {
   const treeState = useYieldStore((state) => state.treeState);
+  const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const insertNode = useYieldStore((state) => state.insertNode);
   const resetTree = useYieldStore((state) => state.resetTree);
   const setTreeAlgorithm = useYieldStore((state) => state.setTreeAlgorithm);
@@ -253,7 +260,9 @@ export function TreeStage({ className }: TreeStageProps) {
       {/* Header Bar */}
       <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">Binary Search Tree</h1>
+          <h1 className="text-primary text-sm font-medium">
+            {DATA_STRUCTURE_LABELS[treeDataStructure]}
+          </h1>
         </div>
 
         {/* Controls */}
@@ -583,6 +592,27 @@ const NODE_STATE_STYLES: Record<TreeNodeState, { border: string; shadow: string;
     shadow: "shadow-rose-500/50",
     bg: "bg-rose-500/30",
   },
+  // AVL-specific states
+  unbalanced: {
+    border: "border-red-500",
+    shadow: "shadow-red-500/50",
+    bg: "bg-red-500/20",
+  },
+  "rotating-pivot": {
+    border: "border-purple-500",
+    shadow: "shadow-purple-500/50",
+    bg: "bg-purple-500/20",
+  },
+  "rotating-new-root": {
+    border: "border-teal-400",
+    shadow: "shadow-teal-400/50",
+    bg: "bg-teal-500/20",
+  },
+  "updating-height": {
+    border: "border-blue-400",
+    shadow: "shadow-blue-400/30",
+    bg: "bg-blue-500/10",
+  },
 };
 
 /**
@@ -599,12 +629,27 @@ const TreeNodeCircle = memo(
   function TreeNodeCircle({ node, x, y, visualState }: TreeNodeCircleProps) {
     const styles = NODE_STATE_STYLES[visualState];
 
+    // Determine scale based on visual state
+    const getScale = () => {
+      switch (visualState) {
+        case "comparing":
+        case "visiting":
+        case "unbalanced":
+          return 1.1;
+        case "rotating-pivot":
+        case "rotating-new-root":
+          return 1.15;
+        default:
+          return 1;
+      }
+    };
+
     return (
       <motion.div
         layout
         initial={{ scale: 0, opacity: 0 }}
         animate={{
-          scale: visualState === "comparing" || visualState === "visiting" ? 1.1 : 1,
+          scale: getScale(),
           opacity: 1,
         }}
         exit={{ scale: 0, opacity: 0 }}

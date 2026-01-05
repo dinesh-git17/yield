@@ -1,3 +1,5 @@
+// AVL Operations
+export { avlDelete, avlInsert, avlSearch } from "./avl";
 // BST Operations
 export {
   bstDelete,

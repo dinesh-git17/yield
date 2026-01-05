@@ -51,7 +51,7 @@ const TREE_DATA_STRUCTURES: {
   enabled: boolean;
 }[] = [
   { id: "bst", label: "Binary Search Tree", enabled: true },
-  { id: "avl", label: "AVL Tree", enabled: false },
+  { id: "avl", label: "AVL Tree", enabled: true },
   { id: "max-heap", label: "Max Heap", enabled: true },
 ];
 

@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  avlDelete,
+  avlInsert,
+  avlSearch,
   bstDelete,
   bstInsert,
   bstSearch,
@@ -33,7 +36,12 @@ export type TreeNodeState =
   | "bubbling-up"
   | "sinking-down"
   | "swapping"
-  | "extracting";
+  | "extracting"
+  // AVL-specific states
+  | "unbalanced"
+  | "rotating-pivot"
+  | "rotating-new-root"
+  | "updating-height";
 
 /**
  * Playback status for the tree controller.
@@ -122,7 +130,33 @@ function getTreeGenerator(
     }
   }
 
-  // BST and AVL use the same generators (AVL will have its own later)
+  // AVL uses AVL-specific generators with rotation visualization
+  if (dataStructure === "avl") {
+    switch (algorithm) {
+      case "insert":
+        if (value === undefined) return null;
+        return avlInsert(context, value);
+      case "search":
+        if (value === undefined) return null;
+        return avlSearch(context, value);
+      case "delete":
+        if (value === undefined) return null;
+        return avlDelete(context, value);
+      // Traversals work on any binary tree structure
+      case "inorder":
+        return inOrderTraversal(context);
+      case "preorder":
+        return preOrderTraversal(context);
+      case "postorder":
+        return postOrderTraversal(context);
+      case "bfs":
+        return levelOrderTraversal(context);
+      default:
+        return null;
+    }
+  }
+
+  // BST uses standard BST generators
   switch (algorithm) {
     case "insert":
       if (value === undefined) return null;
@@ -340,6 +374,55 @@ export function useTreeController(
           return next;
         });
         setLastResult("deleted"); // Extract-max is a form of deletion
+        break;
+
+      // ───────────────────────────────────────────────────────────────────────
+      // AVL-specific steps
+      // ───────────────────────────────────────────────────────────────────────
+      case "unbalanced":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          // Clear previous states except traversed
+          for (const [id, state] of next) {
+            if (state !== "traversed") {
+              next.set(id, "idle");
+            }
+          }
+          // Mark the unbalanced node
+          next.set(step.nodeId, "unbalanced");
+          return next;
+        });
+        break;
+
+      case "rotate":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          // Clear unbalanced state, keep traversed
+          for (const [id, state] of next) {
+            if (state === "unbalanced" || state === "updating-height") {
+              next.set(id, "idle");
+            }
+          }
+          // Highlight pivot (moving down) and new root (moving up)
+          next.set(step.pivotId, "rotating-pivot");
+          next.set(step.newRootId, "rotating-new-root");
+          return next;
+        });
+        break;
+
+      case "update-height":
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          // Clear rotation states
+          for (const [id, state] of next) {
+            if (state === "rotating-pivot" || state === "rotating-new-root") {
+              next.set(id, "idle");
+            }
+          }
+          // Mark the node being updated
+          next.set(step.nodeId, "updating-height");
+          return next;
+        });
         break;
     }
   }, []);

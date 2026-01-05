@@ -315,6 +315,521 @@ const defaultGridConfig: GridConfig = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AVL Tree Helper Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Gets the height of a node. Returns 0 for null nodes.
+ */
+function getAVLHeight(nodes: Record<string, TreeNode>, nodeId: string | null): number {
+  if (nodeId === null) return 0;
+  const node = nodes[nodeId];
+  return node?.height ?? 1;
+}
+
+/**
+ * Calculates the balance factor of a node.
+ * Balance factor = height(left subtree) - height(right subtree)
+ */
+function getAVLBalanceFactor(nodes: Record<string, TreeNode>, nodeId: string): number {
+  const node = nodes[nodeId];
+  if (!node) return 0;
+  return getAVLHeight(nodes, node.leftId) - getAVLHeight(nodes, node.rightId);
+}
+
+/**
+ * Updates the height of a node based on its children.
+ */
+function updateAVLHeight(nodes: Record<string, TreeNode>, nodeId: string): number {
+  const node = nodes[nodeId];
+  if (!node) return 0;
+  return Math.max(getAVLHeight(nodes, node.leftId), getAVLHeight(nodes, node.rightId)) + 1;
+}
+
+/**
+ * Performs a right rotation (for LL case).
+ *
+ *        z                y
+ *       / \              / \
+ *      y   T4    →      x   z
+ *     / \              /   / \
+ *    x   T3           T1  T3  T4
+ */
+function avlRotateRight(
+  nodes: Record<string, TreeNode>,
+  zId: string,
+  rootId: string | null
+): { nodes: Record<string, TreeNode>; newRootId: string | null; subtreeRootId: string } {
+  const z = nodes[zId];
+  if (!z || !z.leftId) return { nodes, newRootId: rootId, subtreeRootId: zId };
+
+  const yId = z.leftId;
+  const y = nodes[yId];
+  if (!y) return { nodes, newRootId: rootId, subtreeRootId: zId };
+
+  const t3Id = y.rightId;
+  const updatedNodes = { ...nodes };
+
+  // y becomes the new root of this subtree
+  updatedNodes[yId] = {
+    ...y,
+    rightId: zId,
+    parentId: z.parentId,
+  };
+
+  // z becomes right child of y
+  updatedNodes[zId] = {
+    ...z,
+    leftId: t3Id,
+    parentId: yId,
+  };
+
+  // T3's parent changes to z (if T3 exists)
+  if (t3Id) {
+    const t3 = updatedNodes[t3Id];
+    if (t3) {
+      updatedNodes[t3Id] = { ...t3, parentId: zId };
+    }
+  }
+
+  // Update parent's child reference (if parent exists)
+  if (z.parentId) {
+    const parent = updatedNodes[z.parentId];
+    if (parent) {
+      if (parent.leftId === zId) {
+        updatedNodes[z.parentId] = { ...parent, leftId: yId };
+      } else {
+        updatedNodes[z.parentId] = { ...parent, rightId: yId };
+      }
+    }
+  }
+
+  // Update heights (bottom-up)
+  const zHeight = updateAVLHeight(updatedNodes, zId);
+  updatedNodes[zId] = { ...updatedNodes[zId], height: zHeight } as TreeNode;
+
+  const yHeight = updateAVLHeight(updatedNodes, yId);
+  updatedNodes[yId] = { ...updatedNodes[yId], height: yHeight } as TreeNode;
+
+  // Update root if z was the root
+  const newRootId = rootId === zId ? yId : rootId;
+
+  return { nodes: updatedNodes, newRootId, subtreeRootId: yId };
+}
+
+/**
+ * Performs a left rotation (for RR case).
+ *
+ *      z                  y
+ *     / \                / \
+ *    T1  y      →       z   x
+ *       / \            / \   \
+ *      T2  x          T1  T2  T3
+ */
+function avlRotateLeft(
+  nodes: Record<string, TreeNode>,
+  zId: string,
+  rootId: string | null
+): { nodes: Record<string, TreeNode>; newRootId: string | null; subtreeRootId: string } {
+  const z = nodes[zId];
+  if (!z || !z.rightId) return { nodes, newRootId: rootId, subtreeRootId: zId };
+
+  const yId = z.rightId;
+  const y = nodes[yId];
+  if (!y) return { nodes, newRootId: rootId, subtreeRootId: zId };
+
+  const t2Id = y.leftId;
+  const updatedNodes = { ...nodes };
+
+  // y becomes the new root of this subtree
+  updatedNodes[yId] = {
+    ...y,
+    leftId: zId,
+    parentId: z.parentId,
+  };
+
+  // z becomes left child of y
+  updatedNodes[zId] = {
+    ...z,
+    rightId: t2Id,
+    parentId: yId,
+  };
+
+  // T2's parent changes to z (if T2 exists)
+  if (t2Id) {
+    const t2 = updatedNodes[t2Id];
+    if (t2) {
+      updatedNodes[t2Id] = { ...t2, parentId: zId };
+    }
+  }
+
+  // Update parent's child reference (if parent exists)
+  if (z.parentId) {
+    const parent = updatedNodes[z.parentId];
+    if (parent) {
+      if (parent.leftId === zId) {
+        updatedNodes[z.parentId] = { ...parent, leftId: yId };
+      } else {
+        updatedNodes[z.parentId] = { ...parent, rightId: yId };
+      }
+    }
+  }
+
+  // Update heights (bottom-up)
+  const zHeight = updateAVLHeight(updatedNodes, zId);
+  updatedNodes[zId] = { ...updatedNodes[zId], height: zHeight } as TreeNode;
+
+  const yHeight = updateAVLHeight(updatedNodes, yId);
+  updatedNodes[yId] = { ...updatedNodes[yId], height: yHeight } as TreeNode;
+
+  // Update root if z was the root
+  const newRootId = rootId === zId ? yId : rootId;
+
+  return { nodes: updatedNodes, newRootId, subtreeRootId: yId };
+}
+
+/**
+ * Inserts a value into an AVL tree and rebalances.
+ */
+function insertAVLNode(
+  treeState: TreeState,
+  value: number,
+  onInsert: (id: string) => void
+): { treeState: TreeState } {
+  let nodes = { ...treeState.nodes };
+  let rootId = treeState.rootId;
+
+  // Track the path for rebalancing
+  const path: string[] = [];
+
+  // Find insertion point (standard BST insert)
+  let currentId: string | null = rootId;
+  let parentId: string | null = null;
+  let position: "left" | "right" = "left";
+
+  while (currentId !== null) {
+    const current = nodes[currentId];
+    if (!current) break;
+
+    path.push(currentId);
+
+    if (value === current.value) {
+      // Duplicate - no insertion
+      return { treeState };
+    }
+
+    if (value < current.value) {
+      parentId = currentId;
+      position = "left";
+      currentId = current.leftId;
+    } else {
+      parentId = currentId;
+      position = "right";
+      currentId = current.rightId;
+    }
+  }
+
+  // Create and insert new node
+  const newId = generateNodeId();
+  onInsert(newId);
+
+  const newNode: TreeNode = {
+    id: newId,
+    value,
+    leftId: null,
+    rightId: null,
+    parentId,
+    height: 1,
+  };
+  nodes[newId] = newNode;
+
+  // Update parent's child pointer
+  if (parentId) {
+    const parent = nodes[parentId];
+    if (parent) {
+      if (position === "left") {
+        nodes[parentId] = { ...parent, leftId: newId };
+      } else {
+        nodes[parentId] = { ...parent, rightId: newId };
+      }
+    }
+  }
+
+  // Rebalance: unwind path and fix balance
+  for (let i = path.length - 1; i >= 0; i--) {
+    const nodeId = path[i];
+    if (!nodeId) continue;
+
+    // Update height
+    const newHeight = updateAVLHeight(nodes, nodeId);
+    const node = nodes[nodeId];
+    if (node) {
+      nodes[nodeId] = { ...node, height: newHeight };
+    }
+
+    // Check balance factor
+    const bf = getAVLBalanceFactor(nodes, nodeId);
+
+    if (bf > 1) {
+      // Left-heavy
+      const leftBf = nodes[nodeId]?.leftId
+        ? getAVLBalanceFactor(nodes, nodes[nodeId].leftId as string)
+        : 0;
+
+      if (leftBf >= 0) {
+        // LL case: single right rotation
+        const result = avlRotateRight(nodes, nodeId, rootId);
+        nodes = result.nodes;
+        rootId = result.newRootId;
+      } else {
+        // LR case: left rotation on left child, then right rotation
+        const leftId = nodes[nodeId]?.leftId;
+        if (leftId) {
+          const result1 = avlRotateLeft(nodes, leftId, rootId);
+          nodes = result1.nodes;
+          rootId = result1.newRootId;
+
+          const result2 = avlRotateRight(nodes, nodeId, rootId);
+          nodes = result2.nodes;
+          rootId = result2.newRootId;
+        }
+      }
+      break; // Insert needs at most one rotation set
+    } else if (bf < -1) {
+      // Right-heavy
+      const rightBf = nodes[nodeId]?.rightId
+        ? getAVLBalanceFactor(nodes, nodes[nodeId].rightId as string)
+        : 0;
+
+      if (rightBf <= 0) {
+        // RR case: single left rotation
+        const result = avlRotateLeft(nodes, nodeId, rootId);
+        nodes = result.nodes;
+        rootId = result.newRootId;
+      } else {
+        // RL case: right rotation on right child, then left rotation
+        const rightId = nodes[nodeId]?.rightId;
+        if (rightId) {
+          const result1 = avlRotateRight(nodes, rightId, rootId);
+          nodes = result1.nodes;
+          rootId = result1.newRootId;
+
+          const result2 = avlRotateLeft(nodes, nodeId, rootId);
+          nodes = result2.nodes;
+          rootId = result2.newRootId;
+        }
+      }
+      break; // Insert needs at most one rotation set
+    }
+  }
+
+  return {
+    treeState: {
+      rootId,
+      nodes,
+    },
+  };
+}
+
+/**
+ * Deletes a value from an AVL tree and rebalances.
+ */
+function deleteAVLNode(
+  treeState: TreeState,
+  value: number
+): { treeState: TreeState; deleted: boolean } {
+  if (treeState.rootId === null) {
+    return { treeState, deleted: false };
+  }
+
+  let nodes = { ...treeState.nodes };
+  let rootId: string | null = treeState.rootId;
+
+  // Track path for rebalancing
+  const path: string[] = [];
+
+  // Find the node to delete
+  let targetId: string | null = rootId;
+  while (targetId !== null) {
+    const targetNode: TreeNode | undefined = nodes[targetId];
+    if (!targetNode) break;
+
+    if (value === targetNode.value) {
+      break;
+    }
+
+    path.push(targetId);
+    if (value < targetNode.value) {
+      targetId = targetNode.leftId;
+    } else {
+      targetId = targetNode.rightId;
+    }
+  }
+
+  if (!targetId || !nodes[targetId]) {
+    return { treeState, deleted: false };
+  }
+
+  const target = nodes[targetId];
+  if (!target) return { treeState, deleted: false };
+
+  // Standard BST delete
+  const hasLeft = target.leftId !== null;
+  const hasRight = target.rightId !== null;
+
+  if (!hasLeft && !hasRight) {
+    // Case 1: Leaf node
+    if (target.parentId) {
+      const parent = nodes[target.parentId];
+      if (parent) {
+        if (parent.leftId === targetId) {
+          nodes[target.parentId] = { ...parent, leftId: null };
+        } else {
+          nodes[target.parentId] = { ...parent, rightId: null };
+        }
+      }
+    } else {
+      rootId = null;
+    }
+    delete nodes[targetId];
+  } else if (!hasLeft || !hasRight) {
+    // Case 2: One child
+    const childId = (target.leftId ?? target.rightId) as string;
+    const child = nodes[childId];
+
+    if (target.parentId) {
+      const parent = nodes[target.parentId];
+      if (parent && child) {
+        if (parent.leftId === targetId) {
+          nodes[target.parentId] = { ...parent, leftId: childId };
+        } else {
+          nodes[target.parentId] = { ...parent, rightId: childId };
+        }
+        nodes[childId] = { ...child, parentId: target.parentId };
+      }
+    } else {
+      rootId = childId;
+      if (child) {
+        nodes[childId] = { ...child, parentId: null };
+      }
+    }
+    delete nodes[targetId];
+  } else {
+    // Case 3: Two children - find in-order successor
+    // target.rightId is guaranteed non-null since we're in the two-children branch
+    let successorId: string = target.rightId as string;
+    let successor: TreeNode | undefined = nodes[successorId];
+
+    const successorPath: string[] = [];
+    while (successor?.leftId) {
+      successorPath.push(successorId);
+      successorId = successor.leftId;
+      successor = nodes[successorId];
+    }
+
+    if (successor) {
+      // Replace target's value with successor's value
+      nodes[targetId] = { ...target, value: successor.value };
+
+      // Remove successor
+      const successorParentId = successor.parentId;
+      if (successorParentId) {
+        const successorParent = nodes[successorParentId];
+        if (successorParent) {
+          if (successorParent.leftId === successorId) {
+            nodes[successorParentId] = { ...successorParent, leftId: successor.rightId };
+          } else {
+            nodes[successorParentId] = { ...successorParent, rightId: successor.rightId };
+          }
+        }
+      }
+
+      if (successor.rightId) {
+        const successorChild = nodes[successor.rightId];
+        if (successorChild) {
+          nodes[successor.rightId] = { ...successorChild, parentId: successorParentId };
+        }
+      }
+
+      delete nodes[successorId];
+
+      // Add successor path to main path for rebalancing
+      path.push(...successorPath);
+    }
+  }
+
+  // Rebalance: unwind path and fix balance (may need multiple rotations)
+  for (let i = path.length - 1; i >= 0; i--) {
+    const nodeId = path[i];
+    if (!nodeId || !nodes[nodeId]) continue;
+
+    // Update height
+    const newHeight = updateAVLHeight(nodes, nodeId);
+    const node = nodes[nodeId];
+    if (node) {
+      nodes[nodeId] = { ...node, height: newHeight };
+    }
+
+    // Check balance factor
+    const bf = getAVLBalanceFactor(nodes, nodeId);
+
+    if (bf > 1) {
+      const leftBf = nodes[nodeId]?.leftId
+        ? getAVLBalanceFactor(nodes, nodes[nodeId].leftId as string)
+        : 0;
+
+      if (leftBf >= 0) {
+        const result = avlRotateRight(nodes, nodeId, rootId);
+        nodes = result.nodes;
+        rootId = result.newRootId;
+      } else {
+        const leftId = nodes[nodeId]?.leftId;
+        if (leftId) {
+          const result1 = avlRotateLeft(nodes, leftId, rootId);
+          nodes = result1.nodes;
+          rootId = result1.newRootId;
+
+          const result2 = avlRotateRight(nodes, nodeId, rootId);
+          nodes = result2.nodes;
+          rootId = result2.newRootId;
+        }
+      }
+      // Don't break - delete may need multiple rotations
+    } else if (bf < -1) {
+      const rightBf = nodes[nodeId]?.rightId
+        ? getAVLBalanceFactor(nodes, nodes[nodeId].rightId as string)
+        : 0;
+
+      if (rightBf <= 0) {
+        const result = avlRotateLeft(nodes, nodeId, rootId);
+        nodes = result.nodes;
+        rootId = result.newRootId;
+      } else {
+        const rightId = nodes[nodeId]?.rightId;
+        if (rightId) {
+          const result1 = avlRotateRight(nodes, rightId, rootId);
+          nodes = result1.nodes;
+          rootId = result1.newRootId;
+
+          const result2 = avlRotateLeft(nodes, nodeId, rootId);
+          nodes = result2.nodes;
+          rootId = result2.newRootId;
+        }
+      }
+      // Don't break - delete may need multiple rotations
+    }
+  }
+
+  return {
+    treeState: {
+      rootId,
+      nodes,
+    },
+    deleted: true,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Heap Helper Functions
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -728,6 +1243,13 @@ export const useYieldStore = create<YieldStore>((set) => ({
         });
       }
 
+      // AVL: Insert like BST, then rebalance with rotations
+      if (treeDataStructure === "avl") {
+        return insertAVLNode(treeState, value, (id) => {
+          insertedId = id;
+        });
+      }
+
       // BST/AVL: Find insertion point using BST property
       let currentId: string | null = treeState.rootId;
       while (currentId !== null) {
@@ -811,6 +1333,13 @@ export const useYieldStore = create<YieldStore>((set) => ({
       if (treeDataStructure === "max-heap") {
         const result = extractHeapMax(treeState);
         deleted = result.extracted;
+        return { treeState: result.treeState };
+      }
+
+      // AVL: Delete like BST, then rebalance with rotations
+      if (treeDataStructure === "avl") {
+        const result = deleteAVLNode(treeState, value);
+        deleted = result.deleted;
         return { treeState: result.treeState };
       }
 
