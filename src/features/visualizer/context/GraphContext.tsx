@@ -90,6 +90,8 @@ export interface GraphControllerState {
   topologicalOrder: string[] | null;
   /** Whether a cycle was detected (graph is not a DAG) */
   hasCycle: boolean;
+  /** Current step type for code panel highlighting */
+  currentStepType: GraphStep["type"] | null;
 }
 
 /**
@@ -152,6 +154,8 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
   const [nodeIndegrees, setNodeIndegrees] = useState<Map<string, number>>(new Map());
   const [topologicalOrder, setTopologicalOrder] = useState<string[] | null>(null);
   const [hasCycle, setHasCycle] = useState(false);
+  // Current step type for code panel
+  const [currentStepType, setCurrentStepType] = useState<GraphStep["type"] | null>(null);
 
   const iteratorRef = useRef<Generator<GraphStep, void, unknown> | null>(null);
   const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
@@ -164,6 +168,9 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
 
   // Apply a single algorithm step to update visual states
   const applyStep = useCallback((step: GraphStep) => {
+    // Track current step type for code panel highlighting
+    setCurrentStepType(step.type);
+
     switch (step.type) {
       case "start":
         setNodeStates((prev) => {
@@ -374,6 +381,8 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
       setNodeIndegrees(new Map());
       setTopologicalOrder(null);
       setHasCycle(false);
+      // Clear step type
+      setCurrentStepType(null);
 
       // Create the appropriate generator
       const context = { graphState, startNodeId };
@@ -455,6 +464,8 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
     setNodeIndegrees(new Map());
     setTopologicalOrder(null);
     setHasCycle(false);
+    // Clear step type
+    setCurrentStepType(null);
     iteratorRef.current = null;
   }, []);
 
@@ -527,6 +538,8 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
     nodeIndegrees,
     topologicalOrder,
     hasCycle,
+    // Step tracking
+    currentStepType,
     runAlgorithm,
     play,
     pause,

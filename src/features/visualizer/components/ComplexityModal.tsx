@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CircleX, Clock, HardDrive, Route, TreeDeciduous } from "lucide-react";
+import { CircleX, Clock, HardDrive, Network, Route, TreeDeciduous } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo } from "react";
 import { getAlgorithmMetadata, getTreeAlgorithmMetadata } from "@/features/algorithms";
+import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
 import { buttonInteraction } from "@/lib/motion";
 import type { TreeDataStructureType } from "@/lib/store";
@@ -52,6 +53,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
   const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
+  const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
 
   const { label, description, complexity, spaceComplexity, hint, extras } = useMemo(() => {
     if (mode === "sorting") {
@@ -79,6 +81,20 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
         },
       };
     }
+    if (mode === "graph") {
+      const meta = getGraphAlgorithmMetadata(graphAlgorithm);
+      return {
+        label: meta.label,
+        description: meta.description,
+        complexity: meta.complexity,
+        spaceComplexity: meta.spaceComplexity,
+        hint: getGraphComparisonHint(graphAlgorithm),
+        extras: {
+          visualPattern: meta.visualPattern,
+          requiresStartNode: meta.requiresStartNode,
+        },
+      };
+    }
     const meta = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
     return {
       label: meta.label,
@@ -91,7 +107,14 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
         visualPattern: meta.visualPattern,
       },
     };
-  }, [mode, sortingAlgorithm, pathfindingAlgorithm, treeAlgorithm, treeDataStructure]);
+  }, [
+    mode,
+    sortingAlgorithm,
+    pathfindingAlgorithm,
+    treeAlgorithm,
+    treeDataStructure,
+    graphAlgorithm,
+  ]);
 
   // Close on escape key
   useEffect(() => {
@@ -201,6 +224,21 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
                       >
                         <Route className="h-3 w-3" />
                         {extras.guaranteesShortestPath ? "Shortest Path" : "No Guarantee"}
+                      </span>
+                      <span className="text-muted text-xs">{extras.visualPattern}</span>
+                    </>
+                  ) : "requiresStartNode" in extras ? (
+                    <>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                          extras.requiresStartNode
+                            ? "bg-rose-500/20 text-rose-400"
+                            : "bg-violet-500/20 text-violet-400"
+                        )}
+                      >
+                        <Network className="h-3 w-3" />
+                        {extras.requiresStartNode ? "Needs Start Node" : "Global Algorithm"}
                       </span>
                       <span className="text-muted text-xs">{extras.visualPattern}</span>
                     </>
@@ -489,6 +527,19 @@ function getTreeComparisonHint(algorithm: string, dataStructure: TreeDataStructu
       return "The famous interview question. Swaps left/right children recursively. If you can't do this, apparently you can't work at Google.";
     default:
       return "Compare different tree operations to understand their use cases.";
+  }
+}
+
+function getGraphComparisonHint(algorithm: string): string {
+  switch (algorithm) {
+    case "prim":
+      return "Prim's grows MST from a single source. Better for dense graphs due to priority queue efficiency. Compare to Kruskal's for sparse graphs.";
+    case "kruskal":
+      return "Kruskal's processes edges globally by weight. Union-Find enables near-constant time cycle detection. Better for sparse graphs.";
+    case "kahn":
+      return "Kahn's algorithm detects cycles and produces topological order. Essential for dependency resolution and build systems.";
+    default:
+      return "Compare different graph algorithms to understand their trade-offs.";
   }
 }
 
