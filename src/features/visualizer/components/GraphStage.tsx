@@ -33,15 +33,6 @@ export interface GraphStageProps {
 }
 
 /**
- * Algorithm labels for the dropdown.
- */
-const GRAPH_ALGORITHMS: { id: GraphAlgorithmType; label: string; enabled: boolean }[] = [
-  { id: "prim", label: "Prim's MST", enabled: true },
-  { id: "kruskal", label: "Kruskal's MST", enabled: true },
-  { id: "kahn", label: "Topological Sort", enabled: true },
-];
-
-/**
  * Preset graph configurations.
  */
 const GRAPH_PRESETS = [
@@ -264,7 +255,6 @@ function generateTreeGraph(): { nodes: GraphNode[]; edges: Omit<GraphEdge, "id">
 export function GraphStage({ className }: GraphStageProps) {
   const graphState = useYieldStore((state) => state.graphState);
   const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
-  const setGraphAlgorithm = useYieldStore((state) => state.setGraphAlgorithm);
   const addGraphNode = useYieldStore((state) => state.addGraphNode);
   const addGraphEdge = useYieldStore((state) => state.addGraphEdge);
   const updateGraphNodePosition = useYieldStore((state) => state.updateGraphNodePosition);
@@ -461,23 +451,10 @@ export function GraphStage({ className }: GraphStageProps) {
   );
 
   /**
-   * Handles algorithm selection.
-   */
-  const handleAlgorithmSelect = useCallback(
-    (algo: GraphAlgorithmType) => {
-      setGraphAlgorithm(algo);
-      // Reset any running algorithm when switching
-      controller.reset();
-    },
-    [setGraphAlgorithm, controller]
-  );
-
-  /**
    * Handles running the selected algorithm.
    */
   const handleRunAlgorithm = useCallback(() => {
-    const selectedAlgo = GRAPH_ALGORITHMS.find((a) => a.id === graphAlgorithm);
-    if (!selectedAlgo?.enabled || isEmpty) return;
+    if (isEmpty) return;
 
     // For Prim's, use the first node as start (or selected if available)
     const startNodeId = controller.selectedNodeId ?? nodes[0]?.id;
@@ -509,75 +486,12 @@ export function GraphStage({ className }: GraphStageProps) {
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header Bar */}
       <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">
-            {graphState.isDirected ? "Directed Graph" : "Undirected Graph"}
-          </h1>
-          <motion.span
-            className={cn(
-              "rounded-full px-2 py-0.5 text-xs font-medium",
-              graphState.isDirected
-                ? "bg-cyan-500/10 text-cyan-400"
-                : "bg-violet-500/10 text-violet-400"
-            )}
-          >
-            {nodes.length} nodes · {edges.length} edges
-          </motion.span>
-        </div>
+        <h1 className="text-primary text-sm font-medium">
+          {graphState.isDirected ? "Directed Graph" : "Undirected Graph"}
+        </h1>
 
         {/* Controls */}
         <div className="flex items-center gap-4">
-          {/* Algorithm Dropdown */}
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <motion.button
-                type="button"
-                disabled={isEmpty}
-                whileHover={isEmpty ? {} : buttonInteraction.hover}
-                whileTap={isEmpty ? {} : buttonInteraction.tap}
-                className={cn(
-                  "bg-surface-elevated border-border text-primary flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium",
-                  "focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-2",
-                  isEmpty && "cursor-not-allowed opacity-50"
-                )}
-              >
-                <span>
-                  {GRAPH_ALGORITHMS.find((a) => a.id === graphAlgorithm)?.label ??
-                    "Select Algorithm"}
-                </span>
-                <ChevronDown className="h-3 w-3" />
-              </motion.button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                className={cn(
-                  "bg-surface-elevated border-border z-50 min-w-[160px] rounded-lg border p-1 shadow-lg",
-                  "animate-in fade-in-0 zoom-in-95"
-                )}
-                sideOffset={5}
-              >
-                {GRAPH_ALGORITHMS.map((algo) => (
-                  <DropdownMenu.Item
-                    key={algo.id}
-                    disabled={!algo.enabled}
-                    onSelect={() => algo.enabled && handleAlgorithmSelect(algo.id)}
-                    className={cn(
-                      "text-primary flex cursor-pointer items-center rounded-md px-2 py-1.5 text-xs font-medium outline-none",
-                      "hover:bg-surface focus:bg-surface",
-                      graphAlgorithm === algo.id && "text-violet-400",
-                      !algo.enabled && "cursor-not-allowed opacity-50"
-                    )}
-                  >
-                    {algo.label}
-                    {!algo.enabled && <span className="text-muted ml-auto text-[10px]">Soon</span>}
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-
-          <div className="bg-border h-6 w-px" />
-
           {/* Graph Actions */}
           <div className="flex items-center gap-2">
             {/* Generate Dropdown */}
@@ -660,11 +574,14 @@ export function GraphStage({ className }: GraphStageProps) {
             <PlayPauseButton
               isPlaying={isPlaying}
               hasStarted={controller.currentStepIndex > 0 && !isComplete}
-              onClick={isPlaying ? controller.pause : isIdle ? handleRunAlgorithm : controller.play}
-              disabled={
-                isEmpty ||
-                (isIdle && !GRAPH_ALGORITHMS.find((a) => a.id === graphAlgorithm)?.enabled)
+              onClick={
+                isPlaying
+                  ? controller.pause
+                  : isIdle || isComplete
+                    ? handleRunAlgorithm
+                    : controller.play
               }
+              disabled={isEmpty}
             />
           </div>
         </div>
@@ -758,6 +675,34 @@ export function GraphStage({ className }: GraphStageProps) {
           nodes={graphState.nodes}
           isComplete={isComplete}
         />
+
+        {/* Graph Stats (Top Right) */}
+        <div className="absolute top-4 right-4">
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-medium",
+              graphState.isDirected
+                ? "bg-cyan-500/10 text-cyan-400"
+                : "bg-violet-500/10 text-violet-400"
+            )}
+          >
+            {nodes.length} nodes · {edges.length} edges
+          </span>
+        </div>
+
+        {/* Legend (shown when algorithm is running) */}
+        <AnimatePresence>
+          {!isIdle && !isEmpty && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute right-4 bottom-4 left-4 flex justify-center"
+            >
+              <AlgorithmLegend algorithm={graphAlgorithm} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Interaction Hint */}
         <AnimatePresence>
@@ -1084,5 +1029,89 @@ function ActionButton({
       {icon}
       {label}
     </motion.button>
+  );
+}
+
+/**
+ * Legend item configuration.
+ */
+interface LegendItem {
+  color: string;
+  label: string;
+  type: "node" | "edge";
+}
+
+/**
+ * Legend configuration for each algorithm.
+ */
+const ALGORITHM_LEGENDS: Record<GraphAlgorithmType, LegendItem[]> = {
+  prim: [
+    { color: "bg-rose-400", label: "Start", type: "node" },
+    { color: "bg-cyan-400", label: "Visiting", type: "node" },
+    { color: "bg-emerald-400", label: "In MST", type: "node" },
+    { color: "bg-amber-400", label: "Considering", type: "edge" },
+    { color: "bg-emerald-400", label: "MST Edge", type: "edge" },
+    { color: "bg-rose-400/40", label: "Rejected", type: "edge" },
+  ],
+  kruskal: [
+    { color: "bg-fuchsia-400", label: "Finding Set", type: "node" },
+    { color: "bg-emerald-400", label: "In MST", type: "node" },
+    { color: "bg-amber-400", label: "Considering", type: "edge" },
+    { color: "bg-emerald-400", label: "MST Edge", type: "edge" },
+    { color: "bg-rose-400/40", label: "Same Set", type: "edge" },
+  ],
+  kahn: [
+    { color: "bg-orange-400", label: "Queued (0°)", type: "node" },
+    { color: "bg-sky-400", label: "Processing", type: "node" },
+    { color: "bg-emerald-400", label: "In Order", type: "node" },
+    { color: "bg-cyan-400", label: "Processing", type: "edge" },
+    { color: "bg-slate-400/30", label: "Processed", type: "edge" },
+  ],
+};
+
+/**
+ * Algorithm legend component.
+ * Shows what the colors mean during algorithm execution.
+ */
+interface AlgorithmLegendProps {
+  algorithm: GraphAlgorithmType;
+}
+
+function AlgorithmLegend({ algorithm }: AlgorithmLegendProps) {
+  const items = ALGORITHM_LEGENDS[algorithm];
+
+  const nodeItems = items.filter((item) => item.type === "node");
+  const edgeItems = items.filter((item) => item.type === "edge");
+
+  return (
+    <motion.div
+      className={cn("rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm", "px-4 py-3")}
+    >
+      <div className="flex items-center gap-6 text-xs">
+        {/* Node legends */}
+        <div className="flex items-center gap-4">
+          <span className="text-muted font-medium">Nodes:</span>
+          {nodeItems.map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5">
+              <span className={cn("h-3 w-3 rounded-full", item.color)} />
+              <span className="text-muted">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-white/10 h-4 w-px" />
+
+        {/* Edge legends */}
+        <div className="flex items-center gap-4">
+          <span className="text-muted font-medium">Edges:</span>
+          {edgeItems.map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5">
+              <span className={cn("h-0.5 w-4 rounded-full", item.color)} />
+              <span className="text-muted">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
   );
 }

@@ -62,9 +62,9 @@ const GRAPH_ALGORITHMS: {
   label: string;
   enabled: boolean;
 }[] = [
-  { id: "prim", label: "Prim's MST", enabled: false },
-  { id: "kruskal", label: "Kruskal's MST", enabled: false },
-  { id: "kahn", label: "Topological Sort", enabled: false },
+  { id: "prim", label: "Prim's MST", enabled: true },
+  { id: "kruskal", label: "Kruskal's MST", enabled: true },
+  { id: "kahn", label: "Topological Sort", enabled: true },
 ];
 
 export function Sidebar({ className, onCollapse }: SidebarProps) {
@@ -357,11 +357,22 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
 
             <div className="border-border-subtle my-4 border-t" />
 
-            {/* Info text for Phase 7 */}
-            <div className="text-muted px-2 text-xs">
-              <p className="mb-2">Graph algorithms coming in Phase 7.3</p>
-              <p className="text-muted/60">Double-click to add nodes. Shift+drag to connect.</p>
-            </div>
+            {/* Complexity Trigger */}
+            <motion.button
+              type="button"
+              onClick={openComplexityModal}
+              whileHover={buttonInteraction.hover}
+              whileTap={buttonInteraction.tap}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                "border border-white/10 bg-white/5 backdrop-blur-sm",
+                "text-primary hover:bg-white/10 transition-colors",
+                "dark:border-white/5 dark:bg-black/20"
+              )}
+            >
+              <BadgeHelp className="h-4 w-4 text-rose-400" />
+              <span className="text-sm font-medium">Complexity</span>
+            </motion.button>
           </>
         )}
       </nav>

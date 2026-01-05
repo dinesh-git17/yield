@@ -541,6 +541,7 @@ function useGraphController(intervalMs: number): UseGraphControllerReturn {
 
 export function GraphProvider({ children }: GraphProviderProps) {
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
+  const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
 
   // Calculate interval from speed multiplier
   const intervalMs = useMemo(() => speedMultiplierToInterval(playbackSpeed), [playbackSpeed]);
@@ -550,6 +551,15 @@ export function GraphProvider({ children }: GraphProviderProps) {
 
   // Interaction mode state (kept in context for cross-component access)
   const [interactionMode, setInteractionMode] = useState<GraphInteractionMode>({ type: "idle" });
+
+  // Track previous algorithm to detect changes
+  const prevAlgorithmRef = useRef(graphAlgorithm);
+  useEffect(() => {
+    if (prevAlgorithmRef.current !== graphAlgorithm) {
+      prevAlgorithmRef.current = graphAlgorithm;
+      controller.reset();
+    }
+  }, [graphAlgorithm, controller]);
 
   const value: GraphContextValue = useMemo(
     () => ({
