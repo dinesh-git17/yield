@@ -2,7 +2,7 @@
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, Copy } from "lucide-react";
+import { Check, ChevronDown, Code2, Copy } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { FaGolang, FaJava, FaPython, FaRust } from "react-icons/fa6";
 import { SiCplusplus, SiJavascript } from "react-icons/si";
@@ -48,24 +48,45 @@ const LanguageIcon = memo(function LanguageIcon({ language, className }: Languag
 });
 
 export interface CodeTabsProps {
-  /** The sorting algorithm to display code for */
-  algorithm: SortingAlgorithmType;
+  /** The visualization mode */
+  mode: "sorting" | "pathfinding";
+  /** The algorithm to display code for */
+  algorithm: string;
   /** Optional additional class names */
   className?: string;
 }
 
 /**
- * Tabbed code viewer component with language switching and copy functionality.
- * Displays sorting algorithm implementations in multiple programming languages.
+ * Get code implementation based on mode and algorithm.
+ * Returns null if pathfinding code is not yet available.
  */
-export const CodeTabs = memo(function CodeTabs({ algorithm, className }: CodeTabsProps) {
+function getImplementation(
+  mode: "sorting" | "pathfinding",
+  algorithm: string,
+  language: Language
+): string | null {
+  if (mode === "sorting") {
+    return getSortingImplementation(algorithm as SortingAlgorithmType, language);
+  }
+  // Pathfinding implementations will be added in Story 9.2
+  // For now, return null to show a placeholder
+  return null;
+}
+
+/**
+ * Tabbed code viewer component with language switching and copy functionality.
+ * Displays algorithm implementations in multiple programming languages.
+ */
+export const CodeTabs = memo(function CodeTabs({ mode, algorithm, className }: CodeTabsProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<Language>("python");
   const [copied, setCopied] = useState(false);
 
-  const code = getSortingImplementation(algorithm, selectedLanguage);
+  const code = getImplementation(mode, algorithm, selectedLanguage);
   const languageInfo = LANGUAGE_INFO[selectedLanguage];
 
+  // All hooks must be called before any conditional returns
   const handleCopy = useCallback(async () => {
+    if (code === null) return;
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
@@ -78,6 +99,32 @@ export const CodeTabs = memo(function CodeTabs({ algorithm, className }: CodeTab
   const handleLanguageChange = useCallback((language: Language) => {
     setSelectedLanguage(language);
   }, []);
+
+  // If no code is available (e.g., pathfinding not yet implemented), show placeholder
+  if (code === null) {
+    return (
+      <div
+        className={cn(
+          "overflow-hidden rounded-xl border border-border",
+          "bg-surface font-mono text-sm",
+          className
+        )}
+      >
+        <div className="flex flex-col items-center justify-center gap-4 p-12 text-center">
+          <div className="rounded-full bg-accent/10 p-4">
+            <Code2 className="h-8 w-8 text-accent" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-primary font-semibold">Code Examples Coming Soon</h3>
+            <p className="text-muted max-w-md text-sm">
+              Polyglot implementations for pathfinding algorithms are being crafted. Check back soon
+              for Python, C++, JavaScript, and more.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

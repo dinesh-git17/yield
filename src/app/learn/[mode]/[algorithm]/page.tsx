@@ -1,9 +1,14 @@
-import { Clock, Code2, HardDrive, Lightbulb, Target, XCircle } from "lucide-react";
+import { Clock, Code2, Compass, HardDrive, Lightbulb, Route, Target, XCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
+import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
 import { CodeTabs } from "@/features/learning/components";
-import { getSortingArticle } from "@/features/learning/content/sorting";
-import type { SortingAlgorithmType, VisualizerMode } from "@/lib/store";
+import {
+  getPathfindingArticle,
+  type PathfindingArticle,
+} from "@/features/learning/content/pathfinding";
+import { getSortingArticle, type SortingArticle } from "@/features/learning/content/sorting";
+import type { PathfindingAlgorithmType, SortingAlgorithmType, VisualizerMode } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 interface LearnPageProps {
@@ -23,6 +28,16 @@ const VALID_SORTING_ALGORITHMS = [
   "merge",
   "heap",
 ] as const;
+const VALID_PATHFINDING_ALGORITHMS = [
+  "bfs",
+  "dfs",
+  "dijkstra",
+  "astar",
+  "greedy",
+  "bidirectional",
+  "flood",
+  "random",
+] as const;
 
 function isValidMode(mode: string): mode is VisualizerMode {
   return VALID_MODES.includes(mode as VisualizerMode);
@@ -32,6 +47,51 @@ function isValidSortingAlgorithm(algorithm: string): algorithm is SortingAlgorit
   return VALID_SORTING_ALGORITHMS.includes(algorithm as SortingAlgorithmType);
 }
 
+function isValidPathfindingAlgorithm(algorithm: string): algorithm is PathfindingAlgorithmType {
+  return VALID_PATHFINDING_ALGORITHMS.includes(algorithm as PathfindingAlgorithmType);
+}
+
+/**
+ * Unified article type for polymorphic page rendering.
+ */
+type ArticleContent =
+  | { mode: "sorting"; article: SortingArticle; algorithm: SortingAlgorithmType }
+  | { mode: "pathfinding"; article: PathfindingArticle; algorithm: PathfindingAlgorithmType };
+
+/**
+ * Factory function to get the appropriate article based on mode and algorithm.
+ */
+function getArticle(mode: string, algorithm: string): ArticleContent | null {
+  if (mode === "sorting" && isValidSortingAlgorithm(algorithm)) {
+    return {
+      mode: "sorting",
+      article: getSortingArticle(algorithm),
+      algorithm,
+    };
+  }
+  if (mode === "pathfinding" && isValidPathfindingAlgorithm(algorithm)) {
+    return {
+      mode: "pathfinding",
+      article: getPathfindingArticle(algorithm),
+      algorithm,
+    };
+  }
+  return null;
+}
+
+/**
+ * Get algorithm metadata (time/space complexity) based on mode.
+ */
+function getMetadata(mode: string, algorithm: string) {
+  if (mode === "sorting" && isValidSortingAlgorithm(algorithm)) {
+    return getAlgorithmMetadata(algorithm);
+  }
+  if (mode === "pathfinding" && isValidPathfindingAlgorithm(algorithm)) {
+    return getPathfindingAlgorithmMetadata(algorithm);
+  }
+  return null;
+}
+
 export default async function LearnPage({ params }: LearnPageProps) {
   const { mode, algorithm } = await params;
 
@@ -39,22 +99,35 @@ export default async function LearnPage({ params }: LearnPageProps) {
     notFound();
   }
 
-  // Currently only sorting content is available
-  if (mode !== "sorting" || !isValidSortingAlgorithm(algorithm)) {
+  const content = getArticle(mode, algorithm);
+  const metadata = getMetadata(mode, algorithm);
+
+  if (!content || !metadata) {
     notFound();
   }
 
-  const article = getSortingArticle(algorithm);
-  const metadata = getAlgorithmMetadata(algorithm);
+  const { article } = content;
+
+  // Mode-specific labels and icons
+  const modeConfig = {
+    sorting: {
+      label: "Sorting Algorithm",
+      icon: <Target className="h-5 w-5" />,
+    },
+    pathfinding: {
+      label: "Pathfinding Algorithm",
+      icon: <Compass className="h-5 w-5" />,
+    },
+  };
+
+  const config = modeConfig[content.mode];
 
   return (
     <article className="space-y-16">
       {/* Hero Section */}
       <header className="space-y-6 text-center">
         <div className="space-y-2">
-          <p className="text-accent text-sm font-medium uppercase tracking-wider">
-            Sorting Algorithm
-          </p>
+          <p className="text-accent text-sm font-medium uppercase tracking-wider">{config.label}</p>
           <h1 className="text-primary text-4xl font-bold tracking-tight sm:text-5xl">
             {article.title}
           </h1>
@@ -75,6 +148,15 @@ export default async function LearnPage({ params }: LearnPageProps) {
             value={metadata.spaceComplexity}
             variant={getComplexityVariant(metadata.spaceComplexity)}
           />
+          {/* Pathfinding-specific: Shortest Path Guarantee */}
+          {content.mode === "pathfinding" && (
+            <ComplexityBadge
+              icon={<Route className="h-4 w-4" />}
+              label="Shortest Path"
+              value={content.article.guaranteesShortestPath ? "Guaranteed" : "Not Guaranteed"}
+              variant={content.article.guaranteesShortestPath ? "excellent" : "fair"}
+            />
+          )}
         </div>
       </header>
 
@@ -84,44 +166,74 @@ export default async function LearnPage({ params }: LearnPageProps) {
       </Section>
 
       {/* How it Works Section */}
-      <Section title="How It Works" icon={<Target className="h-5 w-5" />}>
+      <Section title="How It Works" icon={config.icon}>
         <Prose content={article.mechanics} />
 
-        {/* Complexity Details */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <ComplexityCard
-            title="Best Case"
-            complexity={article.bestCase.complexity}
-            explanation={article.bestCase.explanation}
-            variant="good"
-          />
-          <ComplexityCard
-            title="Worst Case"
-            complexity={article.worstCase.complexity}
-            explanation={article.worstCase.explanation}
-            variant="fair"
-          />
-          <ComplexityCard
-            title="Average Case"
-            complexity={article.averageCase.complexity}
-            explanation={article.averageCase.explanation}
-            variant="neutral"
-          />
-          <ComplexityCard
-            title="Space"
-            complexity={article.spaceComplexity.complexity}
-            explanation={article.spaceComplexity.explanation}
-            variant={article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
-          />
-        </div>
+        {/* Complexity Details - Sorting has 4 cases, Pathfinding has 2 */}
+        {content.mode === "sorting" ? (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ComplexityCard
+              title="Best Case"
+              complexity={content.article.bestCase.complexity}
+              explanation={content.article.bestCase.explanation}
+              variant="good"
+            />
+            <ComplexityCard
+              title="Worst Case"
+              complexity={content.article.worstCase.complexity}
+              explanation={content.article.worstCase.explanation}
+              variant="fair"
+            />
+            <ComplexityCard
+              title="Average Case"
+              complexity={content.article.averageCase.complexity}
+              explanation={content.article.averageCase.explanation}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Space"
+              complexity={content.article.spaceComplexity.complexity}
+              explanation={content.article.spaceComplexity.explanation}
+              variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+            />
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ComplexityCard
+              title="Time Complexity"
+              complexity={content.article.timeComplexity.complexity}
+              explanation={content.article.timeComplexity.explanation}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Space Complexity"
+              complexity={content.article.spaceComplexity.complexity}
+              explanation={content.article.spaceComplexity.explanation}
+              variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+            />
+            <ComplexityCard
+              title="Data Structure"
+              complexity={content.article.dataStructure}
+              explanation={`The core data structure powering ${content.article.title}.`}
+              variant="neutral"
+            />
+            <ComplexityCard
+              title="Visual Pattern"
+              complexity={content.article.visualPattern}
+              explanation="How this algorithm appears during visualization."
+              variant="neutral"
+            />
+          </div>
+        )}
       </Section>
 
       {/* Code Walkthrough Section */}
       <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
         <p className="text-muted mb-4 text-sm">
-          Real implementations in 6 programming languages. Select a language to view idiomatic code.
+          Real implementations in multiple programming languages. Select a language to view
+          idiomatic code.
         </p>
-        <CodeTabs algorithm={algorithm} />
+        <CodeTabs mode={content.mode} algorithm={algorithm} />
       </Section>
 
       {/* Real World Use Cases Section */}
@@ -389,11 +501,13 @@ function getComplexityVariant(complexity: string): "excellent" | "good" | "fair"
 export async function generateMetadata({ params }: LearnPageProps) {
   const { mode, algorithm } = await params;
 
-  if (mode === "sorting" && isValidSortingAlgorithm(algorithm)) {
-    const article = getSortingArticle(algorithm);
+  const content = getArticle(mode, algorithm);
+
+  if (content) {
+    const modeLabel = content.mode === "sorting" ? "Sorting" : "Pathfinding";
     return {
-      title: `${article.title} | Learn | Yield`,
-      description: `Learn about ${article.title}: ${article.tagline}. ${article.mechanics.slice(0, 150)}...`,
+      title: `${content.article.title} | ${modeLabel} | Learn | Yield`,
+      description: `Learn about ${content.article.title}: ${content.article.tagline}. ${content.article.mechanics.slice(0, 150)}...`,
     };
   }
 
@@ -404,8 +518,15 @@ export async function generateMetadata({ params }: LearnPageProps) {
 }
 
 export function generateStaticParams() {
-  return VALID_SORTING_ALGORITHMS.map((algorithm) => ({
+  const sortingParams = VALID_SORTING_ALGORITHMS.map((algorithm) => ({
     mode: "sorting",
     algorithm,
   }));
+
+  const pathfindingParams = VALID_PATHFINDING_ALGORITHMS.map((algorithm) => ({
+    mode: "pathfinding",
+    algorithm,
+  }));
+
+  return [...sortingParams, ...pathfindingParams];
 }
