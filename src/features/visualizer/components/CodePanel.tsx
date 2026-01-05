@@ -3,7 +3,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Clipboard } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getAlgorithmMetadata, STEP_TYPE_LABELS } from "@/features/algorithms";
+import {
+  getAlgorithmMetadata,
+  getTreeAlgorithmMetadata,
+  STEP_TYPE_LABELS,
+  TREE_STEP_LABELS,
+} from "@/features/algorithms";
 import {
   getPathfindingAlgorithmMetadata,
   PATHFINDING_STEP_LABELS,
@@ -11,7 +16,7 @@ import {
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { usePathfinding, useSorting } from "../context";
+import { usePathfinding, useSorting, useTree } from "../context";
 
 export interface CodePanelProps {
   className?: string;
@@ -24,10 +29,13 @@ export function CodePanel({ className }: CodePanelProps) {
   const mode = useYieldStore((state) => state.mode);
   const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
+  const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
+  const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
 
   // Get context values based on mode
   const sortingContext = useSorting();
   const pathfindingContext = usePathfinding();
+  const treeContext = useTree();
 
   const [isCopied, setIsCopied] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -46,6 +54,19 @@ export function CodePanel({ className }: CodePanelProps) {
         highlightedLine: lineIndex,
       };
     }
+    if (mode === "tree") {
+      const metadata = getTreeAlgorithmMetadata(treeAlgorithm, treeDataStructure);
+      const stepType = treeContext.currentStepType;
+      const lineIndex = stepType ? (metadata.lineMapping[stepType] ?? null) : null;
+      return {
+        status: treeContext.status,
+        codeLines: metadata.code,
+        stepLabel: stepType ? TREE_STEP_LABELS[stepType] : null,
+        algorithmKey: `${treeDataStructure}-${treeAlgorithm}`,
+        highlightedLine: lineIndex,
+      };
+    }
+    // Pathfinding mode
     const metadata = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
     const stepType = pathfindingContext.currentStepType;
     const lineIndex = stepType ? (metadata.lineMapping[stepType] ?? null) : null;
@@ -60,10 +81,14 @@ export function CodePanel({ className }: CodePanelProps) {
     mode,
     sortingAlgorithm,
     pathfindingAlgorithm,
+    treeAlgorithm,
+    treeDataStructure,
     sortingContext.currentStepType,
     sortingContext.status,
     pathfindingContext.currentStepType,
     pathfindingContext.status,
+    treeContext.currentStepType,
+    treeContext.status,
   ]);
 
   const displayLine = highlightedLine !== null ? highlightedLine + 1 : null;
@@ -105,9 +130,9 @@ export function CodePanel({ className }: CodePanelProps) {
       <div className="flex-1 overflow-auto">
         <pre className="font-mono text-[13px] leading-7 py-6">
           <code className="relative block">
-            {/* Single persistent highlight that animates position (sorting only) */}
+            {/* Single persistent highlight that animates position (sorting and tree modes) */}
             <AnimatePresence>
-              {mode === "sorting" && highlightedLine !== null && (
+              {(mode === "sorting" || mode === "tree") && highlightedLine !== null && (
                 <motion.div
                   className="bg-accent-muted pointer-events-none absolute left-0 right-0 z-0"
                   style={{ height: LINE_HEIGHT_PX }}
@@ -125,7 +150,9 @@ export function CodePanel({ className }: CodePanelProps) {
                 key={`${algorithmKey}-${lineNumber}`}
                 line={line}
                 lineNumber={lineNumber}
-                isHighlighted={mode === "sorting" && lineNumber === highlightedLine}
+                isHighlighted={
+                  (mode === "sorting" || mode === "tree") && lineNumber === highlightedLine
+                }
               />
             ))}
           </code>
@@ -135,7 +162,7 @@ export function CodePanel({ className }: CodePanelProps) {
       {/* Footer */}
       <footer className="border-border-subtle flex h-10 shrink-0 items-center border-t px-6">
         <span className="text-muted text-xs">
-          {mode === "sorting" ? (
+          {mode === "sorting" && (
             <>
               {status === "idle" && "Ready to start"}
               {status === "complete" && "Sorting complete"}
@@ -144,7 +171,18 @@ export function CodePanel({ className }: CodePanelProps) {
                 stepLabel &&
                 `Line ${displayLine}: ${stepLabel}`}
             </>
-          ) : (
+          )}
+          {mode === "tree" && (
+            <>
+              {status === "idle" && "Ready to visualize"}
+              {status === "complete" && "Operation complete"}
+              {(status === "playing" || status === "paused") &&
+                displayLine &&
+                stepLabel &&
+                `Line ${displayLine}: ${stepLabel}`}
+            </>
+          )}
+          {mode === "pathfinding" && (
             <>
               {status === "idle" && "Ready to visualize"}
               {status === "complete" && "Pathfinding complete"}
