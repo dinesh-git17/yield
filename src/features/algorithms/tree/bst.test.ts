@@ -5,6 +5,7 @@ import {
   bstInsert,
   bstSearch,
   inOrderTraversal,
+  invertTree,
   levelOrderTraversal,
   postOrderTraversal,
   preOrderTraversal,
@@ -334,5 +335,105 @@ describe("levelOrderTraversal", () => {
     const orders = outputSteps.map((s) => (s.type === "traverse-output" ? s.order : -1));
 
     expect(orders).toEqual([0, 1, 2]);
+  });
+});
+
+describe("invertTree", () => {
+  it("yields nothing for empty tree", () => {
+    const context: TreeContext = { treeState: emptyTree() };
+    const steps = collectSteps(invertTree(context));
+    expect(steps).toHaveLength(0);
+  });
+
+  it("yields visit and invert-swap for single node", () => {
+    const treeState: TreeState = {
+      rootId: "node-1",
+      nodes: {
+        "node-1": { id: "node-1", value: 50, leftId: null, rightId: null, parentId: null },
+      },
+    };
+    const context: TreeContext = { treeState };
+    const steps = collectSteps(invertTree(context));
+
+    expect(steps).toHaveLength(2);
+    expect(steps[0]).toMatchObject({ type: "visit", nodeId: "node-1" });
+    expect(steps[1]).toMatchObject({
+      type: "invert-swap",
+      nodeId: "node-1",
+      leftChildId: null,
+      rightChildId: null,
+    });
+  });
+
+  it("yields visit before invert-swap for each node", () => {
+    const context: TreeContext = { treeState: simpleTree() };
+    const steps = collectSteps(invertTree(context));
+
+    // Simple tree has 3 nodes, each gets a visit and invert-swap
+    expect(steps).toHaveLength(6);
+
+    // Root visited first (pre-order visit)
+    expect(steps[0]).toMatchObject({ type: "visit", nodeId: "node-1" });
+    // Left child visited
+    expect(steps[1]).toMatchObject({ type: "visit", nodeId: "node-2" });
+    // Left child swapped (leaf, no children)
+    expect(steps[2]).toMatchObject({ type: "invert-swap", nodeId: "node-2" });
+    // Right child visited
+    expect(steps[3]).toMatchObject({ type: "visit", nodeId: "node-3" });
+    // Right child swapped (leaf, no children)
+    expect(steps[4]).toMatchObject({ type: "invert-swap", nodeId: "node-3" });
+    // Root swapped last (post-order swap)
+    expect(steps[5]).toMatchObject({ type: "invert-swap", nodeId: "node-1" });
+  });
+
+  it("yields invert-swap with correct child IDs", () => {
+    const context: TreeContext = { treeState: simpleTree() };
+    const steps = collectSteps(invertTree(context));
+
+    // Root (node-1) has leftId: node-2, rightId: node-3
+    const rootSwap = steps.find((s) => s.type === "invert-swap" && s.nodeId === "node-1");
+    expect(rootSwap).toMatchObject({
+      type: "invert-swap",
+      nodeId: "node-1",
+      leftChildId: "node-2",
+      rightChildId: "node-3",
+    });
+  });
+
+  it("processes all nodes in complex tree", () => {
+    const context: TreeContext = { treeState: complexTree() };
+    const steps = collectSteps(invertTree(context));
+
+    // Complex tree has 7 nodes, each gets visit + invert-swap = 14 steps
+    expect(steps).toHaveLength(14);
+
+    // All nodes should have an invert-swap step
+    const swapSteps = steps.filter((s) => s.type === "invert-swap");
+    expect(swapSteps).toHaveLength(7);
+
+    const swappedNodeIds = swapSteps.map((s) => (s.type === "invert-swap" ? s.nodeId : ""));
+    expect(swappedNodeIds).toContain("node-1");
+    expect(swappedNodeIds).toContain("node-2");
+    expect(swappedNodeIds).toContain("node-3");
+    expect(swappedNodeIds).toContain("node-4");
+    expect(swappedNodeIds).toContain("node-5");
+    expect(swappedNodeIds).toContain("node-6");
+    expect(swappedNodeIds).toContain("node-7");
+  });
+
+  it("swaps in post-order (children before parent)", () => {
+    const context: TreeContext = { treeState: simpleTree() };
+    const steps = collectSteps(invertTree(context));
+
+    const swapSteps = steps.filter((s) => s.type === "invert-swap");
+    const swapOrder = swapSteps.map((s) => (s.type === "invert-swap" ? s.nodeId : ""));
+
+    // Children (node-2, node-3) should be swapped before root (node-1)
+    const rootIndex = swapOrder.indexOf("node-1");
+    const leftChildIndex = swapOrder.indexOf("node-2");
+    const rightChildIndex = swapOrder.indexOf("node-3");
+
+    expect(leftChildIndex).toBeLessThan(rootIndex);
+    expect(rightChildIndex).toBeLessThan(rootIndex);
   });
 });

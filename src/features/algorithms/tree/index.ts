@@ -6,6 +6,7 @@ export {
   bstInsert,
   bstSearch,
   inOrderTraversal,
+  invertTree,
   levelOrderTraversal,
   postOrderTraversal,
   preOrderTraversal,

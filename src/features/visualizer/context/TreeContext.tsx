@@ -1,7 +1,11 @@
 "use client";
 
-import { createContext, useContext, useMemo } from "react";
-import { type UseTreeControllerReturn, useTreeController } from "@/features/algorithms/hooks";
+import { createContext, useCallback, useContext, useMemo } from "react";
+import {
+  type UseTreeControllerOptions,
+  type UseTreeControllerReturn,
+  useTreeController,
+} from "@/features/algorithms/hooks";
 import type { PlaybackSpeedMultiplier } from "@/lib/store";
 import { useYieldStore } from "@/lib/store";
 
@@ -29,12 +33,29 @@ export function TreeProvider({ children }: TreeProviderProps) {
   const treeState = useYieldStore((state) => state.treeState);
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
+  const swapNodeChildren = useYieldStore((state) => state.swapNodeChildren);
 
   // Calculate interval from speed multiplier
   const intervalMs = useMemo(() => speedMultiplierToInterval(playbackSpeed), [playbackSpeed]);
 
+  // Callback for invert operation - swaps children in the store
+  const handleInvertSwap = useCallback(
+    (nodeId: string) => {
+      swapNodeChildren(nodeId);
+    },
+    [swapNodeChildren]
+  );
+
+  // Controller options with callbacks
+  const options: UseTreeControllerOptions = useMemo(
+    () => ({
+      onInvertSwap: handleInvertSwap,
+    }),
+    [handleInvertSwap]
+  );
+
   // Use the tree controller (data-structure-aware)
-  const controller = useTreeController(treeState, treeDataStructure, intervalMs);
+  const controller = useTreeController(treeState, treeDataStructure, intervalMs, options);
 
   const value: TreeContextValue = useMemo(
     () => ({

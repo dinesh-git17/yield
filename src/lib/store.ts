@@ -66,7 +66,8 @@ export type TreeAlgorithmType =
   | "inorder"
   | "preorder"
   | "postorder"
-  | "bfs";
+  | "bfs"
+  | "invert";
 
 /**
  * Playback speed multipliers.
@@ -116,9 +117,9 @@ export const TREE_CONFIG = {
  * Heaps support all operations (search is linear BFS, traversals work on any tree).
  */
 export const TREE_OPERATIONS: Record<TreeDataStructureType, TreeAlgorithmType[]> = {
-  bst: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
-  avl: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
-  "max-heap": ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
+  bst: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
+  avl: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
+  "max-heap": ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,6 +297,8 @@ export interface YieldStore {
   resetTree: () => void;
   /** Sets the entire tree state (useful for loading presets) */
   setTreeState: (state: TreeState) => void;
+  /** Swaps the left and right children of a node (used for tree inversion) */
+  swapNodeChildren: (nodeId: string) => void;
 }
 
 /**
@@ -1473,6 +1476,26 @@ export const useYieldStore = create<YieldStore>((set) => ({
     }),
 
   setTreeState: (newTreeState) => set({ treeState: newTreeState }),
+
+  swapNodeChildren: (nodeId) =>
+    set((state) => {
+      const node = state.treeState.nodes[nodeId];
+      if (!node) return state;
+
+      return {
+        treeState: {
+          ...state.treeState,
+          nodes: {
+            ...state.treeState.nodes,
+            [nodeId]: {
+              ...node,
+              leftId: node.rightId,
+              rightId: node.leftId,
+            },
+          },
+        },
+      };
+    }),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────

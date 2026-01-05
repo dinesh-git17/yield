@@ -22,6 +22,8 @@ export const TREE_STEP_LABELS: Record<TreeStep["type"], string> = {
   "sink-down": "Sinking down",
   swap: "Swapping nodes",
   "extract-max": "Extracting max",
+  // Invert operation
+  "invert-swap": "Swapping children",
 };
 
 /**
@@ -333,6 +335,44 @@ export const TREE_ALGO_METADATA: Record<TreeAlgorithmType, TreeAlgorithmMetadata
     lineMapping: {
       visit: 10,
       "traverse-output": 11,
+    },
+  },
+
+  invert: {
+    label: "Invert Binary Tree",
+    shortLabel: "Invert",
+    complexity: "O(n)",
+    spaceComplexity: "O(h)",
+    description:
+      "Recursively swaps left and right children of every node, mirroring the entire tree structure. The famous interview question that went viral.",
+    isTraversal: false,
+    visualPattern: "Mirror transformation",
+    code: [
+      "function* invertTree(root) {",
+      "  if (root === null) return null;",
+      "",
+      "  // Visit node",
+      "  yield { type: 'visit', nodeId: root.id };",
+      "",
+      "  // Recursively invert subtrees",
+      "  yield* invertTree(root.left);",
+      "  yield* invertTree(root.right);",
+      "",
+      "  // Swap left and right children",
+      "  yield { type: 'invert-swap', nodeId: root.id };",
+      "  [root.left, root.right] = [root.right, root.left];",
+      "",
+      "  return root;",
+      "}",
+      "",
+      '// "Google: 90% of our engineers use the software',
+      "// you wrote (Homebrew), but you can't invert a",
+      '// binary tree on a whiteboard so f*** off."',
+      "// — Max Howell",
+    ],
+    lineMapping: {
+      visit: 4,
+      "invert-swap": 11,
     },
   },
 };

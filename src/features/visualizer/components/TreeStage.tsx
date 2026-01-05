@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Dices,
+  FlipHorizontal2,
   Pause,
   Play,
   RotateCcw,
@@ -255,6 +256,19 @@ export function TreeStage({ className }: TreeStageProps) {
     }, 150);
   }, [handleClearAll, insertNode]);
 
+  /**
+   * Inverts the tree — the famous interview question.
+   */
+  const handleInvertTree = useCallback(() => {
+    // Reset any previous visualization
+    controller.reset();
+    // Clear traversal selection
+    setSelectedTraversal(null);
+    // Run the invert visualization
+    setTreeAlgorithm("invert");
+    controller.executeOperation("invert");
+  }, [controller, setTreeAlgorithm]);
+
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header Bar */}
@@ -322,6 +336,13 @@ export function TreeStage({ className }: TreeStageProps) {
               onClick={handleGenerateBalanced}
               disabled={isPlaying}
               variant="secondary"
+            />
+            <ActionButton
+              label="Invert"
+              icon={<FlipHorizontal2 className="h-3.5 w-3.5" />}
+              onClick={handleInvertTree}
+              disabled={isPlaying || isEmpty}
+              variant="invert"
             />
             <ActionButton
               label="Clear"
@@ -667,6 +688,12 @@ const NODE_STATE_STYLES: Record<TreeNodeState, { border: string; shadow: string;
     shadow: "shadow-blue-400/30",
     bg: "bg-blue-500/10",
   },
+  // Invert-specific states
+  inverting: {
+    border: "border-pink-400",
+    shadow: "shadow-pink-400/40",
+    bg: "bg-pink-500/20",
+  },
 };
 
 /**
@@ -902,14 +929,14 @@ function PlayPauseButton({ isPlaying, hasStarted, onClick, disabled }: PlayPause
 }
 
 /**
- * Action button for tree operations (Random, Clear).
+ * Action button for tree operations (Random, Invert, Clear).
  */
 interface ActionButtonProps {
   label: string;
   icon: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
-  variant?: "secondary" | "destructive";
+  variant?: "secondary" | "invert" | "destructive";
 }
 
 function ActionButton({
@@ -935,6 +962,7 @@ function ActionButton({
         "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
         "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
         variant === "secondary" && "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20",
+        variant === "invert" && "bg-pink-500/10 text-pink-400 hover:bg-pink-500/20",
         variant === "destructive" && "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
         disabled && "cursor-not-allowed"
       )}

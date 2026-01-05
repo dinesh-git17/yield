@@ -147,6 +147,19 @@ export type TreeStep =
       nodeId: string;
       /** The maximum value being extracted */
       value: number;
+    }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Invert Tree Operation
+  // ─────────────────────────────────────────────────────────────────────────────
+  | {
+      /** Swapping left and right children of a node during tree inversion */
+      type: "invert-swap";
+      /** ID of the node whose children are being swapped */
+      nodeId: string;
+      /** ID of the left child before swap (null if none) */
+      leftChildId: string | null;
+      /** ID of the right child before swap (null if none) */
+      rightChildId: string | null;
     };
 
 /**
