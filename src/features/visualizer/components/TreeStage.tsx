@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Dices,
   FlipHorizontal2,
+  Layers,
   Pause,
   Play,
   RotateCcw,
@@ -135,6 +136,9 @@ export function TreeStage({ className }: TreeStageProps) {
   const insertNode = useYieldStore((state) => state.insertNode);
   const resetTree = useYieldStore((state) => state.resetTree);
   const setTreeAlgorithm = useYieldStore((state) => state.setTreeAlgorithm);
+  const fillRandomHeap = useYieldStore((state) => state.fillRandomHeap);
+
+  const isMaxHeap = treeDataStructure === "max-heap";
 
   // Get controller from context
   const controller = useTree();
@@ -270,6 +274,27 @@ export function TreeStage({ className }: TreeStageProps) {
     controller.executeOperation("invert");
   }, [controller, setTreeAlgorithm]);
 
+  /**
+   * Floyd's Heapify — builds a heap in O(n) from chaotic data.
+   * Fills tree with random values, then runs Floyd's bottom-up heapify algorithm.
+   */
+  const handleHeapify = useCallback(() => {
+    // Clear everything first
+    handleClearAll();
+
+    // Wait for clear to complete before filling
+    setTimeout(() => {
+      // Fill with random unordered values (15 nodes for a nice 4-level tree)
+      fillRandomHeap(15);
+
+      // Wait for fill to render, then run heapify visualization
+      setTimeout(() => {
+        setTreeAlgorithm("heapify");
+        controller.executeOperation("heapify");
+      }, 100);
+    }, 50);
+  }, [handleClearAll, fillRandomHeap, setTreeAlgorithm, controller]);
+
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header Bar */}
@@ -338,6 +363,15 @@ export function TreeStage({ className }: TreeStageProps) {
               disabled={isPlaying}
               variant="secondary"
             />
+            {isMaxHeap && (
+              <ActionButton
+                label="Heapify"
+                icon={<Layers className="h-3.5 w-3.5" />}
+                onClick={handleHeapify}
+                disabled={isPlaying}
+                variant="heapify"
+              />
+            )}
             <ActionButton
               label="Invert"
               icon={<FlipHorizontal2 className="h-3.5 w-3.5" />}
@@ -668,6 +702,11 @@ const NODE_STATE_STYLES: Record<TreeNodeState, { border: string; shadow: string;
     shadow: "shadow-rose-500/50",
     bg: "bg-rose-500/30",
   },
+  heapifying: {
+    border: "border-amber-500",
+    shadow: "shadow-amber-500/40",
+    bg: "bg-amber-500/20",
+  },
   // AVL-specific states
   unbalanced: {
     border: "border-red-500",
@@ -954,14 +993,14 @@ function PlayPauseButton({ isPlaying, hasStarted, onClick, disabled }: PlayPause
 }
 
 /**
- * Action button for tree operations (Random, Invert, Clear).
+ * Action button for tree operations (Random, Heapify, Invert, Clear).
  */
 interface ActionButtonProps {
   label: string;
   icon: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
-  variant?: "secondary" | "invert" | "destructive";
+  variant?: "secondary" | "heapify" | "invert" | "destructive";
 }
 
 function ActionButton({
@@ -987,6 +1026,7 @@ function ActionButton({
         "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
         "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
         variant === "secondary" && "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20",
+        variant === "heapify" && "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20",
         variant === "invert" && "bg-pink-500/10 text-pink-400 hover:bg-pink-500/20",
         variant === "destructive" && "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
         disabled && "cursor-not-allowed"

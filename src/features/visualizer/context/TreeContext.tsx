@@ -35,6 +35,7 @@ export function TreeProvider({ children }: TreeProviderProps) {
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
   const swapNodeChildren = useYieldStore((state) => state.swapNodeChildren);
   const splayNode = useYieldStore((state) => state.splayNode);
+  const heapifySwap = useYieldStore((state) => state.heapifySwap);
 
   // Calculate interval from speed multiplier
   const intervalMs = useMemo(() => speedMultiplierToInterval(playbackSpeed), [playbackSpeed]);
@@ -55,13 +56,22 @@ export function TreeProvider({ children }: TreeProviderProps) {
     [splayNode]
   );
 
+  // Callback for heapify swap operation - swaps values during Floyd's heapify
+  const handleHeapifySwap = useCallback(
+    (parentId: string, childId: string) => {
+      heapifySwap(parentId, childId);
+    },
+    [heapifySwap]
+  );
+
   // Controller options with callbacks
   const options: UseTreeControllerOptions = useMemo(
     () => ({
       onInvertSwap: handleInvertSwap,
       onSplay: handleSplay,
+      onHeapifySwap: handleHeapifySwap,
     }),
-    [handleInvertSwap, handleSplay]
+    [handleInvertSwap, handleSplay, handleHeapifySwap]
   );
 
   // Use the tree controller (data-structure-aware)

@@ -22,6 +22,7 @@ export const TREE_STEP_LABELS: Record<TreeStep["type"], string> = {
   "sink-down": "Sinking down",
   swap: "Swapping nodes",
   "extract-max": "Extracting max",
+  "heapify-node": "Heapifying node",
   // Invert operation
   "invert-swap": "Swapping children",
   // Splay operations
@@ -56,9 +57,11 @@ export interface TreeAlgorithmMetadata {
 }
 
 /**
- * Tree algorithm metadata registry.
+ * Tree algorithm metadata registry (BST-specific algorithms).
+ * Not all algorithms are available for all data structures,
+ * so this is Partial. Use getTreeAlgorithmMetadata() for lookup.
  */
-export const TREE_ALGO_METADATA: Record<TreeAlgorithmType, TreeAlgorithmMetadata> = {
+export const TREE_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithmMetadata>> = {
   insert: {
     label: "BST Insert",
     shortLabel: "Insert",
@@ -685,6 +688,62 @@ export const HEAP_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithm
       "traverse-output": 11,
     },
   },
+
+  heapify: {
+    label: "Floyd's Heapify",
+    shortLabel: "Heapify",
+    complexity: "O(n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Builds a valid max-heap from an unordered tree in linear time. Processes nodes bottom-up, starting from the last non-leaf and sifting down each node. Watch the heap property spread like an infection from leaves to root.",
+    isTraversal: false,
+    visualPattern: "Bottom-up infection",
+    code: [
+      "function* floydHeapify(tree) {",
+      "  // Get nodes in level-order (array representation)",
+      "  const nodes = tree.levelOrder();",
+      "  const n = nodes.length;",
+      "",
+      "  // Last non-leaf index = floor(n/2) - 1",
+      "  const lastNonLeaf = Math.floor(n / 2) - 1;",
+      "",
+      "  // Process each non-leaf from bottom to top",
+      "  for (let i = lastNonLeaf; i >= 0; i--) {",
+      "    yield { type: 'heapify-node', index: i };",
+      "",
+      "    // Sift down this node",
+      "    let current = i;",
+      "    while (true) {",
+      "      const left = 2 * current + 1;",
+      "      const right = 2 * current + 2;",
+      "      let largest = current;",
+      "",
+      "      if (left < n && nodes[left] > nodes[largest]) {",
+      "        largest = left;",
+      "      }",
+      "      if (right < n && nodes[right] > nodes[largest]) {",
+      "        largest = right;",
+      "      }",
+      "",
+      "      if (largest === current) break;",
+      "",
+      "      yield { type: 'sink-down', nodeId: current };",
+      "      yield { type: 'swap', a: current, b: largest };",
+      "      swap(nodes, current, largest);",
+      "      current = largest;",
+      "    }",
+      "  }",
+      "}",
+      "",
+      "// Why O(n)? Most nodes are near leaves, which",
+      "// require few swaps. Only root sinks log(n) levels.",
+    ],
+    lineMapping: {
+      "heapify-node": 10,
+      "sink-down": 27,
+      swap: 28,
+    },
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -868,6 +927,11 @@ export function getTreeAlgorithmMetadata(
     if (splayMetadata) return splayMetadata;
   }
 
-  // Fall back to BST metadata
-  return TREE_ALGO_METADATA[algorithm] ?? TREE_ALGO_METADATA.insert;
+  // Fall back to BST metadata (insert is always defined as the baseline)
+  const treeMetadata = TREE_ALGO_METADATA[algorithm];
+  if (treeMetadata) return treeMetadata;
+
+  // Ultimate fallback to insert metadata
+  // TREE_ALGO_METADATA.insert is always defined as it's the base algorithm
+  return TREE_ALGO_METADATA.insert as TreeAlgorithmMetadata;
 }

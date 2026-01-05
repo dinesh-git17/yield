@@ -28,6 +28,7 @@ export {
 // Heap Operations
 export {
   findHeapInsertionPoint,
+  floydHeapify,
   getLastNode,
   getNodesInLevelOrder,
   heapExtractMax,

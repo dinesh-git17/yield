@@ -148,6 +148,16 @@ export type TreeStep =
       /** The maximum value being extracted */
       value: number;
     }
+  | {
+      /** Marking a node as being processed during Floyd's heapify */
+      type: "heapify-node";
+      /** ID of the node being heapified */
+      nodeId: string;
+      /** Index of the node in level-order (for tracking progress) */
+      index: number;
+      /** Total number of non-leaf nodes to process */
+      totalNonLeaf: number;
+    }
   // ─────────────────────────────────────────────────────────────────────────────
   // Invert Tree Operation
   // ─────────────────────────────────────────────────────────────────────────────

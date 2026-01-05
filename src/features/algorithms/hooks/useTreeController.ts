@@ -9,6 +9,7 @@ import {
   bstDelete,
   bstInsert,
   bstSearch,
+  floydHeapify,
   heapExtractMax,
   heapInsert,
   heapSearch,
@@ -42,6 +43,7 @@ export type TreeNodeState =
   | "sinking-down"
   | "swapping"
   | "extracting"
+  | "heapifying"
   // AVL-specific states
   | "unbalanced"
   | "rotating-pivot"
@@ -128,6 +130,8 @@ export interface UseTreeControllerOptions {
   onInvertSwap?: (nodeId: string) => void;
   /** Callback fired when a splay operation completes (after all zig/zig-zig/zig-zag steps) */
   onSplay?: (nodeId: string) => void;
+  /** Callback fired when a swap occurs during heapify (to update store values) */
+  onHeapifySwap?: (parentId: string, childId: string) => void;
 }
 
 /**
@@ -153,6 +157,9 @@ function getTreeGenerator(
       case "delete":
         // Heap delete is actually extract-max (no value needed)
         return heapExtractMax(context);
+      case "heapify":
+        // Floyd's O(n) heap construction
+        return floydHeapify(context);
       // Traversals work on any binary tree structure
       case "inorder":
         return inOrderTraversal(context);
@@ -265,7 +272,9 @@ export function useTreeController(
   speed: number = DEFAULT_SPEED,
   options: UseTreeControllerOptions = {}
 ): UseTreeControllerReturn {
-  const { onInvertSwap, onSplay } = options;
+  const { onInvertSwap, onSplay, onHeapifySwap } = options;
+  // Track if we're in heapify mode to route swap callbacks correctly
+  const isHeapifyingRef = useRef(false);
   const [status, setStatus] = useState<TreePlaybackStatus>("idle");
   const [nodeStates, setNodeStates] = useState<Map<string, TreeNodeState>>(new Map());
   const [traversalOutput, setTraversalOutput] = useState<TraversalOutput[]>([]);
@@ -431,13 +440,39 @@ export function useTreeController(
             const next = new Map(prev);
             // Clear previous states
             for (const [id, state] of next) {
-              if (state === "bubbling-up" || state === "sinking-down" || state === "comparing") {
+              if (
+                state === "bubbling-up" ||
+                state === "sinking-down" ||
+                state === "comparing" ||
+                state === "heapifying"
+              ) {
                 next.set(id, "idle");
               }
             }
             // Highlight both nodes being swapped
             next.set(step.nodeId1, "swapping");
             next.set(step.nodeId2, "swapping");
+            return next;
+          });
+          // If we're in heapify mode, call the swap callback to update store
+          if (isHeapifyingRef.current) {
+            onHeapifySwap?.(step.nodeId1, step.nodeId2);
+          }
+          break;
+
+        case "heapify-node":
+          // Mark the start of heapify mode
+          isHeapifyingRef.current = true;
+          setNodeStates((prev) => {
+            const next = new Map(prev);
+            // Clear previous heapify states
+            for (const [id, state] of next) {
+              if (state === "heapifying" || state === "swapping") {
+                next.set(id, "idle");
+              }
+            }
+            // Highlight the node being heapified
+            next.set(step.nodeId, "heapifying");
             return next;
           });
           break;
@@ -617,7 +652,7 @@ export function useTreeController(
           break;
       }
     },
-    [onInvertSwap, onSplay]
+    [onInvertSwap, onSplay, onHeapifySwap]
   );
 
   /**
@@ -669,6 +704,7 @@ export function useTreeController(
     setLastResult(null);
     setCurrentRotation(null);
     iteratorRef.current = null;
+    isHeapifyingRef.current = false;
   }, []);
 
   /**

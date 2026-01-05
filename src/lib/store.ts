@@ -68,7 +68,8 @@ export type TreeAlgorithmType =
   | "preorder"
   | "postorder"
   | "bfs"
-  | "invert";
+  | "invert"
+  | "heapify";
 
 /**
  * Playback speed multipliers.
@@ -117,11 +118,22 @@ export const TREE_CONFIG = {
  * Operations available for each tree data structure.
  * Heaps support all operations (search is linear BFS, traversals work on any tree).
  * Splay trees splay the accessed node to root after every search operation.
+ * Heapify is only available for max-heap (Floyd's O(n) heap construction).
  */
 export const TREE_OPERATIONS: Record<TreeDataStructureType, TreeAlgorithmType[]> = {
   bst: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
   avl: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
-  "max-heap": ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
+  "max-heap": [
+    "insert",
+    "search",
+    "delete",
+    "heapify",
+    "inorder",
+    "preorder",
+    "postorder",
+    "bfs",
+    "invert",
+  ],
   splay: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
 };
 
@@ -307,6 +319,17 @@ export interface YieldStore {
    * Used by Splay Trees to move recently accessed nodes to the root.
    */
   splayNode: (nodeId: string) => void;
+  /**
+   * Fills the tree with random values in a complete binary tree structure.
+   * Used before heapify to create an unordered tree that can be converted to a heap.
+   * @param count - Number of nodes to create (1-31)
+   */
+  fillRandomHeap: (count: number) => void;
+  /**
+   * Performs a single swap of values between parent and child during heapify.
+   * Used by the heapify visualization to update the actual tree state.
+   */
+  heapifySwap: (parentId: string, childId: string) => void;
 }
 
 /**
@@ -1727,6 +1750,107 @@ export const useYieldStore = create<YieldStore>((set) => ({
     set((state) => {
       const newTreeState = splayNodeToRoot(state.treeState, nodeId);
       return { treeState: newTreeState };
+    }),
+
+  fillRandomHeap: (count) =>
+    set(() => {
+      // Clamp count to valid range
+      const nodeCount = Math.min(Math.max(1, count), TREE_CONFIG.MAX_NODES);
+
+      // Generate random unique values in the configured range
+      const values: number[] = [];
+      const usedValues = new Set<number>();
+
+      while (values.length < nodeCount) {
+        const value =
+          Math.floor(Math.random() * (TREE_CONFIG.VALUE_MAX - TREE_CONFIG.VALUE_MIN + 1)) +
+          TREE_CONFIG.VALUE_MIN;
+        if (!usedValues.has(value)) {
+          usedValues.add(value);
+          values.push(value);
+        }
+      }
+
+      // Build a complete binary tree with the random values
+      // (complete = all levels full except possibly last, which is filled left-to-right)
+      const nodes: Record<string, TreeNode> = {};
+      const nodeIds: string[] = [];
+
+      // Create all nodes first
+      for (let i = 0; i < nodeCount; i++) {
+        const id = generateNodeId();
+        nodeIds.push(id);
+        // Values array guaranteed to have nodeCount elements
+        const value = values[i] as number;
+        nodes[id] = {
+          id,
+          value,
+          leftId: null,
+          rightId: null,
+          parentId: null,
+        };
+      }
+
+      // Link nodes in complete binary tree structure
+      for (let i = 0; i < nodeCount; i++) {
+        const nodeId = nodeIds[i];
+        // nodeId is guaranteed to exist since we just created nodeCount nodes
+        if (!nodeId) continue;
+        const node = nodes[nodeId];
+        if (!node) continue;
+
+        const leftChildIndex = 2 * i + 1;
+        const rightChildIndex = 2 * i + 2;
+
+        if (leftChildIndex < nodeCount) {
+          const leftChildId = nodeIds[leftChildIndex];
+          if (leftChildId) {
+            node.leftId = leftChildId;
+            const leftChild = nodes[leftChildId];
+            if (leftChild) {
+              leftChild.parentId = nodeId;
+            }
+          }
+        }
+
+        if (rightChildIndex < nodeCount) {
+          const rightChildId = nodeIds[rightChildIndex];
+          if (rightChildId) {
+            node.rightId = rightChildId;
+            const rightChild = nodes[rightChildId];
+            if (rightChild) {
+              rightChild.parentId = nodeId;
+            }
+          }
+        }
+      }
+
+      return {
+        treeState: {
+          rootId: nodeIds[0] ?? null,
+          nodes,
+        },
+      };
+    }),
+
+  heapifySwap: (parentId, childId) =>
+    set((state) => {
+      const parent = state.treeState.nodes[parentId];
+      const child = state.treeState.nodes[childId];
+
+      if (!parent || !child) return state;
+
+      // Swap values between parent and child
+      return {
+        treeState: {
+          ...state.treeState,
+          nodes: {
+            ...state.treeState.nodes,
+            [parentId]: { ...parent, value: child.value },
+            [childId]: { ...child, value: parent.value },
+          },
+        },
+      };
     }),
 }));
 
