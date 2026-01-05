@@ -1,6 +1,7 @@
 import { Clock, Code2, HardDrive, Lightbulb, Target, XCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
+import { CodeTabs } from "@/features/learning/components";
 import { getSortingArticle } from "@/features/learning/content/sorting";
 import type { SortingAlgorithmType, VisualizerMode } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -117,29 +118,10 @@ export default async function LearnPage({ params }: LearnPageProps) {
 
       {/* Code Walkthrough Section */}
       <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
-        <div
-          className={cn(
-            "overflow-hidden rounded-xl border border-border",
-            "bg-surface font-mono text-sm"
-          )}
-        >
-          <div className="border-b border-border bg-surface-elevated px-4 py-2">
-            <span className="text-muted text-xs">pseudocode</span>
-          </div>
-          <pre className="overflow-x-auto p-4">
-            <code className="text-primary">
-              {metadata.code.map((line, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: Static code lines never reorder
-                <div key={index} className="leading-relaxed">
-                  <span className="text-muted mr-4 inline-block w-6 select-none text-right">
-                    {index + 1}
-                  </span>
-                  <span>{line}</span>
-                </div>
-              ))}
-            </code>
-          </pre>
-        </div>
+        <p className="text-muted mb-4 text-sm">
+          Real implementations in 6 programming languages. Select a language to view idiomatic code.
+        </p>
+        <CodeTabs algorithm={algorithm} />
       </Section>
 
       {/* Real World Use Cases Section */}
