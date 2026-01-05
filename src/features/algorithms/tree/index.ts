@@ -1,5 +1,3 @@
-// Config
-
 // BST Operations
 export {
   bstDelete,
@@ -10,12 +8,20 @@ export {
   postOrderTraversal,
   preOrderTraversal,
 } from "./bst";
+
+// Config
 export {
   getTreeAlgorithmMetadata,
   TREE_ALGO_METADATA,
   TREE_STEP_LABELS,
   type TreeAlgorithmMetadata,
 } from "./config";
+
+// Tree Generation
+export {
+  generateBalancedInsertionOrder,
+  generateBalancedTreeSequence,
+} from "./generateBalancedTree";
 
 // Types
 export type {

@@ -5,13 +5,16 @@ import {
   PathfindingProvider,
   Sidebar,
   SortingProvider,
+  TreeProvider,
 } from "@/features/visualizer/components";
 
 export default function Home() {
   return (
     <SortingProvider>
       <PathfindingProvider>
-        <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+        <TreeProvider>
+          <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+        </TreeProvider>
       </PathfindingProvider>
     </SortingProvider>
   );

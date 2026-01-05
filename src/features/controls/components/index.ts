@@ -7,3 +7,4 @@ export {
   type PathfindingAlgorithmWheelProps,
 } from "./PathfindingAlgorithmWheel";
 export { PathfindingControlBar, type PathfindingControlBarProps } from "./PathfindingControlBar";
+export { TreeControlBar, type TreeControlBarProps } from "./TreeControlBar";

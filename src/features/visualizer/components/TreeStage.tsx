@@ -1,18 +1,21 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { memo, useMemo } from "react";
+import { AlertCircle, CheckCircle2, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
+import { memo, useCallback, useMemo, useRef } from "react";
 import type { TraversalOutput, TreeNodeState } from "@/features/algorithms";
-import { SPRING_PRESETS } from "@/lib/motion";
-import { type TreeNode, type TreeState, useYieldStore } from "@/lib/store";
+import {
+  generateBalancedInsertionOrder,
+  getTreeAlgorithmMetadata,
+} from "@/features/algorithms/tree";
+import { TreeControlBar } from "@/features/controls";
+import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
+import { type TreeAlgorithmType, type TreeNode, type TreeState, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { useTree } from "../context";
 
 export interface TreeStageProps {
   className?: string;
-  /** Map of node IDs to their visual states during algorithm execution */
-  nodeStates?: Map<string, TreeNodeState>;
-  /** Output sequence from traversal operations */
-  traversalOutput?: TraversalOutput[];
 }
 
 /**
@@ -25,16 +28,10 @@ const LAYOUT = {
   LEVEL_HEIGHT_PERCENT: 16,
   /** Node diameter in pixels */
   NODE_SIZE: 48,
-  /** Minimum horizontal gap between nodes at deepest level */
-  MIN_NODE_GAP: 8,
 } as const;
 
 /**
  * Calculates the position of a node in the tree using the binary split algorithm.
- * Root is at X=50%, each level splits the remaining width.
- *
- * @param path - The path from root to this node (left/right decisions)
- * @returns The X position as a percentage (0-100)
  */
 function calculateNodeX(path: ("left" | "right")[]): number {
   let x = 50;
@@ -57,8 +54,8 @@ function calculateNodeY(depth: number): number {
  */
 interface PositionedNode {
   node: TreeNode;
-  x: number; // percentage
-  y: number; // percentage
+  x: number;
+  y: number;
   depth: number;
   parentX: number | null;
   parentY: number | null;
@@ -104,18 +101,110 @@ function buildPositionedNodes(treeState: TreeState): PositionedNode[] {
  * TreeStage — The Tree Visualization Stage.
  *
  * Renders a binary search tree with:
+ * - Header with playback controls
  * - Layer 1 (Back): SVG lines connecting parent to child nodes
  * - Layer 2 (Front): Animated circular nodes with values
- * - Layer 3 (Bottom): Traversal output sequence
+ * - Layer 3 (Bottom): TreeControlBar and traversal output
  */
-export function TreeStage({ className, nodeStates, traversalOutput }: TreeStageProps) {
+export function TreeStage({ className }: TreeStageProps) {
   const treeState = useYieldStore((state) => state.treeState);
   const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
+  const insertNode = useYieldStore((state) => state.insertNode);
+  const resetTree = useYieldStore((state) => state.resetTree);
+  const setTreeAlgorithm = useYieldStore((state) => state.setTreeAlgorithm);
+
+  // Get controller from context
+  const controller = useTree();
+
+  // Track insertion sequence for balanced tree generation
+  const balancedInsertionRef = useRef<number[]>([]);
+  const balancedInsertionIndexRef = useRef<number>(0);
+  const balancedInsertionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const positionedNodes = useMemo(() => buildPositionedNodes(treeState), [treeState]);
 
   const isEmpty = positionedNodes.length === 0;
-  const hasTraversalOutput = traversalOutput && traversalOutput.length > 0;
+  const hasTraversalOutput = controller.traversalOutput && controller.traversalOutput.length > 0;
+
+  const isPlaying = controller.status === "playing";
+  const isComplete = controller.status === "complete";
+  const isIdle = controller.status === "idle";
+
+  // Get algorithm metadata for display
+  const metadata = getTreeAlgorithmMetadata(treeAlgorithm);
+
+  /**
+   * Handles executing an operation from the control bar.
+   */
+  const handleExecute = useCallback(
+    (algorithm: TreeAlgorithmType, value?: number) => {
+      // For operations that need a value, insert/delete from store first
+      if (algorithm === "insert" && value !== undefined) {
+        const insertedId = insertNode(value);
+        if (insertedId) {
+          // Execute the visualization after insert
+          setTreeAlgorithm(algorithm);
+          controller.executeOperation(algorithm, value);
+        }
+      } else if (algorithm === "delete" && value !== undefined) {
+        // For delete, run the visualization first, then delete from store
+        setTreeAlgorithm(algorithm);
+        controller.executeOperation(algorithm, value);
+        // Note: actual deletion happens via store action separately
+      } else {
+        // For search and traversals
+        setTreeAlgorithm(algorithm);
+        controller.executeOperation(algorithm, value);
+      }
+    },
+    [insertNode, setTreeAlgorithm, controller]
+  );
+
+  /**
+   * Resets the tree and controller.
+   */
+  const handleReset = useCallback(() => {
+    // Clear any balanced insertion in progress
+    if (balancedInsertionIntervalRef.current) {
+      clearInterval(balancedInsertionIntervalRef.current);
+      balancedInsertionIntervalRef.current = null;
+    }
+    balancedInsertionRef.current = [];
+    balancedInsertionIndexRef.current = 0;
+
+    controller.reset();
+    resetTree();
+  }, [controller, resetTree]);
+
+  /**
+   * Generates a balanced tree with animated insertion.
+   */
+  const handleGenerateBalanced = useCallback(() => {
+    // Reset first
+    handleReset();
+
+    // Generate the insertion order for a balanced tree (15 nodes = nice 4-level tree)
+    const values = generateBalancedInsertionOrder(15);
+    balancedInsertionRef.current = values;
+    balancedInsertionIndexRef.current = 0;
+
+    // Insert nodes with a delay for visual effect
+    balancedInsertionIntervalRef.current = setInterval(() => {
+      const index = balancedInsertionIndexRef.current;
+      if (index >= balancedInsertionRef.current.length) {
+        if (balancedInsertionIntervalRef.current) {
+          clearInterval(balancedInsertionIntervalRef.current);
+          balancedInsertionIntervalRef.current = null;
+        }
+        return;
+      }
+
+      // Safe: index is always within bounds since we check against length above
+      const value = balancedInsertionRef.current[index] as number;
+      insertNode(value);
+      balancedInsertionIndexRef.current += 1;
+    }, 150);
+  }, [handleReset, insertNode]);
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -130,13 +219,32 @@ export function TreeStage({ className, nodeStates, traversalOutput }: TreeStageP
             transition={SPRING_PRESETS.snappy}
             className="bg-emerald-500/20 text-emerald-400 rounded-full px-2 py-0.5 text-xs font-medium"
           >
-            {getAlgorithmLabel(treeAlgorithm)}
+            {metadata.shortLabel}
           </motion.span>
+          {metadata.isTraversal && (
+            <span className="text-orange-400 text-xs">{metadata.visualPattern}</span>
+          )}
         </div>
 
-        {/* Node count */}
-        <div className="text-muted text-xs">
-          {positionedNodes.length} node{positionedNodes.length !== 1 ? "s" : ""}
+        {/* Playback Controls */}
+        <div className="flex items-center gap-2">
+          <ControlButton
+            label="Step"
+            icon={<SkipForward className="h-3.5 w-3.5" />}
+            onClick={controller.step}
+            disabled={isComplete || isIdle}
+          />
+          <ControlButton
+            label="Reset"
+            icon={<RotateCcw className="h-3.5 w-3.5" />}
+            onClick={() => controller.reset()}
+            disabled={isIdle}
+          />
+          <PlayPauseButton
+            isPlaying={isPlaying}
+            onClick={isPlaying ? controller.pause : controller.play}
+            disabled={isComplete || isIdle}
+          />
         </div>
       </header>
 
@@ -168,28 +276,115 @@ export function TreeStage({ className, nodeStates, traversalOutput }: TreeStageP
                 node={node}
                 x={x}
                 y={y}
-                visualState={nodeStates?.get(node.id) ?? "idle"}
+                visualState={controller.nodeStates?.get(node.id) ?? "idle"}
               />
             ))}
           </AnimatePresence>
         </div>
 
-        {/* Status overlay */}
-        {!isEmpty && (
-          <div className="absolute top-4 left-4 flex items-center gap-3">
-            <span className="text-muted text-xs">
-              Depth: {Math.max(...positionedNodes.map((n) => n.depth))}
-            </span>
-          </div>
-        )}
+        {/* Status Overlay */}
+        <StatusOverlay
+          status={controller.status}
+          lastResult={controller.lastResult}
+          stepCount={controller.currentStepIndex}
+          nodeCount={positionedNodes.length}
+          maxDepth={
+            positionedNodes.length > 0 ? Math.max(...positionedNodes.map((n) => n.depth)) : 0
+          }
+        />
 
         {/* Traversal Output Display */}
-        {hasTraversalOutput && (
-          <div className="absolute right-4 bottom-4 left-4">
-            <TraversalOutputDisplay output={traversalOutput} />
-          </div>
-        )}
+        <AnimatePresence>
+          {hasTraversalOutput && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute right-4 bottom-24 left-4"
+            >
+              <TraversalOutputDisplay output={controller.traversalOutput} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating Control Bar */}
+        <div className="absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
+          <TreeControlBar
+            onExecute={handleExecute}
+            onReset={handleReset}
+            onGenerateBalanced={handleGenerateBalanced}
+            status={controller.status}
+          />
+        </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Status overlay showing current operation state.
+ */
+interface StatusOverlayProps {
+  status: "idle" | "playing" | "paused" | "complete";
+  lastResult: "found" | "not-found" | "inserted" | "deleted" | null;
+  stepCount: number;
+  nodeCount: number;
+  maxDepth: number;
+}
+
+function StatusOverlay({ status, lastResult, stepCount, nodeCount, maxDepth }: StatusOverlayProps) {
+  return (
+    <div className="absolute top-4 left-4 flex flex-col gap-2">
+      <div className="flex items-center gap-3">
+        <span className="text-muted text-xs">
+          {nodeCount} node{nodeCount !== 1 ? "s" : ""}
+        </span>
+        {nodeCount > 0 && <span className="text-muted text-xs">Depth: {maxDepth}</span>}
+        {stepCount > 0 && <span className="text-muted text-xs">Steps: {stepCount}</span>}
+      </div>
+
+      {/* Result indicator */}
+      <AnimatePresence>
+        {status === "complete" && lastResult && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={cn(
+              "flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium",
+              lastResult === "found" && "bg-emerald-500/10 text-emerald-400",
+              lastResult === "not-found" && "bg-rose-500/10 text-rose-400",
+              lastResult === "inserted" && "bg-violet-500/10 text-violet-400",
+              lastResult === "deleted" && "bg-orange-500/10 text-orange-400"
+            )}
+          >
+            {lastResult === "found" && (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Value found!
+              </>
+            )}
+            {lastResult === "not-found" && (
+              <>
+                <AlertCircle className="h-3.5 w-3.5" />
+                Value not found
+              </>
+            )}
+            {lastResult === "inserted" && (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Node inserted
+              </>
+            )}
+            {lastResult === "deleted" && (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Node deleted
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -336,34 +531,10 @@ function EmptyTreeHint() {
       >
         <div className="text-muted mb-2 text-4xl">🌳</div>
         <p className="text-muted text-sm">Tree is empty</p>
-        <p className="text-muted/60 mt-1 text-xs">Use the controls to insert nodes</p>
+        <p className="text-muted/60 mt-1 text-xs">Use the controls below to insert nodes</p>
       </motion.div>
     </div>
   );
-}
-
-/**
- * Returns a human-readable label for the tree algorithm.
- */
-function getAlgorithmLabel(algo: string): string {
-  switch (algo) {
-    case "insert":
-      return "Insert";
-    case "search":
-      return "Search";
-    case "delete":
-      return "Delete";
-    case "inorder":
-      return "In-Order";
-    case "preorder":
-      return "Pre-Order";
-    case "postorder":
-      return "Post-Order";
-    case "bfs":
-      return "Level-Order";
-    default:
-      return algo;
-  }
 }
 
 /**
@@ -376,8 +547,6 @@ interface TraversalOutputDisplayProps {
 function TraversalOutputDisplay({ output }: TraversalOutputDisplayProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
       className={cn("rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm", "px-4 py-3")}
     >
       <div className="text-muted mb-2 text-xs font-medium uppercase tracking-wider">
@@ -404,5 +573,87 @@ function TraversalOutputDisplay({ output }: TraversalOutputDisplayProps) {
         </AnimatePresence>
       </div>
     </motion.div>
+  );
+}
+
+/**
+ * Control button in the header.
+ */
+interface ControlButtonProps {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+function ControlButton({ label, icon, onClick, disabled }: ControlButtonProps) {
+  const interactionProps = disabled
+    ? {}
+    : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      {...interactionProps}
+      animate={{ opacity: disabled ? 0.5 : 1 }}
+      transition={SPRING_PRESETS.snappy}
+      className={cn(
+        "bg-surface-elevated border-border text-primary flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium",
+        "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        disabled && "cursor-not-allowed"
+      )}
+      aria-label={label}
+    >
+      {icon}
+      {label}
+    </motion.button>
+  );
+}
+
+/**
+ * Play/Pause toggle button.
+ */
+interface PlayPauseButtonProps {
+  isPlaying: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps) {
+  const interactionProps = disabled
+    ? {}
+    : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      {...interactionProps}
+      animate={{ opacity: disabled ? 0.5 : 1 }}
+      transition={SPRING_PRESETS.snappy}
+      className={cn(
+        "bg-emerald-500 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-white",
+        "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        disabled && "cursor-not-allowed"
+      )}
+      aria-label={isPlaying ? "Pause" : "Play"}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={isPlaying ? "pause" : "play"}
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.5, opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="flex items-center"
+        >
+          {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+        </motion.span>
+      </AnimatePresence>
+      {isPlaying ? "Pause" : "Resume"}
+    </motion.button>
   );
 }

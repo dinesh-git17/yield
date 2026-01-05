@@ -3,8 +3,17 @@ export type {
   PathfindingProviderProps,
   SortingContextValue,
   SortingProviderProps,
+  TreeContextValue,
+  TreeProviderProps,
 } from "../context";
-export { PathfindingProvider, SortingProvider, usePathfinding, useSorting } from "../context";
+export {
+  PathfindingProvider,
+  SortingProvider,
+  TreeProvider,
+  usePathfinding,
+  useSorting,
+  useTree,
+} from "../context";
 export type { CanvasProps } from "./Canvas";
 export { Canvas } from "./Canvas";
 export type { CodePanelProps } from "./CodePanel";

@@ -12,3 +12,9 @@ export {
   type StepType,
   useSorting,
 } from "./SortingContext";
+export {
+  type TreeContextValue,
+  TreeProvider,
+  type TreeProviderProps,
+  useTree,
+} from "./TreeContext";
