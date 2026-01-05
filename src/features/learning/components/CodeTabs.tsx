@@ -13,8 +13,13 @@ import {
   LANGUAGE_ORDER,
   type Language,
 } from "@/features/learning/code/sorting";
+import { getTreeImplementation } from "@/features/learning/code/trees";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
-import type { PathfindingAlgorithmType, SortingAlgorithmType } from "@/lib/store";
+import type {
+  PathfindingAlgorithmType,
+  SortingAlgorithmType,
+  TreeDataStructureType,
+} from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,23 +55,26 @@ const LanguageIcon = memo(function LanguageIcon({ language, className }: Languag
 
 export interface CodeTabsProps {
   /** The visualization mode */
-  mode: "sorting" | "pathfinding";
-  /** The algorithm to display code for */
+  mode: "sorting" | "pathfinding" | "tree";
+  /** The algorithm or data structure to display code for */
   algorithm: string;
   /** Optional additional class names */
   className?: string;
 }
 
 /**
- * Get code implementation based on mode and algorithm.
+ * Get code implementation based on mode and algorithm/structure.
  */
 function getImplementation(
-  mode: "sorting" | "pathfinding",
+  mode: "sorting" | "pathfinding" | "tree",
   algorithm: string,
   language: Language
 ): string {
   if (mode === "sorting") {
     return getSortingImplementation(algorithm as SortingAlgorithmType, language);
+  }
+  if (mode === "tree") {
+    return getTreeImplementation(algorithm as TreeDataStructureType, language);
   }
   return getPathfindingImplementation(algorithm as PathfindingAlgorithmType, language);
 }

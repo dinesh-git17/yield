@@ -330,16 +330,15 @@ export default async function LearnPage({ params }: LearnPageProps) {
         )}
       </Section>
 
-      {/* Code Walkthrough Section - only for sorting/pathfinding (tree code coming in Story 10.2) */}
-      {(content.mode === "sorting" || content.mode === "pathfinding") && (
-        <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
-          <p className="text-muted mb-4 text-sm">
-            Real implementations in multiple programming languages. Select a language to view
-            idiomatic code.
-          </p>
-          <CodeTabs mode={content.mode} algorithm={algorithm} />
-        </Section>
-      )}
+      {/* Code Walkthrough Section */}
+      <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
+        <p className="text-muted mb-4 text-sm">
+          {content.mode === "tree"
+            ? "Complete data structure implementations in multiple programming languages. Select a language to view idiomatic code."
+            : "Real implementations in multiple programming languages. Select a language to view idiomatic code."}
+        </p>
+        <CodeTabs mode={content.mode} algorithm={algorithm} />
+      </Section>
 
       {/* Real World Use Cases Section */}
       <Section title="Real World Use Cases">

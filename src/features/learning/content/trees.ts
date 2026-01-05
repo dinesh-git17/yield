@@ -69,12 +69,14 @@ For every node, all nodes in its **Left Subtree** are smaller, and all nodes in 
     mechanics: `A BST relies on simple comparisons to navigate.
 
 **The Mechanics:**
-1. **Search**: Start at the root. If the value is what you want, stop. If simpler, go left. If larger, go right. Repeat.
+
+1. **Search**: Start at the root. If the value is what you want, stop. If smaller, go left. If larger, go right. Repeat.
 2. **Insert**: Perform a search until you hit a "null" spot (a dead end). Plant the new node there.
 3. **Delete**: This is the tricky part.
-   - Leaf node: Just snip it off.
-   - One child: Replace the node with its child.
-   - Two children: Find the "In-Order Successor" (smallest node in the right subtree), swap values, and delete that successor.`,
+
+- Leaf node: Just snip it off.
+- One child: Replace the node with its child.
+- Two children: Find the "In-Order Successor" (smallest node in the right subtree), swap values, and delete that successor.`,
 
     searchComplexity: {
       complexity: "O(h)",
@@ -135,6 +137,7 @@ For every node, the height difference between the left and right subtrees must b
     mechanics: `The AVL tree maintains balance via **Rotations**. A rotation is a local rearrangement of nodes that fixes height without breaking the sort order.
 
 **The Four Cases:**
+
 1. **LL Case**: Left-left heavy. Fixed by a single Right Rotation.
 2. **RR Case**: Right-right heavy. Fixed by a single Left Rotation.
 3. **LR Case**: Left-right heavy. Fixed by Left then Right rotation.
@@ -198,11 +201,13 @@ It is a "Priority Queue" implementation. It doesn't care about sorting everythin
 For any given node $I$, the value of $I$ is greater than or equal to the values of its children. This means the largest element is always at the Root.`,
 
     mechanics: `Heaps are usually implemented as **Arrays**, not node objects. We use math to simulate the tree structure.
+
 - Parent index: $\\lfloor (i-1)/2 \\rfloor$
 - Left Child: $2i + 1$
 - Right Child: $2i + 2$
 
 **The Operations:**
+
 1. **Insert (Bubble Up)**: Add to the end of the array, then swap with parent until the property is restored.
 2. **Extract Max (Bubble Down)**: Take the root (max), move the last element to the root, then swap it down with the larger child until it settles.`,
 
@@ -268,6 +273,7 @@ Whenever you access a node (search, insert, or update), that node is physically 
     mechanics: `The Splay Tree doesn't enforce height balance. Instead, it uses complex rotations to bring the target node to the root.
 
 **The Rotations (Splaying):**
+
 1. **Zig**: Single rotation (like AVL).
 2. **Zig-Zig**: Two rotations in the same direction.
 3. **Zig-Zag**: Two rotations in opposite directions.
