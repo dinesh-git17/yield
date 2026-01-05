@@ -273,6 +273,7 @@ A* became the algorithm that launched a thousand video games. From early classic
     mechanics: `A* combines the best of both worlds: Dijkstra's optimality guarantee and greedy best-first's speed. The secret is the evaluation function f(n) = g(n) + h(n).
 
 **Understanding f(n) = g(n) + h(n):**
+
 - **g(n)** = actual cost from start to node n (known, exact)
 - **h(n)** = estimated cost from n to goal (heuristic, estimated)
 - **f(n)** = estimated total path cost through n
@@ -295,6 +296,7 @@ A* became the algorithm that launched a thousand video games. From early classic
 For A* to guarantee the shortest path, h(n) must be **admissible** — it must never overestimate the true cost. An optimistic estimate is safe; a pessimistic one is not.
 
 **Common Heuristics for Grids:**
+
 - **Manhattan distance** = |x1-x2| + |y1-y2| (4-directional movement)
 - **Euclidean distance** = √[(x1-x2)² + (y1-y2)²] (any direction)
 - **Chebyshev distance** = max(|x1-x2|, |y1-y2|) (8-directional movement)
@@ -353,6 +355,7 @@ Greedy Best-First became an important stepping stone in the development of A*. B
     mechanics: `Greedy Best-First Search is like A* with amnesia — it only considers how far the goal appears to be, ignoring how far it has already traveled.
 
 **The Evaluation Function:**
+
 - f(n) = h(n) (heuristic only)
 - Unlike A*: g(n) is not considered
 - Always expands the node that appears closest to the goal
@@ -450,7 +453,9 @@ Imagine digging a tunnel through a mountain. Instead of drilling from one side, 
    - With backward path (meeting point → goal)
 
 **Why It's Faster:**
+
 With branching factor b and path length d:
+
 - Unidirectional: explores ~b^d nodes
 - Bidirectional: explores ~2 × b^(d/2) nodes
 - For b=4, d=20: 1 trillion vs. 2 million nodes!
@@ -522,7 +527,9 @@ The algorithm is closely related to BFS but serves a different purpose. While BF
 7. **Reconstruct** — if goal was found, trace back the path
 
 **Why Explore Everything?**
+
 Flood Fill creates a complete distance map. Once complete, you can:
+
 - Find paths to any destination instantly (trace parents)
 - Identify all nodes within a certain radius
 - Analyze connectivity and bottlenecks
@@ -532,6 +539,7 @@ Flood Fill creates a complete distance map. Once complete, you can:
 In Yield, Flood Fill demonstrates what BFS would explore if it didn't terminate early. This helps visualize the full scope of the search space and understand the heat map pattern.
 
 **Comparison to BFS:**
+
 - BFS: "Find the shortest path to the goal"
 - Flood Fill: "Map distances to every reachable node"`,
 
@@ -596,13 +604,16 @@ The algorithm is also known as a "drunkard's walk," imagining someone so disorie
 7. **Repeat** until goal found or max steps exceeded
 
 **Why Include It?**
+
 Random Walk demonstrates:
+
 - The value of intelligent search strategies
 - What happens without heuristic guidance
 - The baseline that other algorithms improve upon
 - That even random movement can eventually find a path
 
 **Expected Behavior:**
+
 - In open space: eventually finds the goal (but slowly)
 - In mazes: may take extremely long or hit step limit
 - Time complexity: unbounded (could theoretically run forever)
