@@ -2,12 +2,17 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { memo, useMemo } from "react";
+import type { TraversalOutput, TreeNodeState } from "@/features/algorithms";
 import { SPRING_PRESETS } from "@/lib/motion";
 import { type TreeNode, type TreeState, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export interface TreeStageProps {
   className?: string;
+  /** Map of node IDs to their visual states during algorithm execution */
+  nodeStates?: Map<string, TreeNodeState>;
+  /** Output sequence from traversal operations */
+  traversalOutput?: TraversalOutput[];
 }
 
 /**
@@ -101,14 +106,16 @@ function buildPositionedNodes(treeState: TreeState): PositionedNode[] {
  * Renders a binary search tree with:
  * - Layer 1 (Back): SVG lines connecting parent to child nodes
  * - Layer 2 (Front): Animated circular nodes with values
+ * - Layer 3 (Bottom): Traversal output sequence
  */
-export function TreeStage({ className }: TreeStageProps) {
+export function TreeStage({ className, nodeStates, traversalOutput }: TreeStageProps) {
   const treeState = useYieldStore((state) => state.treeState);
   const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
 
   const positionedNodes = useMemo(() => buildPositionedNodes(treeState), [treeState]);
 
   const isEmpty = positionedNodes.length === 0;
+  const hasTraversalOutput = traversalOutput && traversalOutput.length > 0;
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -156,7 +163,13 @@ export function TreeStage({ className }: TreeStageProps) {
         <div className="absolute inset-0">
           <AnimatePresence mode="popLayout">
             {positionedNodes.map(({ node, x, y }) => (
-              <TreeNodeCircle key={node.id} node={node} x={x} y={y} />
+              <TreeNodeCircle
+                key={node.id}
+                node={node}
+                x={x}
+                y={y}
+                visualState={nodeStates?.get(node.id) ?? "idle"}
+              />
             ))}
           </AnimatePresence>
         </div>
@@ -167,6 +180,13 @@ export function TreeStage({ className }: TreeStageProps) {
             <span className="text-muted text-xs">
               Depth: {Math.max(...positionedNodes.map((n) => n.depth))}
             </span>
+          </div>
+        )}
+
+        {/* Traversal Output Display */}
+        {hasTraversalOutput && (
+          <div className="absolute right-4 bottom-4 left-4">
+            <TraversalOutputDisplay output={traversalOutput} />
           </div>
         )}
       </div>
@@ -203,42 +223,104 @@ const TreeEdge = memo(function TreeEdge({ x1, y1, x2, y2 }: TreeEdgeProps) {
 });
 
 /**
- * Animated circular node with value.
+ * Visual state styling for tree nodes.
+ */
+const NODE_STATE_STYLES: Record<TreeNodeState, { border: string; shadow: string; bg?: string }> = {
+  idle: {
+    border: "border-emerald-500/50",
+    shadow: "shadow-emerald-500/10",
+  },
+  comparing: {
+    border: "border-amber-400",
+    shadow: "shadow-amber-400/30",
+    bg: "bg-amber-500/10",
+  },
+  visiting: {
+    border: "border-cyan-400",
+    shadow: "shadow-cyan-400/30",
+    bg: "bg-cyan-500/10",
+  },
+  found: {
+    border: "border-emerald-400",
+    shadow: "shadow-emerald-400/40",
+    bg: "bg-emerald-500/20",
+  },
+  "not-found": {
+    border: "border-rose-400",
+    shadow: "shadow-rose-400/30",
+    bg: "bg-rose-500/10",
+  },
+  inserting: {
+    border: "border-violet-400",
+    shadow: "shadow-violet-400/30",
+    bg: "bg-violet-500/10",
+  },
+  deleting: {
+    border: "border-rose-400",
+    shadow: "shadow-rose-400/30",
+    bg: "bg-rose-500/10",
+  },
+  traversed: {
+    border: "border-orange-400",
+    shadow: "shadow-orange-400/30",
+    bg: "bg-orange-500/10",
+  },
+};
+
+/**
+ * Animated circular node with value and visual state.
  */
 interface TreeNodeCircleProps {
   node: TreeNode;
   x: number;
   y: number;
+  visualState: TreeNodeState;
 }
 
-const TreeNodeCircle = memo(function TreeNodeCircle({ node, x, y }: TreeNodeCircleProps) {
-  return (
-    <motion.div
-      layout
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0, opacity: 0 }}
-      transition={SPRING_PRESETS.snappy}
-      style={{
-        left: `${x}%`,
-        top: `${y}%`,
-        width: LAYOUT.NODE_SIZE,
-        height: LAYOUT.NODE_SIZE,
-      }}
-      className={cn(
-        "absolute flex items-center justify-center",
-        "rounded-full border-2",
-        "bg-surface-elevated border-emerald-500/50",
-        "shadow-lg shadow-emerald-500/10",
-        "-translate-x-1/2 -translate-y-1/2"
-      )}
-      role="img"
-      aria-label={`Node with value ${node.value}`}
-    >
-      <span className="text-primary text-sm font-semibold tabular-nums">{node.value}</span>
-    </motion.div>
-  );
-});
+const TreeNodeCircle = memo(
+  function TreeNodeCircle({ node, x, y, visualState }: TreeNodeCircleProps) {
+    const styles = NODE_STATE_STYLES[visualState];
+
+    return (
+      <motion.div
+        layout
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{
+          scale: visualState === "comparing" || visualState === "visiting" ? 1.1 : 1,
+          opacity: 1,
+        }}
+        exit={{ scale: 0, opacity: 0 }}
+        transition={SPRING_PRESETS.snappy}
+        style={{
+          left: `${x}%`,
+          top: `${y}%`,
+          width: LAYOUT.NODE_SIZE,
+          height: LAYOUT.NODE_SIZE,
+        }}
+        className={cn(
+          "absolute flex items-center justify-center",
+          "rounded-full border-2",
+          "bg-surface-elevated shadow-lg",
+          "-translate-x-1/2 -translate-y-1/2",
+          "transition-colors duration-200",
+          styles.border,
+          styles.shadow,
+          styles.bg
+        )}
+        role="img"
+        aria-label={`Node with value ${node.value}, state: ${visualState}`}
+      >
+        <span className="text-primary text-sm font-semibold tabular-nums">{node.value}</span>
+      </motion.div>
+    );
+  },
+  (prev, next) =>
+    prev.node.id === next.node.id &&
+    prev.node.value === next.node.value &&
+    prev.x === next.x &&
+    prev.y === next.y &&
+    prev.visualState === next.visualState
+);
 
 /**
  * Hint displayed when the tree is empty.
@@ -282,4 +364,45 @@ function getAlgorithmLabel(algo: string): string {
     default:
       return algo;
   }
+}
+
+/**
+ * Displays the traversal output sequence.
+ */
+interface TraversalOutputDisplayProps {
+  output: TraversalOutput[];
+}
+
+function TraversalOutputDisplay({ output }: TraversalOutputDisplayProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn("rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm", "px-4 py-3")}
+    >
+      <div className="text-muted mb-2 text-xs font-medium uppercase tracking-wider">
+        Traversal Output
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <AnimatePresence mode="popLayout">
+          {output.map((item) => (
+            <motion.span
+              key={`output-${item.order}`}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={SPRING_PRESETS.snappy}
+              className={cn(
+                "inline-flex h-8 w-8 items-center justify-center",
+                "rounded-full border border-orange-400/50 bg-orange-500/10",
+                "text-sm font-semibold tabular-nums text-orange-400"
+              )}
+            >
+              {item.value}
+            </motion.span>
+          ))}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
 }

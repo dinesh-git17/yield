@@ -1,4 +1,4 @@
-// Types
+// Config
 
 // BST Operations
 export {
@@ -10,6 +10,14 @@ export {
   postOrderTraversal,
   preOrderTraversal,
 } from "./bst";
+export {
+  getTreeAlgorithmMetadata,
+  TREE_ALGO_METADATA,
+  TREE_STEP_LABELS,
+  type TreeAlgorithmMetadata,
+} from "./config";
+
+// Types
 export type {
   TreeContext,
   TreeOperationGenerator,

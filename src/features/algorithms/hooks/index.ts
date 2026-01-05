@@ -19,3 +19,12 @@ export {
   type UseSortingControllerReturn,
   useSortingController,
 } from "./useSortingController";
+export {
+  type TraversalOutput,
+  type TreeControllerActions,
+  type TreeControllerState,
+  type TreeNodeState,
+  type TreePlaybackStatus,
+  type UseTreeControllerReturn,
+  useTreeController,
+} from "./useTreeController";

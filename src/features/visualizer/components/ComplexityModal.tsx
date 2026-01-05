@@ -1,9 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CircleX, Clock, HardDrive, Route } from "lucide-react";
+import { CircleX, Clock, HardDrive, Route, TreeDeciduous } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo } from "react";
-import { getAlgorithmMetadata } from "@/features/algorithms";
+import { getAlgorithmMetadata, getTreeAlgorithmMetadata } from "@/features/algorithms";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
 import { buttonInteraction } from "@/lib/motion";
 import { useYieldStore } from "@/lib/store";
@@ -49,6 +49,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
   const mode = useYieldStore((state) => state.mode);
   const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
+  const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
 
   const { label, description, complexity, spaceComplexity, hint, extras } = useMemo(() => {
     if (mode === "sorting") {
@@ -60,6 +61,20 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
         spaceComplexity: meta.spaceComplexity,
         hint: getSortingComparisonHint(sortingAlgorithm),
         extras: null,
+      };
+    }
+    if (mode === "tree") {
+      const meta = getTreeAlgorithmMetadata(treeAlgorithm);
+      return {
+        label: meta.label,
+        description: meta.description,
+        complexity: meta.complexity,
+        spaceComplexity: meta.spaceComplexity,
+        hint: getTreeComparisonHint(treeAlgorithm),
+        extras: {
+          isTraversal: meta.isTraversal,
+          visualPattern: meta.visualPattern,
+        },
       };
     }
     const meta = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
@@ -74,7 +89,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
         visualPattern: meta.visualPattern,
       },
     };
-  }, [mode, sortingAlgorithm, pathfindingAlgorithm]);
+  }, [mode, sortingAlgorithm, pathfindingAlgorithm, treeAlgorithm]);
 
   // Close on escape key
   useEffect(() => {
@@ -169,21 +184,40 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
               {/* Description */}
               <p className="text-primary/80 text-sm leading-relaxed">{description}</p>
 
-              {/* Pathfinding extras */}
+              {/* Mode-specific extras */}
               {extras && (
                 <div className="flex items-center gap-3">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
-                      extras.guaranteesShortestPath
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "bg-amber-500/20 text-amber-400"
-                    )}
-                  >
-                    <Route className="h-3 w-3" />
-                    {extras.guaranteesShortestPath ? "Shortest Path" : "No Guarantee"}
-                  </span>
-                  <span className="text-muted text-xs">{extras.visualPattern}</span>
+                  {"guaranteesShortestPath" in extras ? (
+                    <>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                          extras.guaranteesShortestPath
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-amber-500/20 text-amber-400"
+                        )}
+                      >
+                        <Route className="h-3 w-3" />
+                        {extras.guaranteesShortestPath ? "Shortest Path" : "No Guarantee"}
+                      </span>
+                      <span className="text-muted text-xs">{extras.visualPattern}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                          extras.isTraversal
+                            ? "bg-cyan-500/20 text-cyan-400"
+                            : "bg-emerald-500/20 text-emerald-400"
+                        )}
+                      >
+                        <TreeDeciduous className="h-3 w-3" />
+                        {extras.isTraversal ? "Traversal" : "Operation"}
+                      </span>
+                      <span className="text-muted text-xs">{extras.visualPattern}</span>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -363,6 +397,27 @@ function getPathfindingComparisonHint(algorithm: string): string {
       return "A* uses heuristics to guide search toward the goal. Optimal when heuristic is admissible (never overestimates).";
     default:
       return "Compare different algorithms to understand their trade-offs.";
+  }
+}
+
+function getTreeComparisonHint(algorithm: string): string {
+  switch (algorithm) {
+    case "insert":
+      return "BST insert is O(log n) average but degrades to O(n) if insertions are sorted. Self-balancing trees (AVL, Red-Black) prevent this.";
+    case "search":
+      return "BST search follows a single path from root to target. Faster than linear search but requires sorted structure.";
+    case "delete":
+      return "BST delete has three cases: leaf (simple), one child (bypass), two children (find successor). The most complex BST operation.";
+    case "inorder":
+      return "In-order traversal visits nodes in sorted order for BST. Perfect for retrieving all values in ascending sequence.";
+    case "preorder":
+      return "Pre-order visits root before children. Useful for copying tree structure or creating prefix expressions.";
+    case "postorder":
+      return "Post-order visits root after children. Essential for safe tree deletion (children freed before parent).";
+    case "bfs":
+      return "Level-order uses a queue to visit breadth-first. Great for finding nodes closest to root or printing by level.";
+    default:
+      return "Compare different tree operations to understand their use cases.";
   }
 }
 
