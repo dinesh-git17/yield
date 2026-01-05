@@ -7,6 +7,7 @@ import {
   bstSearch,
   heapExtractMax,
   heapInsert,
+  heapSearch,
   inOrderTraversal,
   levelOrderTraversal,
   postOrderTraversal,
@@ -94,15 +95,26 @@ function getTreeGenerator(
   dataStructure: TreeDataStructureType,
   value?: number
 ): Generator<TreeStep, void, unknown> | null {
-  // Max Heap uses different generators for insert/delete
+  // Max Heap uses different generators for insert/delete/search
   if (dataStructure === "max-heap") {
     switch (algorithm) {
       case "insert":
         if (value === undefined) return null;
         return heapInsert(context, value);
+      case "search":
+        // Heap search is linear BFS with pruning
+        if (value === undefined) return null;
+        return heapSearch(context, value);
       case "delete":
         // Heap delete is actually extract-max (no value needed)
         return heapExtractMax(context);
+      // Traversals work on any binary tree structure
+      case "inorder":
+        return inOrderTraversal(context);
+      case "preorder":
+        return preOrderTraversal(context);
+      case "postorder":
+        return postOrderTraversal(context);
       case "bfs":
         return levelOrderTraversal(context);
       default:

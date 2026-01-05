@@ -198,6 +198,68 @@ export function* heapInsert(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Max Heap Search Generator (Linear BFS Search)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Max Heap Search operation implemented as a generator.
+ *
+ * Unlike BST, heaps don't have ordering between siblings, so we must
+ * perform a linear search using BFS (level-order traversal).
+ *
+ * Optimization: We can skip subtrees where the current node's value
+ * is less than the target (in a max-heap, children are always smaller).
+ *
+ * @param context - The current tree context
+ * @param value - The value to search for
+ * @yields TreeStep - Visit and found/not-found operations
+ */
+export function* heapSearch(
+  context: TreeContext,
+  value: number
+): Generator<TreeStep, void, unknown> {
+  const { treeState } = context;
+
+  if (treeState.rootId === null) {
+    yield { type: "not-found", value };
+    return;
+  }
+
+  // BFS traversal with pruning
+  const queue: string[] = [treeState.rootId];
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift();
+    if (!nodeId) continue;
+
+    const node = treeState.nodes[nodeId];
+    if (!node) continue;
+
+    // Visit (compare) this node
+    yield { type: "visit", nodeId };
+
+    // Check if found
+    if (node.value === value) {
+      yield { type: "found", nodeId };
+      return;
+    }
+
+    // Pruning: in a max-heap, if current node < target, skip children
+    // (children will be even smaller)
+    if (node.value < value) {
+      continue;
+    }
+
+    // Add children to queue
+    if (node.leftId) queue.push(node.leftId);
+    if (node.rightId) queue.push(node.rightId);
+  }
+
+  // Value not found
+  yield { type: "not-found", value };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Max Heap Extract-Max Generator
 // ─────────────────────────────────────────────────────────────────────────────
 

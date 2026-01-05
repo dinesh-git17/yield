@@ -113,12 +113,12 @@ export const TREE_CONFIG = {
 
 /**
  * Operations available for each tree data structure.
- * Heaps have different operations than BST/AVL.
+ * Heaps support all operations (search is linear BFS, traversals work on any tree).
  */
 export const TREE_OPERATIONS: Record<TreeDataStructureType, TreeAlgorithmType[]> = {
   bst: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
   avl: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
-  "max-heap": ["insert", "delete", "bfs"],
+  "max-heap": ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

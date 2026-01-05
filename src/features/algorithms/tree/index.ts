@@ -28,6 +28,7 @@ export {
   getNodesInLevelOrder,
   heapExtractMax,
   heapInsert,
+  heapSearch,
 } from "./heap";
 
 // Types

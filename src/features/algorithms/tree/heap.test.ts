@@ -6,6 +6,7 @@ import {
   getNodesInLevelOrder,
   heapExtractMax,
   heapInsert,
+  heapSearch,
 } from "./heap";
 import type { TreeContext, TreeStep } from "./types";
 
@@ -366,5 +367,111 @@ describe("Heap Property Verification", () => {
 
     expect(extractStep).toMatchObject({ value: 90 });
     expect(deleteStep).toMatchObject({ nodeId: "node-7" });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// heapSearch Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("heapSearch", () => {
+  it("yields not-found for empty tree", () => {
+    const context: TreeContext = { treeState: emptyTree() };
+    const steps = collectSteps(heapSearch(context, 50));
+
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toMatchObject({ type: "not-found", value: 50 });
+  });
+
+  it("finds value at root", () => {
+    const context: TreeContext = { treeState: simpleMaxHeap() };
+    const steps = collectSteps(heapSearch(context, 90));
+
+    // Should visit root and find immediately
+    const visitSteps = steps.filter((s) => s.type === "visit");
+    const foundStep = steps.find((s) => s.type === "found");
+
+    expect(visitSteps).toHaveLength(1);
+    expect(visitSteps[0]).toMatchObject({ nodeId: "node-1" });
+    expect(foundStep).toMatchObject({ type: "found", nodeId: "node-1" });
+  });
+
+  it("finds value in child node", () => {
+    const context: TreeContext = { treeState: simpleMaxHeap() };
+    const steps = collectSteps(heapSearch(context, 75));
+
+    // Should visit root first, then find in right child
+    const visitSteps = steps.filter((s) => s.type === "visit");
+    const foundStep = steps.find((s) => s.type === "found");
+
+    expect(visitSteps.length).toBeGreaterThanOrEqual(2);
+    expect(foundStep).toMatchObject({ type: "found", nodeId: "node-3" });
+  });
+
+  it("finds value in deep node", () => {
+    const context: TreeContext = { treeState: completeMaxHeap() };
+    const steps = collectSteps(heapSearch(context, 25));
+
+    // Should find value 25 which is at node-5
+    const foundStep = steps.find((s) => s.type === "found");
+    expect(foundStep).toMatchObject({ type: "found", nodeId: "node-5" });
+  });
+
+  it("yields not-found for missing value", () => {
+    const context: TreeContext = { treeState: simpleMaxHeap() };
+    const steps = collectSteps(heapSearch(context, 999));
+
+    const foundStep = steps.find((s) => s.type === "found");
+    const notFoundStep = steps.find((s) => s.type === "not-found");
+
+    expect(foundStep).toBeUndefined();
+    expect(notFoundStep).toMatchObject({ type: "not-found", value: 999 });
+  });
+
+  it("prunes subtrees when current node is smaller than target", () => {
+    const context: TreeContext = { treeState: completeMaxHeap() };
+    // Search for 100 (larger than all nodes)
+    // Should prune early since root (90) < 100
+    const steps = collectSteps(heapSearch(context, 100));
+
+    // Should visit root only, then not-found
+    const visitSteps = steps.filter((s) => s.type === "visit");
+    expect(visitSteps).toHaveLength(1);
+    expect(visitSteps[0]).toMatchObject({ nodeId: "node-1" });
+  });
+
+  it("visits nodes level by level (BFS order)", () => {
+    const context: TreeContext = { treeState: completeMaxHeap() };
+    // Search for value 10 (at the bottom)
+    const steps = collectSteps(heapSearch(context, 10));
+
+    const visitSteps = steps.filter((s) => s.type === "visit");
+    const visitedIds = visitSteps.map((s) => {
+      if (s.type === "visit") return s.nodeId;
+      return "";
+    });
+
+    // BFS order: root first, then level 2, then level 3
+    // May not visit all nodes due to pruning, but order should be BFS
+    expect(visitedIds[0]).toBe("node-1"); // Root
+    // Level 2 nodes come before level 3 nodes (if visited)
+    const rootIndex = visitedIds.indexOf("node-1");
+    const level2 = ["node-2", "node-3"];
+    const level3 = ["node-4", "node-5", "node-6", "node-7"];
+
+    for (const l2Id of level2) {
+      const l2Index = visitedIds.indexOf(l2Id);
+      if (l2Index >= 0) {
+        expect(l2Index).toBeGreaterThan(rootIndex);
+      }
+    }
+
+    for (const l3Id of level3) {
+      const l3Index = visitedIds.indexOf(l3Id);
+      if (l3Index >= 0) {
+        // Level 3 should come after root
+        expect(l3Index).toBeGreaterThan(rootIndex);
+      }
+    }
   });
 });
