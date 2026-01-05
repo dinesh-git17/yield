@@ -52,7 +52,9 @@ export interface UseMazeGeneratorReturn {
  */
 export function useMazeGenerator(): UseMazeGeneratorReturn {
   const gridConfig = useYieldStore((state) => state.gridConfig);
-  const nodeState = useYieldStore((state) => state.nodeState);
+  // Select start/end individually to avoid re-renders when walls change
+  const start = useYieldStore((state) => state.nodeState.start);
+  const end = useYieldStore((state) => state.nodeState.end);
   const setWalls = useYieldStore((state) => state.setWalls);
   const clearWalls = useYieldStore((state) => state.clearWalls);
   const setIsGeneratingMaze = useYieldStore((state) => state.setIsGeneratingMaze);
@@ -85,8 +87,8 @@ export function useMazeGenerator(): UseMazeGeneratorReturn {
    */
   const fillAllWalls = useCallback(() => {
     const walls = new Set<string>();
-    const startKey = toKey(nodeState.start);
-    const endKey = toKey(nodeState.end);
+    const startKey = toKey(start);
+    const endKey = toKey(end);
 
     for (let r = 0; r < gridConfig.rows; r++) {
       for (let c = 0; c < gridConfig.cols; c++) {
@@ -100,7 +102,7 @@ export function useMazeGenerator(): UseMazeGeneratorReturn {
 
     wallsRef.current = walls;
     setWalls(new Set(walls));
-  }, [gridConfig, nodeState, setWalls]);
+  }, [gridConfig, start, end, setWalls]);
 
   /**
    * Start generating a maze with the specified algorithm.
@@ -123,8 +125,8 @@ export function useMazeGenerator(): UseMazeGeneratorReturn {
       const context: MazeContext = {
         rows: gridConfig.rows,
         cols: gridConfig.cols,
-        start: nodeState.start,
-        end: nodeState.end,
+        start,
+        end,
       };
 
       // Initialize generator
@@ -167,7 +169,7 @@ export function useMazeGenerator(): UseMazeGeneratorReturn {
         }
       }, GENERATION_SPEED_MS);
     },
-    [gridConfig, nodeState, clearWalls, fillAllWalls, setWalls, setIsGeneratingMaze, stop]
+    [gridConfig, start, end, clearWalls, fillAllWalls, setWalls, setIsGeneratingMaze, stop]
   );
 
   // Cleanup on unmount

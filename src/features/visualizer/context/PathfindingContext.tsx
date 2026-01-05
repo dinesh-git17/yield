@@ -34,23 +34,33 @@ export function PathfindingProvider({ children }: PathfindingProviderProps) {
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
   const pathfindingHeuristic = useYieldStore((state) => state.pathfindingHeuristic);
   const gridConfig = useYieldStore((state) => state.gridConfig);
-  const nodeState = useYieldStore((state) => state.nodeState);
+  // Select nodeState parts individually to control re-render granularity
+  const start = useYieldStore((state) => state.nodeState.start);
+  const end = useYieldStore((state) => state.nodeState.end);
+  const walls = useYieldStore((state) => state.nodeState.walls);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
+  const isGeneratingMaze = useYieldStore((state) => state.isGeneratingMaze);
 
   // Build pathfinding context from store state
   const context: PathfindingContextType = useMemo(
     () => ({
       rows: gridConfig.rows,
       cols: gridConfig.cols,
-      start: nodeState.start,
-      end: nodeState.end,
-      walls: nodeState.walls,
+      start,
+      end,
+      walls,
     }),
-    [gridConfig, nodeState]
+    [gridConfig.rows, gridConfig.cols, start, end, walls]
   );
 
   // Use the pathfinding controller with heuristic
-  const controller = usePathfindingController(context, pathfindingAlgorithm, pathfindingHeuristic);
+  // Pass isGeneratingMaze to prevent infinite loop during maze generation
+  const controller = usePathfindingController(
+    context,
+    pathfindingAlgorithm,
+    pathfindingHeuristic,
+    isGeneratingMaze
+  );
 
   // Sync store's playback speed to controller
   useEffect(() => {

@@ -100,7 +100,8 @@ const PATH_ANIMATION_DELAY_MS = 30;
 export function usePathfindingController(
   context: PathfindingContext,
   algorithm: PathfindingAlgorithmType = "bfs",
-  heuristicType: HeuristicType = "manhattan"
+  heuristicType: HeuristicType = "manhattan",
+  isGeneratingMaze = false
 ): UsePathfindingControllerReturn {
   const [nodeStates, setNodeStates] = useState<Map<string, NodeVisualization>>(new Map());
   const [maxDistance, setMaxDistance] = useState(0);
@@ -133,8 +134,13 @@ export function usePathfindingController(
   }, [context, algorithm, heuristic]);
 
   // Re-initialize when context or algorithm changes
+  // Skip re-initialization during maze generation to prevent infinite loops
   // initializeIterator depends on context and algorithm, so changes propagate through it
   useEffect(() => {
+    if (isGeneratingMaze) {
+      // During maze generation, walls change rapidly - skip reset to prevent infinite loop
+      return;
+    }
     setStatus("idle");
     setCurrentStepIndex(0);
     setCurrentStepType(null);
@@ -143,7 +149,7 @@ export function usePathfindingController(
     setPathFound(null);
     clearPathTimeouts();
     initializeIterator();
-  }, [initializeIterator, clearPathTimeouts]);
+  }, [initializeIterator, clearPathTimeouts, isGeneratingMaze]);
 
   // Cleanup on unmount
   useEffect(() => {

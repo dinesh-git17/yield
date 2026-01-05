@@ -1,5 +1,7 @@
 import type { GridCoord } from "@/lib/store";
 
+export type { GridCoord };
+
 /**
  * Represents a single step in a maze generation algorithm.
  * Used by generator functions to yield wall placements for visualization.
