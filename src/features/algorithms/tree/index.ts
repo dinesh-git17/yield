@@ -6,6 +6,7 @@ export {
   bstInsert,
   bstSearch,
   inOrderTraversal,
+  invertTree,
   levelOrderTraversal,
   postOrderTraversal,
   preOrderTraversal,
@@ -14,6 +15,7 @@ export {
 export {
   getTreeAlgorithmMetadata,
   HEAP_ALGO_METADATA,
+  SPLAY_ALGO_METADATA,
   TREE_ALGO_METADATA,
   TREE_STEP_LABELS,
   type TreeAlgorithmMetadata,
@@ -26,12 +28,15 @@ export {
 // Heap Operations
 export {
   findHeapInsertionPoint,
+  floydHeapify,
   getLastNode,
   getNodesInLevelOrder,
   heapExtractMax,
   heapInsert,
   heapSearch,
 } from "./heap";
+// Splay Operations
+export { splayDelete, splayInsert, splaySearch } from "./splay";
 
 // Types
 export type {

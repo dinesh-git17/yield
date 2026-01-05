@@ -442,3 +442,51 @@ export function* levelOrderTraversal(context: TreeContext): Generator<TreeStep, 
     }
   }
 }
+
+/**
+ * Invert Tree operation implemented as a generator.
+ * Recursively swaps left and right children of every node.
+ * Uses post-order traversal: children are swapped before moving up.
+ *
+ * This is the famous "invert a binary tree" interview problem.
+ *
+ * @param context - The current tree context
+ * @yields TreeStep - Visit and invert-swap operations
+ */
+export function* invertTree(context: TreeContext): Generator<TreeStep, void, unknown> {
+  const { treeState } = context;
+
+  if (treeState.rootId === null) return;
+
+  /**
+   * Recursive post-order inversion.
+   * Visit children first, then swap them.
+   */
+  function* invert(nodeId: string): Generator<TreeStep, void, unknown> {
+    const node = treeState.nodes[nodeId];
+    if (!node) return;
+
+    // Visit node first to show we're examining it
+    yield { type: "visit", nodeId };
+
+    // Recursively invert left subtree
+    if (node.leftId) {
+      yield* invert(node.leftId);
+    }
+
+    // Recursively invert right subtree
+    if (node.rightId) {
+      yield* invert(node.rightId);
+    }
+
+    // Swap left and right children (yield the swap operation)
+    yield {
+      type: "invert-swap",
+      nodeId,
+      leftChildId: node.leftId,
+      rightChildId: node.rightId,
+    };
+  }
+
+  yield* invert(treeState.rootId);
+}

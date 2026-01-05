@@ -26,6 +26,7 @@ export {
   type TreeControllerState,
   type TreeNodeState,
   type TreePlaybackStatus,
+  type UseTreeControllerOptions,
   type UseTreeControllerReturn,
   useTreeController,
 } from "./useTreeController";

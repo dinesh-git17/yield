@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { TreeState } from "@/lib/store";
 import {
   findHeapInsertionPoint,
+  floydHeapify,
   getLastNode,
   getNodesInLevelOrder,
   heapExtractMax,
@@ -473,5 +474,316 @@ describe("heapSearch", () => {
         expect(l3Index).toBeGreaterThan(rootIndex);
       }
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// floydHeapify Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Creates an unordered complete binary tree (not a valid heap).
+ * Values are arranged chaotically to test heapify.
+ *
+ *        10 (node-1)
+ *       /  \
+ *      50   30 (node-2, node-3)
+ *     /  \
+ *    20  40 (node-4, node-5)
+ */
+function unorderedTree(): TreeState {
+  return {
+    rootId: "node-1",
+    nodes: {
+      "node-1": {
+        id: "node-1",
+        value: 10, // Small value at root - needs to sink
+        leftId: "node-2",
+        rightId: "node-3",
+        parentId: null,
+      },
+      "node-2": {
+        id: "node-2",
+        value: 50, // Largest - should become root
+        leftId: "node-4",
+        rightId: "node-5",
+        parentId: "node-1",
+      },
+      "node-3": {
+        id: "node-3",
+        value: 30,
+        leftId: null,
+        rightId: null,
+        parentId: "node-1",
+      },
+      "node-4": {
+        id: "node-4",
+        value: 20,
+        leftId: null,
+        rightId: null,
+        parentId: "node-2",
+      },
+      "node-5": {
+        id: "node-5",
+        value: 40,
+        leftId: null,
+        rightId: null,
+        parentId: "node-2",
+      },
+    },
+  };
+}
+
+/**
+ * Creates a larger unordered tree with 7 nodes.
+ *
+ *           5 (root)
+ *          / \
+ *        20   15
+ *       / \   / \
+ *      60  40 10  30
+ */
+function largeUnorderedTree(): TreeState {
+  return {
+    rootId: "node-1",
+    nodes: {
+      "node-1": {
+        id: "node-1",
+        value: 5,
+        leftId: "node-2",
+        rightId: "node-3",
+        parentId: null,
+      },
+      "node-2": {
+        id: "node-2",
+        value: 20,
+        leftId: "node-4",
+        rightId: "node-5",
+        parentId: "node-1",
+      },
+      "node-3": {
+        id: "node-3",
+        value: 15,
+        leftId: "node-6",
+        rightId: "node-7",
+        parentId: "node-1",
+      },
+      "node-4": {
+        id: "node-4",
+        value: 60, // Largest
+        leftId: null,
+        rightId: null,
+        parentId: "node-2",
+      },
+      "node-5": {
+        id: "node-5",
+        value: 40,
+        leftId: null,
+        rightId: null,
+        parentId: "node-2",
+      },
+      "node-6": {
+        id: "node-6",
+        value: 10,
+        leftId: null,
+        rightId: null,
+        parentId: "node-3",
+      },
+      "node-7": {
+        id: "node-7",
+        value: 30,
+        leftId: null,
+        rightId: null,
+        parentId: "node-3",
+      },
+    },
+  };
+}
+
+describe("floydHeapify", () => {
+  it("returns no steps for empty tree", () => {
+    const context: TreeContext = { treeState: emptyTree() };
+    const steps = collectSteps(floydHeapify(context));
+    expect(steps).toHaveLength(0);
+  });
+
+  it("returns no steps for single node tree", () => {
+    const context: TreeContext = {
+      treeState: {
+        rootId: "node-1",
+        nodes: {
+          "node-1": {
+            id: "node-1",
+            value: 50,
+            leftId: null,
+            rightId: null,
+            parentId: null,
+          },
+        },
+      },
+    };
+    const steps = collectSteps(floydHeapify(context));
+    expect(steps).toHaveLength(0);
+  });
+
+  it("yields heapify-node steps for each non-leaf node", () => {
+    const context: TreeContext = { treeState: unorderedTree() };
+    const steps = collectSteps(floydHeapify(context));
+
+    const heapifySteps = steps.filter((s) => s.type === "heapify-node");
+    // 5 nodes: 2 non-leaf (node-1 and node-2), 3 leaf (node-3, node-4, node-5)
+    expect(heapifySteps).toHaveLength(2);
+  });
+
+  it("processes non-leaf nodes in reverse level order (bottom-up)", () => {
+    const context: TreeContext = { treeState: unorderedTree() };
+    const steps = collectSteps(floydHeapify(context));
+
+    const heapifySteps = steps.filter((s) => s.type === "heapify-node");
+    // node-2 (index 1) should be processed before node-1 (index 0)
+    // That means node-2 comes first in heapify steps (bottom-up)
+    expect(heapifySteps[0]).toMatchObject({ type: "heapify-node", nodeId: "node-2" });
+    expect(heapifySteps[1]).toMatchObject({ type: "heapify-node", nodeId: "node-1" });
+  });
+
+  it("yields sink-down steps when swaps are needed", () => {
+    const context: TreeContext = { treeState: unorderedTree() };
+    const steps = collectSteps(floydHeapify(context));
+
+    const sinkDownSteps = steps.filter((s) => s.type === "sink-down");
+    // node-1 has value 10, which is smaller than both children (50 and 30)
+    // So it needs to sink down
+    expect(sinkDownSteps.length).toBeGreaterThan(0);
+  });
+
+  it("yields swap steps when values need to be exchanged", () => {
+    const context: TreeContext = { treeState: unorderedTree() };
+    const steps = collectSteps(floydHeapify(context));
+
+    const swapSteps = steps.filter((s) => s.type === "swap");
+    // At least one swap needed (10 at root needs to sink)
+    expect(swapSteps.length).toBeGreaterThan(0);
+  });
+
+  it("processes larger tree correctly with 3 non-leaf nodes", () => {
+    const context: TreeContext = { treeState: largeUnorderedTree() };
+    const steps = collectSteps(floydHeapify(context));
+
+    const heapifySteps = steps.filter((s) => s.type === "heapify-node");
+    // 7 nodes: 3 non-leaf (node-1, node-2, node-3), 4 leaf
+    expect(heapifySteps).toHaveLength(3);
+  });
+
+  it("processes nodes at same level in level-order (right to left within level)", () => {
+    const context: TreeContext = { treeState: largeUnorderedTree() };
+    const steps = collectSteps(floydHeapify(context));
+
+    const heapifySteps = steps.filter((s) => s.type === "heapify-node");
+    // Last non-leaf index is 2 (node-3), then 1 (node-2), then 0 (node-1)
+    // Bottom-up means: node-3 first, then node-2, then node-1
+    expect(heapifySteps[0]).toMatchObject({ nodeId: "node-3" });
+    expect(heapifySteps[1]).toMatchObject({ nodeId: "node-2" });
+    expect(heapifySteps[2]).toMatchObject({ nodeId: "node-1" });
+  });
+
+  it("includes progress tracking in heapify-node steps", () => {
+    const context: TreeContext = { treeState: largeUnorderedTree() };
+    const steps = collectSteps(floydHeapify(context));
+
+    const heapifySteps = steps.filter(
+      (s): s is Extract<TreeStep, { type: "heapify-node" }> => s.type === "heapify-node"
+    );
+
+    // Check that index increments and totalNonLeaf is consistent
+    expect(heapifySteps[0]).toMatchObject({ index: 0, totalNonLeaf: 3 });
+    expect(heapifySteps[1]).toMatchObject({ index: 1, totalNonLeaf: 3 });
+    expect(heapifySteps[2]).toMatchObject({ index: 2, totalNonLeaf: 3 });
+  });
+
+  it("sink-down continues until heap property is satisfied", () => {
+    // Create a tree where root needs to sink multiple levels
+    const deepSink: TreeState = {
+      rootId: "node-1",
+      nodes: {
+        "node-1": {
+          id: "node-1",
+          value: 1, // Very small - needs to sink to bottom
+          leftId: "node-2",
+          rightId: "node-3",
+          parentId: null,
+        },
+        "node-2": {
+          id: "node-2",
+          value: 50,
+          leftId: "node-4",
+          rightId: null,
+          parentId: "node-1",
+        },
+        "node-3": {
+          id: "node-3",
+          value: 40,
+          leftId: null,
+          rightId: null,
+          parentId: "node-1",
+        },
+        "node-4": {
+          id: "node-4",
+          value: 30,
+          leftId: null,
+          rightId: null,
+          parentId: "node-2",
+        },
+      },
+    };
+
+    const context: TreeContext = { treeState: deepSink };
+    const steps = collectSteps(floydHeapify(context));
+
+    const swapSteps = steps.filter((s) => s.type === "swap");
+    // Value 1 should sink from root to at least level 2
+    // First swap: node-1 (1) with node-2 (50)
+    // Then potentially more swaps as 1 continues down
+    expect(swapSteps.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("does not swap when heap property is already satisfied at a node", () => {
+    // Create a tree that's already a valid heap
+    const validHeap: TreeState = {
+      rootId: "node-1",
+      nodes: {
+        "node-1": {
+          id: "node-1",
+          value: 90,
+          leftId: "node-2",
+          rightId: "node-3",
+          parentId: null,
+        },
+        "node-2": {
+          id: "node-2",
+          value: 50,
+          leftId: null,
+          rightId: null,
+          parentId: "node-1",
+        },
+        "node-3": {
+          id: "node-3",
+          value: 30,
+          leftId: null,
+          rightId: null,
+          parentId: "node-1",
+        },
+      },
+    };
+
+    const context: TreeContext = { treeState: validHeap };
+    const steps = collectSteps(floydHeapify(context));
+
+    // Should still process non-leaf nodes but not swap
+    const heapifySteps = steps.filter((s) => s.type === "heapify-node");
+    expect(heapifySteps).toHaveLength(1); // Only root is non-leaf
+
+    // No swaps needed since heap property is satisfied
+    const swapSteps = steps.filter((s) => s.type === "swap");
+    expect(swapSteps).toHaveLength(0);
   });
 });

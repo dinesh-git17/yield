@@ -22,6 +22,14 @@ export const TREE_STEP_LABELS: Record<TreeStep["type"], string> = {
   "sink-down": "Sinking down",
   swap: "Swapping nodes",
   "extract-max": "Extracting max",
+  "heapify-node": "Heapifying node",
+  // Invert operation
+  "invert-swap": "Swapping children",
+  // Splay operations
+  "splay-start": "Starting splay",
+  zig: "Zig rotation",
+  "zig-zig": "Zig-Zig rotation",
+  "zig-zag": "Zig-Zag rotation",
 };
 
 /**
@@ -49,9 +57,11 @@ export interface TreeAlgorithmMetadata {
 }
 
 /**
- * Tree algorithm metadata registry.
+ * Tree algorithm metadata registry (BST-specific algorithms).
+ * Not all algorithms are available for all data structures,
+ * so this is Partial. Use getTreeAlgorithmMetadata() for lookup.
  */
-export const TREE_ALGO_METADATA: Record<TreeAlgorithmType, TreeAlgorithmMetadata> = {
+export const TREE_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithmMetadata>> = {
   insert: {
     label: "BST Insert",
     shortLabel: "Insert",
@@ -333,6 +343,44 @@ export const TREE_ALGO_METADATA: Record<TreeAlgorithmType, TreeAlgorithmMetadata
     lineMapping: {
       visit: 10,
       "traverse-output": 11,
+    },
+  },
+
+  invert: {
+    label: "Invert Binary Tree",
+    shortLabel: "Invert",
+    complexity: "O(n)",
+    spaceComplexity: "O(h)",
+    description:
+      "Recursively swaps left and right children of every node, mirroring the entire tree structure. The famous interview question that went viral.",
+    isTraversal: false,
+    visualPattern: "Mirror transformation",
+    code: [
+      "function* invertTree(root) {",
+      "  if (root === null) return null;",
+      "",
+      "  // Visit node",
+      "  yield { type: 'visit', nodeId: root.id };",
+      "",
+      "  // Recursively invert subtrees",
+      "  yield* invertTree(root.left);",
+      "  yield* invertTree(root.right);",
+      "",
+      "  // Swap left and right children",
+      "  yield { type: 'invert-swap', nodeId: root.id };",
+      "  [root.left, root.right] = [root.right, root.left];",
+      "",
+      "  return root;",
+      "}",
+      "",
+      '// "Google: 90% of our engineers use the software',
+      "// you wrote (Homebrew), but you can't invert a",
+      '// binary tree on a whiteboard so f*** off."',
+      "// — Max Howell",
+    ],
+    lineMapping: {
+      visit: 4,
+      "invert-swap": 11,
     },
   },
 };
@@ -640,6 +688,214 @@ export const HEAP_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithm
       "traverse-output": 11,
     },
   },
+
+  heapify: {
+    label: "Floyd's Heapify",
+    shortLabel: "Heapify",
+    complexity: "O(n)",
+    spaceComplexity: "O(1)",
+    description:
+      "Builds a valid max-heap from an unordered tree in linear time. Processes nodes bottom-up, starting from the last non-leaf and sifting down each node. Watch the heap property spread like an infection from leaves to root.",
+    isTraversal: false,
+    visualPattern: "Bottom-up infection",
+    code: [
+      "function* floydHeapify(tree) {",
+      "  // Get nodes in level-order (array representation)",
+      "  const nodes = tree.levelOrder();",
+      "  const n = nodes.length;",
+      "",
+      "  // Last non-leaf index = floor(n/2) - 1",
+      "  const lastNonLeaf = Math.floor(n / 2) - 1;",
+      "",
+      "  // Process each non-leaf from bottom to top",
+      "  for (let i = lastNonLeaf; i >= 0; i--) {",
+      "    yield { type: 'heapify-node', index: i };",
+      "",
+      "    // Sift down this node",
+      "    let current = i;",
+      "    while (true) {",
+      "      const left = 2 * current + 1;",
+      "      const right = 2 * current + 2;",
+      "      let largest = current;",
+      "",
+      "      if (left < n && nodes[left] > nodes[largest]) {",
+      "        largest = left;",
+      "      }",
+      "      if (right < n && nodes[right] > nodes[largest]) {",
+      "        largest = right;",
+      "      }",
+      "",
+      "      if (largest === current) break;",
+      "",
+      "      yield { type: 'sink-down', nodeId: current };",
+      "      yield { type: 'swap', a: current, b: largest };",
+      "      swap(nodes, current, largest);",
+      "      current = largest;",
+      "    }",
+      "  }",
+      "}",
+      "",
+      "// Why O(n)? Most nodes are near leaves, which",
+      "// require few swaps. Only root sinks log(n) levels.",
+    ],
+    lineMapping: {
+      "heapify-node": 10,
+      "sink-down": 27,
+      swap: 28,
+    },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Splay Tree Algorithm Metadata
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Splay-specific algorithm metadata.
+ * Used when treeDataStructure is "splay".
+ */
+export const SPLAY_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithmMetadata>> = {
+  insert: {
+    label: "Splay Insert",
+    shortLabel: "Insert",
+    complexity: "O(log n) amortized",
+    spaceComplexity: "O(1)",
+    description:
+      "Inserts like BST, then splays the inserted node to the root. Frequently accessed nodes stay near the top, providing cache-like behavior.",
+    isTraversal: false,
+    visualPattern: "Insert → Splay to root",
+    code: [
+      "function* splayInsert(tree, value) {",
+      "  // 1. Standard BST insert",
+      "  let current = tree.root;",
+      "  while (current !== null) {",
+      "    if (value < current.value) {",
+      "      yield { type: 'compare', result: 'left' };",
+      "      current = current.left;",
+      "    } else if (value > current.value) {",
+      "      yield { type: 'compare', result: 'right' };",
+      "      current = current.right;",
+      "    } else {",
+      "      // Found: splay existing node",
+      "      yield { type: 'found', nodeId: current.id };",
+      "      yield* splay(tree, current);",
+      "      return;",
+      "    }",
+      "  }",
+      "",
+      "  yield { type: 'insert', value };",
+      "",
+      "  // 2. Splay new node to root",
+      "  yield* splay(tree, newNode);",
+      "}",
+      "",
+      "// Splay uses Zig, Zig-Zig, Zig-Zag rotations",
+      "// to move accessed node to root",
+    ],
+    lineMapping: {
+      compare: 5,
+      insert: 19,
+      found: 12,
+      "splay-start": 22,
+      zig: 26,
+      "zig-zig": 26,
+      "zig-zag": 26,
+    },
+  },
+
+  search: {
+    label: "Splay Search",
+    shortLabel: "Search",
+    complexity: "O(log n) amortized",
+    spaceComplexity: "O(1)",
+    description:
+      "Standard BST search, then splays the found node (or last accessed) to root. Repeated searches for the same key are O(1).",
+    isTraversal: false,
+    visualPattern: "Search → Splay to root",
+    code: [
+      "function* splaySearch(tree, value) {",
+      "  let current = tree.root;",
+      "  let lastAccessed = tree.root;",
+      "",
+      "  while (current !== null) {",
+      "    lastAccessed = current;",
+      "",
+      "    if (value < current.value) {",
+      "      yield { type: 'compare', result: 'left' };",
+      "      current = current.left;",
+      "    } else if (value > current.value) {",
+      "      yield { type: 'compare', result: 'right' };",
+      "      current = current.right;",
+      "    } else {",
+      "      yield { type: 'found', nodeId: current.id };",
+      "      yield* splay(tree, current);",
+      "      return;",
+      "    }",
+      "  }",
+      "",
+      "  yield { type: 'not-found', value };",
+      "  yield* splay(tree, lastAccessed);",
+      "}",
+    ],
+    lineMapping: {
+      compare: 8,
+      found: 15,
+      "not-found": 21,
+      "splay-start": 16,
+      zig: 22,
+      "zig-zig": 22,
+      "zig-zag": 22,
+    },
+  },
+
+  delete: {
+    label: "Splay Delete",
+    shortLabel: "Delete",
+    complexity: "O(log n) amortized",
+    spaceComplexity: "O(1)",
+    description:
+      "Splays target to root, then removes it. If two children, splay max from left subtree and attach right subtree to it.",
+    isTraversal: false,
+    visualPattern: "Splay → Delete root",
+    code: [
+      "function* splayDelete(tree, value) {",
+      "  // 1. Search and splay to root",
+      "  yield* splaySearch(tree, value);",
+      "",
+      "  if (tree.root.value !== value) {",
+      "    yield { type: 'not-found', value };",
+      "    return;",
+      "  }",
+      "",
+      "  // 2. Now target is at root",
+      "  const left = tree.root.left;",
+      "  const right = tree.root.right;",
+      "",
+      "  if (!left) {",
+      "    yield { type: 'delete', strategy: 'one-child' };",
+      "    tree.root = right;",
+      "  } else if (!right) {",
+      "    yield { type: 'delete', strategy: 'one-child' };",
+      "    tree.root = left;",
+      "  } else {",
+      "    // Splay max in left subtree",
+      "    yield { type: 'delete', strategy: 'two-children' };",
+      "    splayMax(left);",
+      "    left.right = right;",
+      "    tree.root = left;",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      compare: 2,
+      delete: 15,
+      "not-found": 6,
+      "splay-start": 3,
+      zig: 23,
+      "zig-zig": 23,
+      "zig-zag": 23,
+    },
+  },
 };
 
 /**
@@ -647,7 +903,7 @@ export const HEAP_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithm
  * Returns data-structure-specific metadata when available.
  *
  * @param algorithm - The algorithm type
- * @param dataStructure - The tree data structure (bst, avl, max-heap)
+ * @param dataStructure - The tree data structure (bst, avl, max-heap, splay)
  */
 export function getTreeAlgorithmMetadata(
   algorithm: TreeAlgorithmType,
@@ -665,6 +921,17 @@ export function getTreeAlgorithmMetadata(
     if (avlMetadata) return avlMetadata;
   }
 
-  // Fall back to BST metadata
-  return TREE_ALGO_METADATA[algorithm] ?? TREE_ALGO_METADATA.insert;
+  // Use Splay-specific metadata for splay
+  if (dataStructure === "splay") {
+    const splayMetadata = SPLAY_ALGO_METADATA[algorithm];
+    if (splayMetadata) return splayMetadata;
+  }
+
+  // Fall back to BST metadata (insert is always defined as the baseline)
+  const treeMetadata = TREE_ALGO_METADATA[algorithm];
+  if (treeMetadata) return treeMetadata;
+
+  // Ultimate fallback to insert metadata
+  // TREE_ALGO_METADATA.insert is always defined as it's the base algorithm
+  return TREE_ALGO_METADATA.insert as TreeAlgorithmMetadata;
 }

@@ -1,4 +1,4 @@
-import type { TreeState } from "@/lib/store";
+import type { TreeNode, TreeState } from "@/lib/store";
 import type { TreeContext, TreeStep } from "./types";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -401,5 +401,183 @@ export function* heapExtractMax(context: TreeContext): Generator<TreeStep, void,
       // Heap property satisfied
       break;
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Floyd's Heapify Generator (Build Heap in O(n))
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Helper: Performs a single sift-down operation on a node.
+ * Used internally by floydHeapify to restore heap property at a single node.
+ *
+ * @param nodes - The current nodes map (mutable reference for value tracking)
+ * @param nodeId - ID of the node to sift down
+ * @param nodesInOrder - Level-order node IDs for child lookup
+ * @param nodeIndex - Index of the node in level-order
+ * @yields TreeStep - sink-down and swap operations
+ */
+function* siftDown(
+  nodes: Record<string, TreeNode>,
+  nodeId: string,
+  nodesInOrder: string[],
+  nodeIndex: number
+): Generator<TreeStep, Record<string, TreeNode>, unknown> {
+  let currentId: string | null = nodeId;
+  let currentIndex = nodeIndex;
+  let currentNodes = { ...nodes };
+
+  while (currentId !== null) {
+    const current = currentNodes[currentId];
+    if (!current) break;
+
+    // Calculate child indices in level-order
+    const leftChildIndex = 2 * currentIndex + 1;
+    const rightChildIndex = 2 * currentIndex + 2;
+
+    const leftId = leftChildIndex < nodesInOrder.length ? nodesInOrder[leftChildIndex] : null;
+    const rightId = rightChildIndex < nodesInOrder.length ? nodesInOrder[rightChildIndex] : null;
+
+    // No children - done
+    if (leftId === null && rightId === null) {
+      break;
+    }
+
+    const leftNode = leftId ? currentNodes[leftId] : null;
+    const rightNode = rightId ? currentNodes[rightId] : null;
+
+    const leftValue = leftNode?.value ?? Number.NEGATIVE_INFINITY;
+    const rightValue = rightNode?.value ?? Number.NEGATIVE_INFINITY;
+
+    // Find larger child
+    let largerChildId: string | null = null;
+    let largerChildValue: number = Number.NEGATIVE_INFINITY;
+    let largerChildIndex = -1;
+
+    if (leftValue >= rightValue && leftId) {
+      largerChildId = leftId;
+      largerChildValue = leftValue;
+      largerChildIndex = leftChildIndex;
+    } else if (rightId) {
+      largerChildId = rightId;
+      largerChildValue = rightValue;
+      largerChildIndex = rightChildIndex;
+    }
+
+    if (!largerChildId) break;
+
+    // Collect child IDs for visualization
+    const childIds: string[] = [];
+    if (leftId) childIds.push(leftId);
+    if (rightId) childIds.push(rightId);
+
+    // Check if swap is needed
+    const willSwap = current.value < largerChildValue;
+
+    yield {
+      type: "sink-down",
+      nodeId: currentId,
+      childIds,
+      largerChildId,
+      willSwap,
+    };
+
+    if (willSwap && largerChildId) {
+      yield {
+        type: "swap",
+        nodeId1: currentId,
+        nodeId2: largerChildId,
+      };
+
+      // Swap values in our local copy
+      const largerChild = currentNodes[largerChildId];
+      if (largerChild) {
+        currentNodes = {
+          ...currentNodes,
+          [currentId]: { ...current, value: largerChildValue },
+          [largerChildId]: { ...largerChild, value: current.value },
+        };
+      }
+
+      // Move to the child position
+      currentId = largerChildId;
+      currentIndex = largerChildIndex;
+    } else {
+      // Heap property satisfied
+      break;
+    }
+  }
+
+  return currentNodes;
+}
+
+/**
+ * Floyd's Heap Construction algorithm implemented as a generator.
+ *
+ * Builds a valid max-heap from an arbitrary binary tree in O(n) time.
+ * Works by starting at the last non-leaf node and sifting down each
+ * node in reverse level-order up to the root.
+ *
+ * The key insight: leaf nodes are already valid heaps (trivially),
+ * so we only need to fix internal nodes. By processing bottom-up,
+ * each sift-down operation maintains the heap property of its subtree.
+ *
+ * Visual: Watch the "heap property" spread like an infection from
+ * the bottom leaves up to the root.
+ *
+ * @param context - The current tree context
+ * @yields TreeStep - heapify-node, sink-down, and swap operations
+ */
+export function* floydHeapify(context: TreeContext): Generator<TreeStep, void, unknown> {
+  const { treeState } = context;
+
+  if (treeState.rootId === null) {
+    return;
+  }
+
+  // Get nodes in level-order (array representation of complete binary tree)
+  const nodesInOrder = getNodesInLevelOrder(treeState);
+  const n = nodesInOrder.length;
+
+  if (n <= 1) {
+    // Single node or empty - already a valid heap
+    return;
+  }
+
+  // Calculate the last non-leaf index
+  // In a complete binary tree represented as array:
+  // - Leaf nodes are at indices floor(n/2) to n-1
+  // - Non-leaf nodes are at indices 0 to floor(n/2) - 1
+  const lastNonLeafIndex = Math.floor(n / 2) - 1;
+  const totalNonLeaf = lastNonLeafIndex + 1;
+
+  // Start with a copy of the nodes for value tracking during swaps
+  let currentNodes = { ...treeState.nodes };
+
+  // Process each non-leaf node from bottom to top (reverse level-order)
+  for (let i = lastNonLeafIndex; i >= 0; i--) {
+    const nodeId = nodesInOrder[i];
+    if (!nodeId) continue;
+
+    // Yield heapify-node step to show which node is being processed
+    yield {
+      type: "heapify-node",
+      nodeId,
+      index: lastNonLeafIndex - i, // Progress counter (0, 1, 2, ...)
+      totalNonLeaf,
+    };
+
+    // Perform sift-down on this node
+    const siftDownGen = siftDown(currentNodes, nodeId, nodesInOrder, i);
+    let siftResult = siftDownGen.next();
+
+    while (!siftResult.done) {
+      yield siftResult.value;
+      siftResult = siftDownGen.next();
+    }
+
+    // Update our nodes copy with the result of sift-down
+    currentNodes = siftResult.value;
   }
 }

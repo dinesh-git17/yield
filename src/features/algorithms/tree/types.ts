@@ -147,6 +147,72 @@ export type TreeStep =
       nodeId: string;
       /** The maximum value being extracted */
       value: number;
+    }
+  | {
+      /** Marking a node as being processed during Floyd's heapify */
+      type: "heapify-node";
+      /** ID of the node being heapified */
+      nodeId: string;
+      /** Index of the node in level-order (for tracking progress) */
+      index: number;
+      /** Total number of non-leaf nodes to process */
+      totalNonLeaf: number;
+    }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Invert Tree Operation
+  // ─────────────────────────────────────────────────────────────────────────────
+  | {
+      /** Swapping left and right children of a node during tree inversion */
+      type: "invert-swap";
+      /** ID of the node whose children are being swapped */
+      nodeId: string;
+      /** ID of the left child before swap (null if none) */
+      leftChildId: string | null;
+      /** ID of the right child before swap (null if none) */
+      rightChildId: string | null;
+    }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Splay Tree Operations
+  // ─────────────────────────────────────────────────────────────────────────────
+  | {
+      /** Mark the start of a splay operation on a node */
+      type: "splay-start";
+      /** ID of the node being splayed to root */
+      nodeId: string;
+    }
+  | {
+      /** Zig: Single rotation when parent is root */
+      type: "zig";
+      /** ID of the node being splayed */
+      nodeId: string;
+      /** ID of the parent node (the root) */
+      parentId: string;
+      /** Direction of the rotation */
+      direction: "left" | "right";
+    }
+  | {
+      /** Zig-Zig: Double same-direction rotation (both left or both right children) */
+      type: "zig-zig";
+      /** ID of the node being splayed */
+      nodeId: string;
+      /** ID of the parent node */
+      parentId: string;
+      /** ID of the grandparent node */
+      grandparentId: string;
+      /** Direction of the rotations (both same direction) */
+      direction: "left" | "right";
+    }
+  | {
+      /** Zig-Zag: Double opposite-direction rotation */
+      type: "zig-zag";
+      /** ID of the node being splayed */
+      nodeId: string;
+      /** ID of the parent node */
+      parentId: string;
+      /** ID of the grandparent node */
+      grandparentId: string;
+      /** Direction sequence: first on parent, then on grandparent */
+      directions: ["left", "right"] | ["right", "left"];
     };
 
 /**

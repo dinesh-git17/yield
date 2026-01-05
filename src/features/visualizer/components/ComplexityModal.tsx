@@ -6,6 +6,7 @@ import { memo, useCallback, useEffect, useMemo } from "react";
 import { getAlgorithmMetadata, getTreeAlgorithmMetadata } from "@/features/algorithms";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
 import { buttonInteraction } from "@/lib/motion";
+import type { TreeDataStructureType } from "@/lib/store";
 import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
   const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
   const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
+  const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
 
   const { label, description, complexity, spaceComplexity, hint, extras } = useMemo(() => {
     if (mode === "sorting") {
@@ -64,13 +66,13 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
       };
     }
     if (mode === "tree") {
-      const meta = getTreeAlgorithmMetadata(treeAlgorithm);
+      const meta = getTreeAlgorithmMetadata(treeAlgorithm, treeDataStructure);
       return {
         label: meta.label,
         description: meta.description,
         complexity: meta.complexity,
         spaceComplexity: meta.spaceComplexity,
-        hint: getTreeComparisonHint(treeAlgorithm),
+        hint: getTreeComparisonHint(treeAlgorithm, treeDataStructure),
         extras: {
           isTraversal: meta.isTraversal,
           visualPattern: meta.visualPattern,
@@ -89,7 +91,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
         visualPattern: meta.visualPattern,
       },
     };
-  }, [mode, sortingAlgorithm, pathfindingAlgorithm, treeAlgorithm]);
+  }, [mode, sortingAlgorithm, pathfindingAlgorithm, treeAlgorithm, treeDataStructure]);
 
   // Close on escape key
   useEffect(() => {
@@ -400,7 +402,50 @@ function getPathfindingComparisonHint(algorithm: string): string {
   }
 }
 
-function getTreeComparisonHint(algorithm: string): string {
+function getTreeComparisonHint(algorithm: string, dataStructure: TreeDataStructureType): string {
+  // Data-structure-specific hints for operations
+  if (dataStructure === "max-heap") {
+    switch (algorithm) {
+      case "insert":
+        return "Heap insert maintains the complete binary tree property. Bubble-up is O(log n) worst-case but O(1) average for random insertions.";
+      case "delete":
+        return "Extract-max always removes the root. Sink-down restores heap property. Used in priority queues and heap sort.";
+      case "heapify":
+        return "Floyd's algorithm builds a heap in O(n) time, faster than n insertions. Key insight: most nodes are near leaves.";
+      case "bfs":
+        return "Level-order on a heap shows values in array order. Each level has smaller values than the one above.";
+      default:
+        return "Max heaps are ideal for priority queues where you need fast access to the maximum element.";
+    }
+  }
+
+  if (dataStructure === "avl") {
+    switch (algorithm) {
+      case "insert":
+        return "AVL insert guarantees O(log n) worst-case. At most one rotation needed. Compare to BST's O(n) worst-case.";
+      case "search":
+        return "AVL search is identical to BST but guaranteed O(log n) due to balance property. No degenerate cases.";
+      case "delete":
+        return "AVL delete may require multiple rotations up the tree, unlike insert which needs at most one.";
+      default:
+        return "AVL trees maintain strict balance (height difference ≤ 1) for guaranteed O(log n) operations.";
+    }
+  }
+
+  if (dataStructure === "splay") {
+    switch (algorithm) {
+      case "insert":
+        return "Splay trees move accessed nodes to root. No balance tracking needed. Great for caching and locality patterns.";
+      case "search":
+        return "Repeated searches for the same key are O(1). Splaying exploits temporal locality in access patterns.";
+      case "delete":
+        return "Delete splays target to root first, then removes. Recently accessed nodes stay near root.";
+      default:
+        return "Splay trees are self-adjusting with O(log n) amortized cost. No explicit balance information stored.";
+    }
+  }
+
+  // Default BST hints
   switch (algorithm) {
     case "insert":
       return "BST insert is O(log n) average but degrades to O(n) if insertions are sorted. Self-balancing trees (AVL, Red-Black) prevent this.";
@@ -416,6 +461,8 @@ function getTreeComparisonHint(algorithm: string): string {
       return "Post-order visits root after children. Essential for safe tree deletion (children freed before parent).";
     case "bfs":
       return "Level-order uses a queue to visit breadth-first. Great for finding nodes closest to root or printing by level.";
+    case "invert":
+      return "The famous interview question. Swaps left/right children recursively. If you can't do this, apparently you can't work at Google.";
     default:
       return "Compare different tree operations to understand their use cases.";
   }

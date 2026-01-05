@@ -53,8 +53,9 @@ export const HEURISTIC_ALGORITHMS: PathfindingAlgorithmType[] = [
  * - bst: Binary Search Tree (unbalanced)
  * - avl: AVL Tree (self-balancing, height difference ≤ 1)
  * - max-heap: Max Binary Heap (parent ≥ children, complete tree)
+ * - splay: Splay Tree (self-adjusting, recently accessed nodes move to root)
  */
-export type TreeDataStructureType = "bst" | "avl" | "max-heap";
+export type TreeDataStructureType = "bst" | "avl" | "max-heap" | "splay";
 
 /**
  * Supported tree operations and traversals.
@@ -66,7 +67,9 @@ export type TreeAlgorithmType =
   | "inorder"
   | "preorder"
   | "postorder"
-  | "bfs";
+  | "bfs"
+  | "invert"
+  | "heapify";
 
 /**
  * Playback speed multipliers.
@@ -114,11 +117,24 @@ export const TREE_CONFIG = {
 /**
  * Operations available for each tree data structure.
  * Heaps support all operations (search is linear BFS, traversals work on any tree).
+ * Splay trees splay the accessed node to root after every search operation.
+ * Heapify is only available for max-heap (Floyd's O(n) heap construction).
  */
 export const TREE_OPERATIONS: Record<TreeDataStructureType, TreeAlgorithmType[]> = {
-  bst: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
-  avl: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
-  "max-heap": ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs"],
+  bst: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
+  avl: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
+  "max-heap": [
+    "insert",
+    "search",
+    "delete",
+    "heapify",
+    "inorder",
+    "preorder",
+    "postorder",
+    "bfs",
+    "invert",
+  ],
+  splay: ["insert", "search", "delete", "inorder", "preorder", "postorder", "bfs", "invert"],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,6 +312,24 @@ export interface YieldStore {
   resetTree: () => void;
   /** Sets the entire tree state (useful for loading presets) */
   setTreeState: (state: TreeState) => void;
+  /** Swaps the left and right children of a node (used for tree inversion) */
+  swapNodeChildren: (nodeId: string) => void;
+  /**
+   * Splays a node to the root using Zig, Zig-Zig, or Zig-Zag rotations.
+   * Used by Splay Trees to move recently accessed nodes to the root.
+   */
+  splayNode: (nodeId: string) => void;
+  /**
+   * Fills the tree with random values in a complete binary tree structure.
+   * Used before heapify to create an unordered tree that can be converted to a heap.
+   * @param count - Number of nodes to create (1-31)
+   */
+  fillRandomHeap: (count: number) => void;
+  /**
+   * Performs a single swap of values between parent and child during heapify.
+   * Used by the heapify visualization to update the actual tree state.
+   */
+  heapifySwap: (parentId: string, childId: string) => void;
 }
 
 /**
@@ -1089,6 +1123,224 @@ function extractHeapMax(treeState: TreeState): { treeState: TreeState; extracted
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Splay Tree Helper Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Performs a right rotation for splay operation (simpler than AVL, no height update).
+ *
+ *        y                x
+ *       / \              / \
+ *      x   C    →       A   y
+ *     / \                  / \
+ *    A   B                B   C
+ */
+function splayRotateRight(
+  nodes: Record<string, TreeNode>,
+  yId: string,
+  rootId: string | null
+): { nodes: Record<string, TreeNode>; newRootId: string | null } {
+  const y = nodes[yId];
+  if (!y || !y.leftId) return { nodes, newRootId: rootId };
+
+  const xId = y.leftId;
+  const x = nodes[xId];
+  if (!x) return { nodes, newRootId: rootId };
+
+  const bId = x.rightId;
+  const updatedNodes = { ...nodes };
+
+  // x becomes the new root of this subtree
+  updatedNodes[xId] = {
+    ...x,
+    rightId: yId,
+    parentId: y.parentId,
+  };
+
+  // y becomes right child of x
+  updatedNodes[yId] = {
+    ...y,
+    leftId: bId,
+    parentId: xId,
+  };
+
+  // B's parent changes to y (if B exists)
+  if (bId) {
+    const b = updatedNodes[bId];
+    if (b) {
+      updatedNodes[bId] = { ...b, parentId: yId };
+    }
+  }
+
+  // Update parent's child reference (if parent exists)
+  if (y.parentId) {
+    const parent = updatedNodes[y.parentId];
+    if (parent) {
+      if (parent.leftId === yId) {
+        updatedNodes[y.parentId] = { ...parent, leftId: xId };
+      } else {
+        updatedNodes[y.parentId] = { ...parent, rightId: xId };
+      }
+    }
+  }
+
+  // Update root if y was the root
+  const newRootId = rootId === yId ? xId : rootId;
+
+  return { nodes: updatedNodes, newRootId };
+}
+
+/**
+ * Performs a left rotation for splay operation (simpler than AVL, no height update).
+ *
+ *      x                  y
+ *     / \                / \
+ *    A   y      →       x   C
+ *       / \            / \
+ *      B   C          A   B
+ */
+function splayRotateLeft(
+  nodes: Record<string, TreeNode>,
+  xId: string,
+  rootId: string | null
+): { nodes: Record<string, TreeNode>; newRootId: string | null } {
+  const x = nodes[xId];
+  if (!x || !x.rightId) return { nodes, newRootId: rootId };
+
+  const yId = x.rightId;
+  const y = nodes[yId];
+  if (!y) return { nodes, newRootId: rootId };
+
+  const bId = y.leftId;
+  const updatedNodes = { ...nodes };
+
+  // y becomes the new root of this subtree
+  updatedNodes[yId] = {
+    ...y,
+    leftId: xId,
+    parentId: x.parentId,
+  };
+
+  // x becomes left child of y
+  updatedNodes[xId] = {
+    ...x,
+    rightId: bId,
+    parentId: yId,
+  };
+
+  // B's parent changes to x (if B exists)
+  if (bId) {
+    const b = updatedNodes[bId];
+    if (b) {
+      updatedNodes[bId] = { ...b, parentId: xId };
+    }
+  }
+
+  // Update parent's child reference (if parent exists)
+  if (x.parentId) {
+    const parent = updatedNodes[x.parentId];
+    if (parent) {
+      if (parent.leftId === xId) {
+        updatedNodes[x.parentId] = { ...parent, leftId: yId };
+      } else {
+        updatedNodes[x.parentId] = { ...parent, rightId: yId };
+      }
+    }
+  }
+
+  // Update root if x was the root
+  const newRootId = rootId === xId ? yId : rootId;
+
+  return { nodes: updatedNodes, newRootId };
+}
+
+/**
+ * Splays a node to the root using bottom-up rotations.
+ * Splay operation uses three cases:
+ * - Zig: x is child of root (single rotation)
+ * - Zig-Zig: x and parent are both left or both right children (double same-direction)
+ * - Zig-Zag: x is left child of right child or vice versa (double opposite-direction)
+ */
+function splayNodeToRoot(treeState: TreeState, nodeId: string): TreeState {
+  let nodes = { ...treeState.nodes };
+  let rootId = treeState.rootId;
+
+  // If node doesn't exist or is already root, nothing to do
+  const node = nodes[nodeId];
+  if (!node || nodeId === rootId) {
+    return treeState;
+  }
+
+  // Keep splaying until node is root
+  while (nodes[nodeId]?.parentId !== null) {
+    const current = nodes[nodeId];
+    if (!current || !current.parentId) break;
+
+    const parent = nodes[current.parentId];
+    if (!parent) break;
+
+    const grandparentId = parent.parentId;
+
+    if (grandparentId === null) {
+      // Zig case: parent is root, single rotation
+      if (parent.leftId === nodeId) {
+        // x is left child of root: rotate right
+        const result = splayRotateRight(nodes, current.parentId, rootId);
+        nodes = result.nodes;
+        rootId = result.newRootId;
+      } else {
+        // x is right child of root: rotate left
+        const result = splayRotateLeft(nodes, current.parentId, rootId);
+        nodes = result.nodes;
+        rootId = result.newRootId;
+      }
+    } else {
+      const grandparent = nodes[grandparentId];
+      if (!grandparent) break;
+
+      const parentIsLeftChild = grandparent.leftId === current.parentId;
+      const nodeIsLeftChild = parent.leftId === nodeId;
+
+      if (parentIsLeftChild && nodeIsLeftChild) {
+        // Zig-Zig (Left-Left): rotate grandparent right, then parent right
+        const result1 = splayRotateRight(nodes, grandparentId, rootId);
+        nodes = result1.nodes;
+        rootId = result1.newRootId;
+        const result2 = splayRotateRight(nodes, current.parentId, rootId);
+        nodes = result2.nodes;
+        rootId = result2.newRootId;
+      } else if (!parentIsLeftChild && !nodeIsLeftChild) {
+        // Zig-Zig (Right-Right): rotate grandparent left, then parent left
+        const result1 = splayRotateLeft(nodes, grandparentId, rootId);
+        nodes = result1.nodes;
+        rootId = result1.newRootId;
+        const result2 = splayRotateLeft(nodes, current.parentId, rootId);
+        nodes = result2.nodes;
+        rootId = result2.newRootId;
+      } else if (parentIsLeftChild && !nodeIsLeftChild) {
+        // Zig-Zag (Left-Right): rotate parent left, then grandparent right
+        const result1 = splayRotateLeft(nodes, current.parentId, rootId);
+        nodes = result1.nodes;
+        rootId = result1.newRootId;
+        const result2 = splayRotateRight(nodes, grandparentId, rootId);
+        nodes = result2.nodes;
+        rootId = result2.newRootId;
+      } else {
+        // Zig-Zag (Right-Left): rotate parent right, then grandparent left
+        const result1 = splayRotateRight(nodes, current.parentId, rootId);
+        nodes = result1.nodes;
+        rootId = result1.newRootId;
+        const result2 = splayRotateLeft(nodes, grandparentId, rootId);
+        nodes = result2.nodes;
+        rootId = result2.newRootId;
+      }
+    }
+  }
+
+  return { rootId, nodes };
+}
+
 export const useYieldStore = create<YieldStore>((set) => ({
   // Global initial state
   mode: "sorting",
@@ -1473,6 +1725,133 @@ export const useYieldStore = create<YieldStore>((set) => ({
     }),
 
   setTreeState: (newTreeState) => set({ treeState: newTreeState }),
+
+  swapNodeChildren: (nodeId) =>
+    set((state) => {
+      const node = state.treeState.nodes[nodeId];
+      if (!node) return state;
+
+      return {
+        treeState: {
+          ...state.treeState,
+          nodes: {
+            ...state.treeState.nodes,
+            [nodeId]: {
+              ...node,
+              leftId: node.rightId,
+              rightId: node.leftId,
+            },
+          },
+        },
+      };
+    }),
+
+  splayNode: (nodeId) =>
+    set((state) => {
+      const newTreeState = splayNodeToRoot(state.treeState, nodeId);
+      return { treeState: newTreeState };
+    }),
+
+  fillRandomHeap: (count) =>
+    set(() => {
+      // Clamp count to valid range
+      const nodeCount = Math.min(Math.max(1, count), TREE_CONFIG.MAX_NODES);
+
+      // Generate random unique values in the configured range
+      const values: number[] = [];
+      const usedValues = new Set<number>();
+
+      while (values.length < nodeCount) {
+        const value =
+          Math.floor(Math.random() * (TREE_CONFIG.VALUE_MAX - TREE_CONFIG.VALUE_MIN + 1)) +
+          TREE_CONFIG.VALUE_MIN;
+        if (!usedValues.has(value)) {
+          usedValues.add(value);
+          values.push(value);
+        }
+      }
+
+      // Build a complete binary tree with the random values
+      // (complete = all levels full except possibly last, which is filled left-to-right)
+      const nodes: Record<string, TreeNode> = {};
+      const nodeIds: string[] = [];
+
+      // Create all nodes first
+      for (let i = 0; i < nodeCount; i++) {
+        const id = generateNodeId();
+        nodeIds.push(id);
+        // Values array guaranteed to have nodeCount elements
+        const value = values[i] as number;
+        nodes[id] = {
+          id,
+          value,
+          leftId: null,
+          rightId: null,
+          parentId: null,
+        };
+      }
+
+      // Link nodes in complete binary tree structure
+      for (let i = 0; i < nodeCount; i++) {
+        const nodeId = nodeIds[i];
+        // nodeId is guaranteed to exist since we just created nodeCount nodes
+        if (!nodeId) continue;
+        const node = nodes[nodeId];
+        if (!node) continue;
+
+        const leftChildIndex = 2 * i + 1;
+        const rightChildIndex = 2 * i + 2;
+
+        if (leftChildIndex < nodeCount) {
+          const leftChildId = nodeIds[leftChildIndex];
+          if (leftChildId) {
+            node.leftId = leftChildId;
+            const leftChild = nodes[leftChildId];
+            if (leftChild) {
+              leftChild.parentId = nodeId;
+            }
+          }
+        }
+
+        if (rightChildIndex < nodeCount) {
+          const rightChildId = nodeIds[rightChildIndex];
+          if (rightChildId) {
+            node.rightId = rightChildId;
+            const rightChild = nodes[rightChildId];
+            if (rightChild) {
+              rightChild.parentId = nodeId;
+            }
+          }
+        }
+      }
+
+      return {
+        treeState: {
+          rootId: nodeIds[0] ?? null,
+          nodes,
+        },
+      };
+    }),
+
+  heapifySwap: (parentId, childId) =>
+    set((state) => {
+      const parent = state.treeState.nodes[parentId];
+      const child = state.treeState.nodes[childId];
+
+      if (!parent || !child) return state;
+
+      // Swap values between parent and child
+      return {
+        treeState: {
+          ...state.treeState,
+          nodes: {
+            ...state.treeState.nodes,
+            [parentId]: { ...parent, value: child.value },
+            [childId]: { ...child, value: parent.value },
+          },
+        },
+      };
+    }),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
