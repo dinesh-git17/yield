@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BadgeHelp, ChevronsLeft } from "lucide-react";
+import { BadgeHelp, BookOpen, ChevronsLeft } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
@@ -238,6 +239,22 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
               <BadgeHelp className="h-4 w-4 text-violet-400" />
               <span className="text-sm font-medium">Complexity</span>
             </motion.button>
+
+            {/* Learn Trigger */}
+            <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+              <Link
+                href={`/learn/sorting/${sortingAlgorithm}`}
+                className={cn(
+                  "mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                  "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
+                  "text-primary hover:bg-sky-500/20 transition-colors",
+                  "dark:border-sky-500/10 dark:bg-sky-500/5"
+                )}
+              >
+                <BookOpen className="h-4 w-4 text-sky-400" />
+                <span className="text-sm font-medium">Learn</span>
+              </Link>
+            </motion.div>
           </>
         )}
 

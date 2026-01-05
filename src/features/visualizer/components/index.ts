@@ -44,3 +44,4 @@ export type { SortingStageProps } from "./SortingStage";
 export { SortingStage } from "./SortingStage";
 export type { TreeStageProps } from "./TreeStage";
 export { TreeStage } from "./TreeStage";
+export { UrlStateSync } from "./UrlStateSync";
