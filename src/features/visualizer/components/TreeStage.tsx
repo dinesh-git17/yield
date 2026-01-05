@@ -1,7 +1,16 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, CheckCircle2, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Dices,
+  Pause,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Trash2,
+} from "lucide-react";
 import { memo, useCallback, useMemo, useRef } from "react";
 import type { TraversalOutput, TreeNodeState } from "@/features/algorithms";
 import {
@@ -226,25 +235,48 @@ export function TreeStage({ className }: TreeStageProps) {
           )}
         </div>
 
-        {/* Playback Controls */}
-        <div className="flex items-center gap-2">
-          <ControlButton
-            label="Step"
-            icon={<SkipForward className="h-3.5 w-3.5" />}
-            onClick={controller.step}
-            disabled={isComplete || isIdle}
-          />
-          <ControlButton
-            label="Reset"
-            icon={<RotateCcw className="h-3.5 w-3.5" />}
-            onClick={() => controller.reset()}
-            disabled={isIdle}
-          />
-          <PlayPauseButton
-            isPlaying={isPlaying}
-            onClick={isPlaying ? controller.pause : controller.play}
-            disabled={isComplete || isIdle}
-          />
+        {/* Controls */}
+        <div className="flex items-center gap-4">
+          {/* Tree Actions */}
+          <div className="flex items-center gap-2">
+            <ActionButton
+              label="Random"
+              icon={<Dices className="h-3.5 w-3.5" />}
+              onClick={handleGenerateBalanced}
+              disabled={isPlaying}
+              variant="secondary"
+            />
+            <ActionButton
+              label="Clear"
+              icon={<Trash2 className="h-3.5 w-3.5" />}
+              onClick={handleReset}
+              disabled={isPlaying || isEmpty}
+              variant="destructive"
+            />
+          </div>
+
+          <div className="bg-border h-6 w-px" />
+
+          {/* Playback Controls */}
+          <div className="flex items-center gap-2">
+            <ControlButton
+              label="Step"
+              icon={<SkipForward className="h-3.5 w-3.5" />}
+              onClick={controller.step}
+              disabled={isComplete || isIdle}
+            />
+            <ControlButton
+              label="Reset"
+              icon={<RotateCcw className="h-3.5 w-3.5" />}
+              onClick={() => controller.reset()}
+              disabled={isIdle}
+            />
+            <PlayPauseButton
+              isPlaying={isPlaying}
+              onClick={isPlaying ? controller.pause : controller.play}
+              disabled={isComplete || isIdle}
+            />
+          </div>
         </div>
       </header>
 
@@ -309,12 +341,7 @@ export function TreeStage({ className }: TreeStageProps) {
 
         {/* Floating Control Bar */}
         <div className="absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
-          <TreeControlBar
-            onExecute={handleExecute}
-            onReset={handleReset}
-            onGenerateBalanced={handleGenerateBalanced}
-            status={controller.status}
-          />
+          <TreeControlBar onExecute={handleExecute} status={controller.status} />
         </div>
       </div>
     </div>
@@ -654,6 +681,51 @@ function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps)
         </motion.span>
       </AnimatePresence>
       {isPlaying ? "Pause" : "Resume"}
+    </motion.button>
+  );
+}
+
+/**
+ * Action button for tree operations (Random, Clear).
+ */
+interface ActionButtonProps {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  variant?: "secondary" | "destructive";
+}
+
+function ActionButton({
+  label,
+  icon,
+  onClick,
+  disabled,
+  variant = "secondary",
+}: ActionButtonProps) {
+  const interactionProps = disabled
+    ? {}
+    : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      {...interactionProps}
+      animate={{ opacity: disabled ? 0.5 : 1 }}
+      transition={SPRING_PRESETS.snappy}
+      className={cn(
+        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+        "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
+        variant === "secondary" && "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20",
+        variant === "destructive" && "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
+        disabled && "cursor-not-allowed"
+      )}
+      aria-label={label}
+    >
+      {icon}
+      {label}
     </motion.button>
   );
 }

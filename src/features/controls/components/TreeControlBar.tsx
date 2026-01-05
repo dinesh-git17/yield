@@ -2,7 +2,7 @@
 
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { motion } from "framer-motion";
-import { Dices, Minus, Plus, Search, Trash2 } from "lucide-react";
+import { Minus, Plus, Search } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { SPRING_PRESETS } from "@/lib/motion";
 import {
@@ -17,10 +17,6 @@ export interface TreeControlBarProps {
   className?: string;
   /** Callback when an operation should be executed */
   onExecute?: (algorithm: TreeAlgorithmType, value?: number) => void;
-  /** Callback when tree should be reset */
-  onReset?: () => void;
-  /** Callback when balanced tree should be generated */
-  onGenerateBalanced?: () => void;
   /** Current playback status */
   status?: "idle" | "playing" | "paused" | "complete";
 }
@@ -51,8 +47,6 @@ const SPEED_OPTIONS: { value: PlaybackSpeedMultiplier; label: string }[] = [
 export const TreeControlBar = memo(function TreeControlBar({
   className,
   onExecute,
-  onReset,
-  onGenerateBalanced,
   status = "idle",
 }: TreeControlBarProps) {
   const [inputValue, setInputValue] = useState("");
@@ -66,8 +60,7 @@ export const TreeControlBar = memo(function TreeControlBar({
 
   const nodeCount = Object.keys(treeState.nodes).length;
   const isMaxNodes = nodeCount >= TREE_CONFIG.MAX_NODES;
-  const isOperating = status === "playing";
-  const isDisabled = isOperating || status === "complete";
+  const isTraversalPlaying = status === "playing";
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -151,12 +144,10 @@ export const TreeControlBar = memo(function TreeControlBar({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={`${TREE_CONFIG.VALUE_MIN}-${TREE_CONFIG.VALUE_MAX}`}
-            disabled={isDisabled}
             className={cn(
               "bg-surface border-border text-primary h-8 w-16 rounded-md border px-2 text-center text-sm tabular-nums",
               "placeholder:text-muted/50",
-              "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
-              "disabled:cursor-not-allowed disabled:opacity-50"
+              "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2"
             )}
             aria-label="Value to insert, search, or delete"
           />
@@ -170,15 +161,14 @@ export const TreeControlBar = memo(function TreeControlBar({
         <div className="flex items-center gap-1">
           {OPERATIONS.map((op) => {
             const isInsertDisabled = op.value === "insert" && isMaxNodes;
-            const needsInput = ["insert", "search", "delete"].includes(op.value);
-            const buttonDisabled = isDisabled || isInsertDisabled || (needsInput && !isValidInput);
+            const buttonDisabled = isInsertDisabled || !isValidInput;
 
             return (
               <OperationButton
                 key={op.value}
                 label={op.label}
                 icon={op.icon}
-                isActive={treeAlgorithm === op.value && isOperating}
+                isActive={treeAlgorithm === op.value && isTraversalPlaying}
                 disabled={buttonDisabled}
                 onClick={() => handleOperationExecute(op.value)}
               />
@@ -195,14 +185,14 @@ export const TreeControlBar = memo(function TreeControlBar({
           type="single"
           value={TRAVERSALS.some((t) => t.value === treeAlgorithm) ? treeAlgorithm : ""}
           onValueChange={(value) => value && handleTraversalExecute(value as TreeAlgorithmType)}
-          disabled={isDisabled || nodeCount === 0}
+          disabled={isTraversalPlaying || nodeCount === 0}
           className="bg-surface flex rounded-lg p-0.5"
         >
           {TRAVERSALS.map((traversal) => (
             <ToggleGroup.Item
               key={traversal.value}
               value={traversal.value}
-              disabled={isDisabled || nodeCount === 0}
+              disabled={isTraversalPlaying || nodeCount === 0}
               className={cn(
                 "text-muted relative rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
                 "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
@@ -257,28 +247,6 @@ export const TreeControlBar = memo(function TreeControlBar({
           ))}
         </ToggleGroup.Root>
       </ControlSection>
-
-      <Divider />
-
-      {/* Actions Section */}
-      <ControlSection label="Actions">
-        <div className="flex items-center gap-1">
-          <ActionButton
-            label="Random"
-            icon={<Dices className="h-3.5 w-3.5" />}
-            onClick={onGenerateBalanced ?? (() => {})}
-            disabled={isOperating}
-            variant="secondary"
-          />
-          <ActionButton
-            label="Clear"
-            icon={<Trash2 className="h-3.5 w-3.5" />}
-            onClick={onReset ?? (() => {})}
-            disabled={isOperating || nodeCount === 0}
-            variant="destructive"
-          />
-        </div>
-      </ControlSection>
     </motion.div>
   );
 });
@@ -332,46 +300,6 @@ const OperationButton = memo(function OperationButton({
         isActive
           ? "bg-emerald-500/20 text-emerald-400"
           : "bg-surface hover:bg-surface-elevated text-primary border-border border",
-        disabled && "cursor-not-allowed opacity-50"
-      )}
-      aria-label={label}
-    >
-      {icon}
-      {label}
-    </motion.button>
-  );
-});
-
-interface ActionButtonProps {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  variant?: "secondary" | "destructive";
-}
-
-const ActionButton = memo(function ActionButton({
-  label,
-  icon,
-  onClick,
-  disabled,
-  variant = "secondary",
-}: ActionButtonProps) {
-  const hoverAnimation = disabled ? {} : { whileHover: { scale: 1.02 } };
-  const tapAnimation = disabled ? {} : { whileTap: { scale: 0.98 } };
-
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      {...hoverAnimation}
-      {...tapAnimation}
-      className={cn(
-        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-        "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
-        variant === "secondary" && "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20",
-        variant === "destructive" && "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
         disabled && "cursor-not-allowed opacity-50"
       )}
       aria-label={label}

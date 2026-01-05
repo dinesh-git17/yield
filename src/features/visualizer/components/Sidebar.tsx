@@ -7,7 +7,6 @@ import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
   type PathfindingAlgorithmType,
   type SortingAlgorithmType,
-  type TreeAlgorithmType,
   useYieldStore,
   type VisualizerMode,
 } from "@/lib/store";
@@ -45,20 +44,6 @@ const PATHFINDING_ALGORITHMS: {
   { id: "random", label: "Random Walk", enabled: true },
 ];
 
-const TREE_ALGORITHMS: {
-  id: TreeAlgorithmType;
-  label: string;
-  enabled: boolean;
-}[] = [
-  { id: "insert", label: "Insert", enabled: true },
-  { id: "search", label: "Search", enabled: true },
-  { id: "delete", label: "Delete", enabled: true },
-  { id: "inorder", label: "In-Order Traversal", enabled: true },
-  { id: "preorder", label: "Pre-Order Traversal", enabled: true },
-  { id: "postorder", label: "Post-Order Traversal", enabled: true },
-  { id: "bfs", label: "Level-Order (BFS)", enabled: true },
-];
-
 export function Sidebar({ className, onCollapse }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
@@ -69,8 +54,6 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
   const setSortingAlgorithm = useYieldStore((state) => state.setSortingAlgorithm);
   const pathfindingAlgorithm = useYieldStore((state) => state.pathfindingAlgorithm);
   const setPathfindingAlgorithm = useYieldStore((state) => state.setPathfindingAlgorithm);
-  const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
-  const setTreeAlgorithm = useYieldStore((state) => state.setTreeAlgorithm);
 
   const handleModeSelect = useCallback(
     (newMode: VisualizerMode) => {
@@ -91,13 +74,6 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
       setPathfindingAlgorithm(algo);
     },
     [setPathfindingAlgorithm]
-  );
-
-  const handleTreeAlgorithmSelect = useCallback(
-    (algo: TreeAlgorithmType) => {
-      setTreeAlgorithm(algo);
-    },
-    [setTreeAlgorithm]
   );
 
   const openComplexityModal = useCallback(() => {
@@ -263,51 +239,6 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
               )}
             >
               <BadgeHelp className="h-4 w-4 text-cyan-400" />
-              <span className="text-sm font-medium">Complexity</span>
-            </motion.button>
-          </>
-        )}
-
-        {/* Tree Algorithms List */}
-        {mode === "tree" && (
-          <>
-            <div className="mb-2">
-              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
-                Binary Search Tree
-              </span>
-            </div>
-
-            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
-              {TREE_ALGORITHMS.map((algo) => (
-                <SidebarItem
-                  key={algo.id}
-                  id={`algo-${algo.id}`}
-                  label={algo.label}
-                  isActive={treeAlgorithm === algo.id}
-                  disabled={!algo.enabled}
-                  hoveredItem={hoveredItem}
-                  onHover={setHoveredItem}
-                  onClick={() => algo.enabled && handleTreeAlgorithmSelect(algo.id)}
-                />
-              ))}
-            </SidebarGroup>
-
-            <div className="border-border-subtle my-4 border-t" />
-
-            {/* Complexity Trigger */}
-            <motion.button
-              type="button"
-              onClick={openComplexityModal}
-              whileHover={buttonInteraction.hover}
-              whileTap={buttonInteraction.tap}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                "border border-white/10 bg-white/5 backdrop-blur-sm",
-                "text-primary hover:bg-white/10 transition-colors",
-                "dark:border-white/5 dark:bg-black/20"
-              )}
-            >
-              <BadgeHelp className="h-4 w-4 text-emerald-400" />
               <span className="text-sm font-medium">Complexity</span>
             </motion.button>
           </>
