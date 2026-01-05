@@ -310,7 +310,10 @@ function getComplexityVariant(complexity: string): ComplexityCardProps["variant"
   return "fair";
 }
 
-function getTimeDescription(complexity: string, mode: "sorting" | "pathfinding" | "tree"): string {
+function getTimeDescription(
+  complexity: string,
+  mode: "sorting" | "pathfinding" | "tree" | "graph"
+): string {
   if (mode === "pathfinding") {
     if (complexity.includes("V + E")) {
       return "Visits each vertex and edge once. Scales linearly with graph size.";
@@ -329,6 +332,15 @@ function getTimeDescription(complexity: string, mode: "sorting" | "pathfinding" 
     }
     return "Execution time depends on tree structure.";
   }
+  if (mode === "graph") {
+    if (complexity.includes("E log V")) {
+      return "Edge sorting or priority queue operations dominate. Efficient for sparse graphs.";
+    }
+    if (complexity.includes("V + E")) {
+      return "Linear in vertices and edges. Visits each element once.";
+    }
+    return "Execution time depends on graph density.";
+  }
   if (complexity === "O(n²)") {
     return "Performance degrades quickly as input size grows. Suitable for small datasets.";
   }
@@ -338,7 +350,10 @@ function getTimeDescription(complexity: string, mode: "sorting" | "pathfinding" 
   return "Execution time varies with input.";
 }
 
-function getSpaceDescription(complexity: string, mode: "sorting" | "pathfinding" | "tree"): string {
+function getSpaceDescription(
+  complexity: string,
+  mode: "sorting" | "pathfinding" | "tree" | "graph"
+): string {
   if (mode === "pathfinding") {
     if (complexity === "O(V)") {
       return "Stores visited nodes and parent pointers proportional to vertices.";
@@ -353,6 +368,15 @@ function getSpaceDescription(complexity: string, mode: "sorting" | "pathfinding"
       return "Queue or result storage proportional to number of nodes.";
     }
     return "Memory usage depends on tree structure.";
+  }
+  if (mode === "graph") {
+    if (complexity === "O(V)") {
+      return "Stores visited set and result edges proportional to vertices.";
+    }
+    if (complexity.includes("E") || complexity.includes("V")) {
+      return "Memory usage scales with graph size (vertices + edges).";
+    }
+    return "Memory usage depends on graph density.";
   }
   if (complexity === "O(1)") {
     return "Constant memory. Sorts in-place without extra allocation.";
