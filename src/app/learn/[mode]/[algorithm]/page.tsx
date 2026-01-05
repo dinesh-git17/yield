@@ -1,5 +1,16 @@
 import katex from "katex";
-import { Clock, Code2, Compass, HardDrive, Lightbulb, Route, Target, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  Clock,
+  Code2,
+  Compass,
+  HardDrive,
+  Lightbulb,
+  Route,
+  Target,
+  TreeDeciduous,
+  XCircle,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
@@ -9,7 +20,13 @@ import {
   type PathfindingArticle,
 } from "@/features/learning/content/pathfinding";
 import { getSortingArticle, type SortingArticle } from "@/features/learning/content/sorting";
-import type { PathfindingAlgorithmType, SortingAlgorithmType, VisualizerMode } from "@/lib/store";
+import { getTreeArticle, type TreeArticle } from "@/features/learning/content/trees";
+import type {
+  PathfindingAlgorithmType,
+  SortingAlgorithmType,
+  TreeDataStructureType,
+  VisualizerMode,
+} from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 interface LearnPageProps {
@@ -39,6 +56,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
   "flood",
   "random",
 ] as const;
+const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
 
 function isValidMode(mode: string): mode is VisualizerMode {
   return VALID_MODES.includes(mode as VisualizerMode);
@@ -52,15 +70,20 @@ function isValidPathfindingAlgorithm(algorithm: string): algorithm is Pathfindin
   return VALID_PATHFINDING_ALGORITHMS.includes(algorithm as PathfindingAlgorithmType);
 }
 
+function isValidTreeStructure(structure: string): structure is TreeDataStructureType {
+  return VALID_TREE_STRUCTURES.includes(structure as TreeDataStructureType);
+}
+
 /**
  * Unified article type for polymorphic page rendering.
  */
 type ArticleContent =
   | { mode: "sorting"; article: SortingArticle; algorithm: SortingAlgorithmType }
-  | { mode: "pathfinding"; article: PathfindingArticle; algorithm: PathfindingAlgorithmType };
+  | { mode: "pathfinding"; article: PathfindingArticle; algorithm: PathfindingAlgorithmType }
+  | { mode: "tree"; article: TreeArticle; structure: TreeDataStructureType };
 
 /**
- * Factory function to get the appropriate article based on mode and algorithm.
+ * Factory function to get the appropriate article based on mode and algorithm/structure.
  */
 function getArticle(mode: string, algorithm: string): ArticleContent | null {
   if (mode === "sorting" && isValidSortingAlgorithm(algorithm)) {
@@ -75,6 +98,13 @@ function getArticle(mode: string, algorithm: string): ArticleContent | null {
       mode: "pathfinding",
       article: getPathfindingArticle(algorithm),
       algorithm,
+    };
+  }
+  if (mode === "tree" && isValidTreeStructure(algorithm)) {
+    return {
+      mode: "tree",
+      article: getTreeArticle(algorithm),
+      structure: algorithm,
     };
   }
   return null;
@@ -101,9 +131,15 @@ export default async function LearnPage({ params }: LearnPageProps) {
   }
 
   const content = getArticle(mode, algorithm);
+  // Tree mode has complexity info inline in the article, not in separate metadata
   const metadata = getMetadata(mode, algorithm);
 
-  if (!content || !metadata) {
+  if (!content) {
+    notFound();
+  }
+
+  // For non-tree modes, metadata is required
+  if (content.mode !== "tree" && !metadata) {
     notFound();
   }
 
@@ -118,6 +154,10 @@ export default async function LearnPage({ params }: LearnPageProps) {
     pathfinding: {
       label: "Pathfinding Algorithm",
       icon: <Compass className="h-5 w-5" />,
+    },
+    tree: {
+      label: "Data Structure",
+      icon: <TreeDeciduous className="h-5 w-5" />,
     },
   };
 
@@ -137,26 +177,52 @@ export default async function LearnPage({ params }: LearnPageProps) {
 
         {/* Complexity Badges */}
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <ComplexityBadge
-            icon={<Clock className="h-4 w-4" />}
-            label="Time"
-            value={metadata.complexity}
-            variant={getComplexityVariant(metadata.complexity)}
-          />
-          <ComplexityBadge
-            icon={<HardDrive className="h-4 w-4" />}
-            label="Space"
-            value={metadata.spaceComplexity}
-            variant={getComplexityVariant(metadata.spaceComplexity)}
-          />
-          {/* Pathfinding-specific: Shortest Path Guarantee */}
-          {content.mode === "pathfinding" && (
-            <ComplexityBadge
-              icon={<Route className="h-4 w-4" />}
-              label="Shortest Path"
-              value={content.article.guaranteesShortestPath ? "Guaranteed" : "Not Guaranteed"}
-              variant={content.article.guaranteesShortestPath ? "excellent" : "fair"}
-            />
+          {/* Tree mode shows search complexity + self-balancing */}
+          {content.mode === "tree" ? (
+            <>
+              <ComplexityBadge
+                icon={<Clock className="h-4 w-4" />}
+                label="Search"
+                value={content.article.searchComplexity.complexity}
+                variant={getComplexityVariant(content.article.searchComplexity.complexity)}
+              />
+              <ComplexityBadge
+                icon={<HardDrive className="h-4 w-4" />}
+                label="Space"
+                value={content.article.spaceComplexity.complexity}
+                variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
+              />
+              <ComplexityBadge
+                icon={<TreeDeciduous className="h-4 w-4" />}
+                label="Self-Balancing"
+                value={content.article.selfBalancing ? "Yes" : "No"}
+                variant={content.article.selfBalancing ? "excellent" : "fair"}
+              />
+            </>
+          ) : (
+            <>
+              <ComplexityBadge
+                icon={<Clock className="h-4 w-4" />}
+                label="Time"
+                value={metadata?.complexity ?? "N/A"}
+                variant={getComplexityVariant(metadata?.complexity ?? "")}
+              />
+              <ComplexityBadge
+                icon={<HardDrive className="h-4 w-4" />}
+                label="Space"
+                value={metadata?.spaceComplexity ?? "N/A"}
+                variant={getComplexityVariant(metadata?.spaceComplexity ?? "")}
+              />
+              {/* Pathfinding-specific: Shortest Path Guarantee */}
+              {content.mode === "pathfinding" && (
+                <ComplexityBadge
+                  icon={<Route className="h-4 w-4" />}
+                  label="Shortest Path"
+                  value={content.article.guaranteesShortestPath ? "Guaranteed" : "Not Guaranteed"}
+                  variant={content.article.guaranteesShortestPath ? "excellent" : "fair"}
+                />
+              )}
+            </>
           )}
         </div>
       </header>
@@ -166,12 +232,19 @@ export default async function LearnPage({ params }: LearnPageProps) {
         <Prose content={article.history} />
       </Section>
 
+      {/* Core Property Section - Trees only */}
+      {content.mode === "tree" && (
+        <Section title="Core Property" icon={<TreeDeciduous className="h-5 w-5" />}>
+          <Prose content={content.article.coreProperty} />
+        </Section>
+      )}
+
       {/* How it Works Section */}
       <Section title="How It Works" icon={config.icon}>
         <Prose content={article.mechanics} />
 
-        {/* Complexity Details - Sorting has 4 cases, Pathfinding has 2 */}
-        {content.mode === "sorting" ? (
+        {/* Complexity Details - mode-specific rendering */}
+        {content.mode === "sorting" && (
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <ComplexityCard
               title="Best Case"
@@ -198,7 +271,8 @@ export default async function LearnPage({ params }: LearnPageProps) {
               variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
             />
           </div>
-        ) : (
+        )}
+        {content.mode === "pathfinding" && (
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <ComplexityCard
               title="Time Complexity"
@@ -226,13 +300,42 @@ export default async function LearnPage({ params }: LearnPageProps) {
             />
           </div>
         )}
+        {content.mode === "tree" && (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ComplexityCard
+              title="Search"
+              complexity={content.article.searchComplexity.complexity}
+              explanation={content.article.searchComplexity.explanation}
+              variant={getComplexityCardVariant(content.article.searchComplexity.complexity)}
+            />
+            <ComplexityCard
+              title="Insert"
+              complexity={content.article.insertComplexity.complexity}
+              explanation={content.article.insertComplexity.explanation}
+              variant={getComplexityCardVariant(content.article.insertComplexity.complexity)}
+            />
+            <ComplexityCard
+              title="Delete"
+              complexity={content.article.deleteComplexity.complexity}
+              explanation={content.article.deleteComplexity.explanation}
+              variant={getComplexityCardVariant(content.article.deleteComplexity.complexity)}
+            />
+            <ComplexityCard
+              title="Space"
+              complexity={content.article.spaceComplexity.complexity}
+              explanation={content.article.spaceComplexity.explanation}
+              variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+            />
+          </div>
+        )}
       </Section>
 
       {/* Code Walkthrough Section */}
       <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
         <p className="text-muted mb-4 text-sm">
-          Real implementations in multiple programming languages. Select a language to view
-          idiomatic code.
+          {content.mode === "tree"
+            ? "Complete data structure implementations in multiple programming languages. Select a language to view idiomatic code."
+            : "Real implementations in multiple programming languages. Select a language to view idiomatic code."}
         </p>
         <CodeTabs mode={content.mode} algorithm={algorithm} />
       </Section>
@@ -294,6 +397,19 @@ export default async function LearnPage({ params }: LearnPageProps) {
           <p className="text-primary/80 text-sm leading-relaxed">{article.whenNotToUse}</p>
         </div>
       </div>
+
+      {/* Pitfall Section - Trees only */}
+      {content.mode === "tree" && (
+        <div
+          className={cn("rounded-xl border border-amber-500/30 bg-amber-500/10 p-6", "space-y-3")}
+        >
+          <div className="flex items-center gap-2 text-amber-500">
+            <AlertTriangle className="h-5 w-5" />
+            <h3 className="font-semibold">Watch Out</h3>
+          </div>
+          <p className="text-primary/80 text-sm leading-relaxed">{content.article.pitfall}</p>
+        </div>
+      )}
 
       {/* Back to Visualizer CTA */}
       <div className="pt-8 text-center">
@@ -553,13 +669,38 @@ function ComplexityCard({ title, complexity, explanation, variant }: ComplexityC
 }
 
 function getComplexityVariant(complexity: string): "excellent" | "good" | "fair" {
+  // Handle O(log n) - excellent (guaranteed logarithmic)
   if (complexity.includes("log n") && !complexity.includes("n log n")) {
     return "excellent";
+  }
+  // Handle O(h) - good (depends on tree height, can be log n if balanced)
+  if (complexity === "O(h)") {
+    return "good";
   }
   if (complexity === "O(1)" || complexity === "O(n)" || complexity.includes("n log n")) {
     return "good";
   }
   return "fair";
+}
+
+/**
+ * Get variant for complexity cards - maps complexity to card styling.
+ * Used for tree operation complexity cards.
+ */
+function getComplexityCardVariant(complexity: string): "good" | "fair" | "neutral" {
+  // O(log n) is excellent - show as good
+  if (complexity.includes("log n") && !complexity.includes("n log n")) {
+    return "good";
+  }
+  // O(h) depends on balance - neutral (could be good or bad)
+  if (complexity === "O(h)") {
+    return "neutral";
+  }
+  // O(n) for search is not great - fair
+  if (complexity === "O(n)") {
+    return "fair";
+  }
+  return "neutral";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -572,7 +713,12 @@ export async function generateMetadata({ params }: LearnPageProps) {
   const content = getArticle(mode, algorithm);
 
   if (content) {
-    const modeLabel = content.mode === "sorting" ? "Sorting" : "Pathfinding";
+    const modeLabels = {
+      sorting: "Sorting",
+      pathfinding: "Pathfinding",
+      tree: "Data Structures",
+    } as const;
+    const modeLabel = modeLabels[content.mode];
     return {
       title: `${content.article.title} | ${modeLabel} | Learn | Yield`,
       description: `Learn about ${content.article.title}: ${content.article.tagline}. ${content.article.mechanics.slice(0, 150)}...`,
@@ -596,5 +742,10 @@ export function generateStaticParams() {
     algorithm,
   }));
 
-  return [...sortingParams, ...pathfindingParams];
+  const treeParams = VALID_TREE_STRUCTURES.map((structure) => ({
+    mode: "tree",
+    algorithm: structure,
+  }));
+
+  return [...sortingParams, ...pathfindingParams, ...treeParams];
 }
