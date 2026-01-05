@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createEmptyTreeState, resetNodeIdCounter, type TreeState, useYieldStore } from "./store";
+import {
+  createEmptyGraphState,
+  createEmptyTreeState,
+  type GraphState,
+  getAdjacencyList,
+  resetGraphIdCounters,
+  resetNodeIdCounter,
+  type TreeState,
+  useYieldStore,
+} from "./store";
 
 describe("Tree Store Actions", () => {
   beforeEach(() => {
@@ -269,5 +278,322 @@ describe("createEmptyTreeState", () => {
     const state = createEmptyTreeState();
     expect(state.rootId).toBeNull();
     expect(state.nodes).toEqual({});
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Graph Store Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("Graph Store Actions", () => {
+  beforeEach(() => {
+    resetGraphIdCounters();
+    useYieldStore.getState().clearGraph();
+  });
+
+  afterEach(() => {
+    useYieldStore.getState().clearGraph();
+  });
+
+  describe("addGraphNode", () => {
+    it("adds first node with auto-generated label", () => {
+      const id = useYieldStore.getState().addGraphNode(50, 50);
+      const { graphState } = useYieldStore.getState();
+
+      expect(id).toBe("gnode-1");
+      expect(graphState.nodes["gnode-1"]).toEqual({
+        id: "gnode-1",
+        x: 50,
+        y: 50,
+        label: "A",
+      });
+    });
+
+    it("adds multiple nodes with sequential labels", () => {
+      useYieldStore.getState().addGraphNode(10, 10);
+      useYieldStore.getState().addGraphNode(20, 20);
+      useYieldStore.getState().addGraphNode(30, 30);
+      const { graphState } = useYieldStore.getState();
+
+      expect(graphState.nodes["gnode-1"]?.label).toBe("A");
+      expect(graphState.nodes["gnode-2"]?.label).toBe("B");
+      expect(graphState.nodes["gnode-3"]?.label).toBe("C");
+    });
+
+    it("adds node with custom label", () => {
+      const id = useYieldStore.getState().addGraphNode(50, 50, "Start");
+      const { graphState } = useYieldStore.getState();
+
+      expect(graphState.nodes[id as string]?.label).toBe("Start");
+    });
+
+    it("returns null when max nodes reached", () => {
+      // Add 50 nodes (MAX_NODES)
+      for (let i = 0; i < 50; i++) {
+        useYieldStore.getState().addGraphNode(i, i);
+      }
+
+      const id = useYieldStore.getState().addGraphNode(100, 100);
+      expect(id).toBeNull();
+    });
+  });
+
+  describe("addGraphEdge", () => {
+    beforeEach(() => {
+      useYieldStore.getState().addGraphNode(10, 10); // gnode-1
+      useYieldStore.getState().addGraphNode(20, 20); // gnode-2
+      useYieldStore.getState().addGraphNode(30, 30); // gnode-3
+    });
+
+    it("adds edge between two nodes", () => {
+      const edgeId = useYieldStore.getState().addGraphEdge("gnode-1", "gnode-2");
+      const { graphState } = useYieldStore.getState();
+
+      expect(edgeId).toBe("gedge-1");
+      expect(graphState.edges["gedge-1"]).toEqual({
+        id: "gedge-1",
+        sourceId: "gnode-1",
+        targetId: "gnode-2",
+        weight: 1,
+      });
+    });
+
+    it("adds edge with custom weight", () => {
+      const edgeId = useYieldStore.getState().addGraphEdge("gnode-1", "gnode-2", 5);
+      const { graphState } = useYieldStore.getState();
+
+      expect(graphState.edges[edgeId as string]?.weight).toBe(5);
+    });
+
+    it("rejects self-loops", () => {
+      const edgeId = useYieldStore.getState().addGraphEdge("gnode-1", "gnode-1");
+      expect(edgeId).toBeNull();
+    });
+
+    it("rejects edges to non-existent nodes", () => {
+      const edgeId = useYieldStore.getState().addGraphEdge("gnode-1", "gnode-99");
+      expect(edgeId).toBeNull();
+    });
+
+    it("rejects duplicate edges in undirected mode", () => {
+      useYieldStore.getState().addGraphEdge("gnode-1", "gnode-2");
+      const edgeId = useYieldStore.getState().addGraphEdge("gnode-2", "gnode-1");
+      expect(edgeId).toBeNull();
+    });
+
+    it("allows reverse edges in directed mode", () => {
+      useYieldStore.getState().setGraphDirected(true);
+      useYieldStore.getState().addGraphEdge("gnode-1", "gnode-2");
+      const edgeId = useYieldStore.getState().addGraphEdge("gnode-2", "gnode-1");
+
+      expect(edgeId).not.toBeNull();
+    });
+  });
+
+  describe("updateGraphNodePosition", () => {
+    it("updates node position", () => {
+      useYieldStore.getState().addGraphNode(10, 10);
+      useYieldStore.getState().updateGraphNodePosition("gnode-1", 75, 25);
+      const { graphState } = useYieldStore.getState();
+
+      expect(graphState.nodes["gnode-1"]?.x).toBe(75);
+      expect(graphState.nodes["gnode-1"]?.y).toBe(25);
+    });
+
+    it("ignores non-existent node", () => {
+      useYieldStore.getState().addGraphNode(10, 10);
+      useYieldStore.getState().updateGraphNodePosition("gnode-99", 75, 25);
+      const { graphState } = useYieldStore.getState();
+
+      expect(graphState.nodes["gnode-1"]?.x).toBe(10);
+    });
+  });
+
+  describe("updateGraphEdgeWeight", () => {
+    it("updates edge weight", () => {
+      useYieldStore.getState().addGraphNode(10, 10);
+      useYieldStore.getState().addGraphNode(20, 20);
+      useYieldStore.getState().addGraphEdge("gnode-1", "gnode-2", 1);
+      useYieldStore.getState().updateGraphEdgeWeight("gedge-1", 10);
+      const { graphState } = useYieldStore.getState();
+
+      expect(graphState.edges["gedge-1"]?.weight).toBe(10);
+    });
+  });
+
+  describe("removeGraphNode", () => {
+    it("removes node and its connected edges", () => {
+      useYieldStore.getState().addGraphNode(10, 10); // gnode-1
+      useYieldStore.getState().addGraphNode(20, 20); // gnode-2
+      useYieldStore.getState().addGraphNode(30, 30); // gnode-3
+      useYieldStore.getState().addGraphEdge("gnode-1", "gnode-2"); // gedge-1
+      useYieldStore.getState().addGraphEdge("gnode-2", "gnode-3"); // gedge-2
+
+      const result = useYieldStore.getState().removeGraphNode("gnode-2");
+      const { graphState } = useYieldStore.getState();
+
+      expect(result).toBe(true);
+      expect(graphState.nodes["gnode-2"]).toBeUndefined();
+      expect(Object.keys(graphState.nodes)).toHaveLength(2);
+      expect(Object.keys(graphState.edges)).toHaveLength(0); // Both edges removed
+    });
+
+    it("returns false for non-existent node", () => {
+      const result = useYieldStore.getState().removeGraphNode("gnode-99");
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("removeGraphEdge", () => {
+    it("removes edge", () => {
+      useYieldStore.getState().addGraphNode(10, 10);
+      useYieldStore.getState().addGraphNode(20, 20);
+      useYieldStore.getState().addGraphEdge("gnode-1", "gnode-2");
+
+      const result = useYieldStore.getState().removeGraphEdge("gedge-1");
+      const { graphState } = useYieldStore.getState();
+
+      expect(result).toBe(true);
+      expect(graphState.edges["gedge-1"]).toBeUndefined();
+      expect(Object.keys(graphState.nodes)).toHaveLength(2); // Nodes preserved
+    });
+
+    it("returns false for non-existent edge", () => {
+      const result = useYieldStore.getState().removeGraphEdge("gedge-99");
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("setGraphDirected", () => {
+    it("toggles directed mode", () => {
+      expect(useYieldStore.getState().graphState.isDirected).toBe(false);
+
+      useYieldStore.getState().setGraphDirected(true);
+      expect(useYieldStore.getState().graphState.isDirected).toBe(true);
+
+      useYieldStore.getState().setGraphDirected(false);
+      expect(useYieldStore.getState().graphState.isDirected).toBe(false);
+    });
+  });
+
+  describe("clearGraph", () => {
+    it("clears all nodes and edges", () => {
+      useYieldStore.getState().addGraphNode(10, 10);
+      useYieldStore.getState().addGraphNode(20, 20);
+      useYieldStore.getState().addGraphEdge("gnode-1", "gnode-2");
+
+      useYieldStore.getState().clearGraph();
+      const { graphState } = useYieldStore.getState();
+
+      expect(Object.keys(graphState.nodes)).toHaveLength(0);
+      expect(Object.keys(graphState.edges)).toHaveLength(0);
+      expect(graphState.isDirected).toBe(false);
+    });
+  });
+
+  describe("setGraphState", () => {
+    it("sets entire graph state", () => {
+      const customState: GraphState = {
+        nodes: {
+          "custom-1": { id: "custom-1", x: 25, y: 75, label: "X" },
+          "custom-2": { id: "custom-2", x: 75, y: 25, label: "Y" },
+        },
+        edges: {
+          "custom-edge-1": {
+            id: "custom-edge-1",
+            sourceId: "custom-1",
+            targetId: "custom-2",
+            weight: 42,
+          },
+        },
+        isDirected: true,
+      };
+
+      useYieldStore.getState().setGraphState(customState);
+      const { graphState } = useYieldStore.getState();
+
+      expect(graphState.nodes["custom-1"]?.label).toBe("X");
+      expect(graphState.edges["custom-edge-1"]?.weight).toBe(42);
+      expect(graphState.isDirected).toBe(true);
+    });
+  });
+
+  describe("mode switching", () => {
+    it("preserves graph state when switching modes", () => {
+      useYieldStore.getState().setMode("graph");
+      useYieldStore.getState().addGraphNode(50, 50);
+      useYieldStore.getState().addGraphNode(75, 25);
+
+      useYieldStore.getState().setMode("sorting");
+      useYieldStore.getState().setMode("pathfinding");
+      useYieldStore.getState().setMode("graph");
+
+      const { graphState } = useYieldStore.getState();
+      expect(Object.keys(graphState.nodes)).toHaveLength(2);
+    });
+  });
+});
+
+describe("createEmptyGraphState", () => {
+  it("creates empty graph state", () => {
+    const state = createEmptyGraphState();
+    expect(state.nodes).toEqual({});
+    expect(state.edges).toEqual({});
+    expect(state.isDirected).toBe(false);
+  });
+});
+
+describe("getAdjacencyList", () => {
+  it("returns empty map for empty graph", () => {
+    const graphState = createEmptyGraphState();
+    const adjList = getAdjacencyList(graphState);
+    expect(adjList.size).toBe(0);
+  });
+
+  it("creates adjacency list for undirected graph", () => {
+    const graphState: GraphState = {
+      nodes: {
+        A: { id: "A", x: 0, y: 0, label: "A" },
+        B: { id: "B", x: 50, y: 0, label: "B" },
+        C: { id: "C", x: 25, y: 50, label: "C" },
+      },
+      edges: {
+        e1: { id: "e1", sourceId: "A", targetId: "B", weight: 5 },
+        e2: { id: "e2", sourceId: "B", targetId: "C", weight: 3 },
+      },
+      isDirected: false,
+    };
+
+    const adjList = getAdjacencyList(graphState);
+
+    // A connects to B
+    expect(adjList.get("A")).toEqual([{ neighborId: "B", edgeId: "e1", weight: 5 }]);
+    // B connects to A and C (undirected)
+    expect(adjList.get("B")).toEqual([
+      { neighborId: "A", edgeId: "e1", weight: 5 },
+      { neighborId: "C", edgeId: "e2", weight: 3 },
+    ]);
+    // C connects to B
+    expect(adjList.get("C")).toEqual([{ neighborId: "B", edgeId: "e2", weight: 3 }]);
+  });
+
+  it("creates adjacency list for directed graph", () => {
+    const graphState: GraphState = {
+      nodes: {
+        A: { id: "A", x: 0, y: 0, label: "A" },
+        B: { id: "B", x: 50, y: 0, label: "B" },
+      },
+      edges: {
+        e1: { id: "e1", sourceId: "A", targetId: "B", weight: 1 },
+      },
+      isDirected: true,
+    };
+
+    const adjList = getAdjacencyList(graphState);
+
+    // A -> B
+    expect(adjList.get("A")).toEqual([{ neighborId: "B", edgeId: "e1", weight: 1 }]);
+    // B has no outgoing edges
+    expect(adjList.get("B")).toEqual([]);
   });
 });
