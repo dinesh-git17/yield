@@ -24,6 +24,11 @@ export const TREE_STEP_LABELS: Record<TreeStep["type"], string> = {
   "extract-max": "Extracting max",
   // Invert operation
   "invert-swap": "Swapping children",
+  // Splay operations
+  "splay-start": "Starting splay",
+  zig: "Zig rotation",
+  "zig-zig": "Zig-Zig rotation",
+  "zig-zag": "Zig-Zag rotation",
 };
 
 /**
@@ -682,12 +687,164 @@ export const HEAP_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithm
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Splay Tree Algorithm Metadata
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Splay-specific algorithm metadata.
+ * Used when treeDataStructure is "splay".
+ */
+export const SPLAY_ALGO_METADATA: Partial<Record<TreeAlgorithmType, TreeAlgorithmMetadata>> = {
+  insert: {
+    label: "Splay Insert",
+    shortLabel: "Insert",
+    complexity: "O(log n) amortized",
+    spaceComplexity: "O(1)",
+    description:
+      "Inserts like BST, then splays the inserted node to the root. Frequently accessed nodes stay near the top, providing cache-like behavior.",
+    isTraversal: false,
+    visualPattern: "Insert → Splay to root",
+    code: [
+      "function* splayInsert(tree, value) {",
+      "  // 1. Standard BST insert",
+      "  let current = tree.root;",
+      "  while (current !== null) {",
+      "    if (value < current.value) {",
+      "      yield { type: 'compare', result: 'left' };",
+      "      current = current.left;",
+      "    } else if (value > current.value) {",
+      "      yield { type: 'compare', result: 'right' };",
+      "      current = current.right;",
+      "    } else {",
+      "      // Found: splay existing node",
+      "      yield { type: 'found', nodeId: current.id };",
+      "      yield* splay(tree, current);",
+      "      return;",
+      "    }",
+      "  }",
+      "",
+      "  yield { type: 'insert', value };",
+      "",
+      "  // 2. Splay new node to root",
+      "  yield* splay(tree, newNode);",
+      "}",
+      "",
+      "// Splay uses Zig, Zig-Zig, Zig-Zag rotations",
+      "// to move accessed node to root",
+    ],
+    lineMapping: {
+      compare: 5,
+      insert: 19,
+      found: 12,
+      "splay-start": 22,
+      zig: 26,
+      "zig-zig": 26,
+      "zig-zag": 26,
+    },
+  },
+
+  search: {
+    label: "Splay Search",
+    shortLabel: "Search",
+    complexity: "O(log n) amortized",
+    spaceComplexity: "O(1)",
+    description:
+      "Standard BST search, then splays the found node (or last accessed) to root. Repeated searches for the same key are O(1).",
+    isTraversal: false,
+    visualPattern: "Search → Splay to root",
+    code: [
+      "function* splaySearch(tree, value) {",
+      "  let current = tree.root;",
+      "  let lastAccessed = tree.root;",
+      "",
+      "  while (current !== null) {",
+      "    lastAccessed = current;",
+      "",
+      "    if (value < current.value) {",
+      "      yield { type: 'compare', result: 'left' };",
+      "      current = current.left;",
+      "    } else if (value > current.value) {",
+      "      yield { type: 'compare', result: 'right' };",
+      "      current = current.right;",
+      "    } else {",
+      "      yield { type: 'found', nodeId: current.id };",
+      "      yield* splay(tree, current);",
+      "      return;",
+      "    }",
+      "  }",
+      "",
+      "  yield { type: 'not-found', value };",
+      "  yield* splay(tree, lastAccessed);",
+      "}",
+    ],
+    lineMapping: {
+      compare: 8,
+      found: 15,
+      "not-found": 21,
+      "splay-start": 16,
+      zig: 22,
+      "zig-zig": 22,
+      "zig-zag": 22,
+    },
+  },
+
+  delete: {
+    label: "Splay Delete",
+    shortLabel: "Delete",
+    complexity: "O(log n) amortized",
+    spaceComplexity: "O(1)",
+    description:
+      "Splays target to root, then removes it. If two children, splay max from left subtree and attach right subtree to it.",
+    isTraversal: false,
+    visualPattern: "Splay → Delete root",
+    code: [
+      "function* splayDelete(tree, value) {",
+      "  // 1. Search and splay to root",
+      "  yield* splaySearch(tree, value);",
+      "",
+      "  if (tree.root.value !== value) {",
+      "    yield { type: 'not-found', value };",
+      "    return;",
+      "  }",
+      "",
+      "  // 2. Now target is at root",
+      "  const left = tree.root.left;",
+      "  const right = tree.root.right;",
+      "",
+      "  if (!left) {",
+      "    yield { type: 'delete', strategy: 'one-child' };",
+      "    tree.root = right;",
+      "  } else if (!right) {",
+      "    yield { type: 'delete', strategy: 'one-child' };",
+      "    tree.root = left;",
+      "  } else {",
+      "    // Splay max in left subtree",
+      "    yield { type: 'delete', strategy: 'two-children' };",
+      "    splayMax(left);",
+      "    left.right = right;",
+      "    tree.root = left;",
+      "  }",
+      "}",
+    ],
+    lineMapping: {
+      compare: 2,
+      delete: 15,
+      "not-found": 6,
+      "splay-start": 3,
+      zig: 23,
+      "zig-zig": 23,
+      "zig-zag": 23,
+    },
+  },
+};
+
 /**
  * Get metadata for a specific tree algorithm.
  * Returns data-structure-specific metadata when available.
  *
  * @param algorithm - The algorithm type
- * @param dataStructure - The tree data structure (bst, avl, max-heap)
+ * @param dataStructure - The tree data structure (bst, avl, max-heap, splay)
  */
 export function getTreeAlgorithmMetadata(
   algorithm: TreeAlgorithmType,
@@ -703,6 +860,12 @@ export function getTreeAlgorithmMetadata(
   if (dataStructure === "avl") {
     const avlMetadata = AVL_ALGO_METADATA[algorithm];
     if (avlMetadata) return avlMetadata;
+  }
+
+  // Use Splay-specific metadata for splay
+  if (dataStructure === "splay") {
+    const splayMetadata = SPLAY_ALGO_METADATA[algorithm];
+    if (splayMetadata) return splayMetadata;
   }
 
   // Fall back to BST metadata

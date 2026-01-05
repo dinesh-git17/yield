@@ -17,6 +17,9 @@ import {
   levelOrderTraversal,
   postOrderTraversal,
   preOrderTraversal,
+  splayDelete,
+  splayInsert,
+  splaySearch,
   type TreeContext,
   type TreeStep,
 } from "@/features/algorithms/tree";
@@ -45,7 +48,12 @@ export type TreeNodeState =
   | "rotating-new-root"
   | "updating-height"
   // Invert-specific states
-  | "inverting";
+  | "inverting"
+  // Splay-specific states
+  | "splaying"
+  | "splay-target"
+  | "splay-parent"
+  | "splay-grandparent";
 
 /**
  * Rotation information for AVL tree operations.
@@ -118,6 +126,8 @@ const DEFAULT_SPEED = 300;
 export interface UseTreeControllerOptions {
   /** Callback fired when an invert-swap step is processed */
   onInvertSwap?: (nodeId: string) => void;
+  /** Callback fired when a splay operation completes (after all zig/zig-zig/zig-zag steps) */
+  onSplay?: (nodeId: string) => void;
 }
 
 /**
@@ -187,6 +197,34 @@ function getTreeGenerator(
     }
   }
 
+  // Splay uses splay-specific generators with rotation visualization
+  if (dataStructure === "splay") {
+    switch (algorithm) {
+      case "insert":
+        if (value === undefined) return null;
+        return splayInsert(context, value);
+      case "search":
+        if (value === undefined) return null;
+        return splaySearch(context, value);
+      case "delete":
+        if (value === undefined) return null;
+        return splayDelete(context, value);
+      // Traversals work on any binary tree structure
+      case "inorder":
+        return inOrderTraversal(context);
+      case "preorder":
+        return preOrderTraversal(context);
+      case "postorder":
+        return postOrderTraversal(context);
+      case "bfs":
+        return levelOrderTraversal(context);
+      case "invert":
+        return invertTree(context);
+      default:
+        return null;
+    }
+  }
+
   // BST uses standard BST generators
   switch (algorithm) {
     case "insert":
@@ -227,7 +265,7 @@ export function useTreeController(
   speed: number = DEFAULT_SPEED,
   options: UseTreeControllerOptions = {}
 ): UseTreeControllerReturn {
-  const { onInvertSwap } = options;
+  const { onInvertSwap, onSplay } = options;
   const [status, setStatus] = useState<TreePlaybackStatus>("idle");
   const [nodeStates, setNodeStates] = useState<Map<string, TreeNodeState>>(new Map());
   const [traversalOutput, setTraversalOutput] = useState<TraversalOutput[]>([]);
@@ -488,9 +526,98 @@ export function useTreeController(
           // Call the callback to actually swap children in the store
           onInvertSwap?.(step.nodeId);
           break;
+
+        // ───────────────────────────────────────────────────────────────────────
+        // Splay operations
+        // ───────────────────────────────────────────────────────────────────────
+        case "splay-start":
+          setNodeStates((prev) => {
+            const next = new Map(prev);
+            // Clear previous states except found/traversed
+            for (const [id, state] of next) {
+              if (state !== "found" && state !== "traversed") {
+                next.set(id, "idle");
+              }
+            }
+            // Mark the node being splayed
+            next.set(step.nodeId, "splay-target");
+            return next;
+          });
+          break;
+
+        case "zig":
+          setNodeStates((prev) => {
+            const next = new Map(prev);
+            // Clear previous splay states
+            for (const [id, state] of next) {
+              if (
+                state === "splaying" ||
+                state === "splay-target" ||
+                state === "splay-parent" ||
+                state === "splay-grandparent"
+              ) {
+                next.set(id, "idle");
+              }
+            }
+            // Highlight the node and its parent
+            next.set(step.nodeId, "splay-target");
+            next.set(step.parentId, "splay-parent");
+            return next;
+          });
+          // Call splay callback to update store
+          onSplay?.(step.nodeId);
+          break;
+
+        case "zig-zig":
+          setNodeStates((prev) => {
+            const next = new Map(prev);
+            // Clear previous splay states
+            for (const [id, state] of next) {
+              if (
+                state === "splaying" ||
+                state === "splay-target" ||
+                state === "splay-parent" ||
+                state === "splay-grandparent"
+              ) {
+                next.set(id, "idle");
+              }
+            }
+            // Highlight node, parent, and grandparent
+            next.set(step.nodeId, "splay-target");
+            next.set(step.parentId, "splay-parent");
+            next.set(step.grandparentId, "splay-grandparent");
+            return next;
+          });
+          // Call splay callback to update store
+          onSplay?.(step.nodeId);
+          break;
+
+        case "zig-zag":
+          setNodeStates((prev) => {
+            const next = new Map(prev);
+            // Clear previous splay states
+            for (const [id, state] of next) {
+              if (
+                state === "splaying" ||
+                state === "splay-target" ||
+                state === "splay-parent" ||
+                state === "splay-grandparent"
+              ) {
+                next.set(id, "idle");
+              }
+            }
+            // Highlight node, parent, and grandparent
+            next.set(step.nodeId, "splay-target");
+            next.set(step.parentId, "splay-parent");
+            next.set(step.grandparentId, "splay-grandparent");
+            return next;
+          });
+          // Call splay callback to update store
+          onSplay?.(step.nodeId);
+          break;
       }
     },
-    [onInvertSwap]
+    [onInvertSwap, onSplay]
   );
 
   /**

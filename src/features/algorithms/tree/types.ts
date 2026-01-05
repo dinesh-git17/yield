@@ -160,6 +160,49 @@ export type TreeStep =
       leftChildId: string | null;
       /** ID of the right child before swap (null if none) */
       rightChildId: string | null;
+    }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Splay Tree Operations
+  // ─────────────────────────────────────────────────────────────────────────────
+  | {
+      /** Mark the start of a splay operation on a node */
+      type: "splay-start";
+      /** ID of the node being splayed to root */
+      nodeId: string;
+    }
+  | {
+      /** Zig: Single rotation when parent is root */
+      type: "zig";
+      /** ID of the node being splayed */
+      nodeId: string;
+      /** ID of the parent node (the root) */
+      parentId: string;
+      /** Direction of the rotation */
+      direction: "left" | "right";
+    }
+  | {
+      /** Zig-Zig: Double same-direction rotation (both left or both right children) */
+      type: "zig-zig";
+      /** ID of the node being splayed */
+      nodeId: string;
+      /** ID of the parent node */
+      parentId: string;
+      /** ID of the grandparent node */
+      grandparentId: string;
+      /** Direction of the rotations (both same direction) */
+      direction: "left" | "right";
+    }
+  | {
+      /** Zig-Zag: Double opposite-direction rotation */
+      type: "zig-zag";
+      /** ID of the node being splayed */
+      nodeId: string;
+      /** ID of the parent node */
+      parentId: string;
+      /** ID of the grandparent node */
+      grandparentId: string;
+      /** Direction sequence: first on parent, then on grandparent */
+      directions: ["left", "right"] | ["right", "left"];
     };
 
 /**

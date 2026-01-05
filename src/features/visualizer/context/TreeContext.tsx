@@ -34,6 +34,7 @@ export function TreeProvider({ children }: TreeProviderProps) {
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
   const swapNodeChildren = useYieldStore((state) => state.swapNodeChildren);
+  const splayNode = useYieldStore((state) => state.splayNode);
 
   // Calculate interval from speed multiplier
   const intervalMs = useMemo(() => speedMultiplierToInterval(playbackSpeed), [playbackSpeed]);
@@ -46,12 +47,21 @@ export function TreeProvider({ children }: TreeProviderProps) {
     [swapNodeChildren]
   );
 
+  // Callback for splay operation - splays node to root in the store
+  const handleSplay = useCallback(
+    (nodeId: string) => {
+      splayNode(nodeId);
+    },
+    [splayNode]
+  );
+
   // Controller options with callbacks
   const options: UseTreeControllerOptions = useMemo(
     () => ({
       onInvertSwap: handleInvertSwap,
+      onSplay: handleSplay,
     }),
-    [handleInvertSwap]
+    [handleInvertSwap, handleSplay]
   );
 
   // Use the tree controller (data-structure-aware)

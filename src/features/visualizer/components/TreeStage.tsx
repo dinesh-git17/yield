@@ -125,6 +125,7 @@ function buildPositionedNodes(treeState: TreeState): PositionedNode[] {
 const DATA_STRUCTURE_LABELS = {
   bst: "Binary Search Tree",
   avl: "AVL Tree",
+  splay: "Splay Tree",
   "max-heap": "Max Heap",
 } as const;
 
@@ -694,6 +695,27 @@ const NODE_STATE_STYLES: Record<TreeNodeState, { border: string; shadow: string;
     shadow: "shadow-pink-400/40",
     bg: "bg-pink-500/20",
   },
+  // Splay-specific states
+  splaying: {
+    border: "border-lime-400",
+    shadow: "shadow-lime-400/40",
+    bg: "bg-lime-500/20",
+  },
+  "splay-target": {
+    border: "border-lime-500",
+    shadow: "shadow-lime-500/50",
+    bg: "bg-lime-500/30",
+  },
+  "splay-parent": {
+    border: "border-yellow-400",
+    shadow: "shadow-yellow-400/40",
+    bg: "bg-yellow-500/20",
+  },
+  "splay-grandparent": {
+    border: "border-orange-400",
+    shadow: "shadow-orange-400/40",
+    bg: "bg-orange-500/20",
+  },
 };
 
 /**
@@ -717,9 +739,12 @@ const TreeNodeCircle = memo(
         case "comparing":
         case "visiting":
         case "unbalanced":
+        case "splay-parent":
+        case "splay-grandparent":
           return 1.1;
         case "rotating-pivot":
         case "rotating-new-root":
+        case "splay-target":
           return 1.15;
         default:
           return 1;

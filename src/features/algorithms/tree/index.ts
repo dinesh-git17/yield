@@ -15,6 +15,7 @@ export {
 export {
   getTreeAlgorithmMetadata,
   HEAP_ALGO_METADATA,
+  SPLAY_ALGO_METADATA,
   TREE_ALGO_METADATA,
   TREE_STEP_LABELS,
   type TreeAlgorithmMetadata,
@@ -33,6 +34,8 @@ export {
   heapInsert,
   heapSearch,
 } from "./heap";
+// Splay Operations
+export { splayDelete, splayInsert, splaySearch } from "./splay";
 
 // Types
 export type {
