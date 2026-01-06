@@ -111,8 +111,19 @@ class GTMProvider implements AnalyticsProvider {
   grantConsent(categories: { analytics: boolean; marketing: boolean }): void {
     if (!this.initialized) return;
 
-    // Push consent update to dataLayer
-    // GTM should be configured to listen for this event
+    // Update Google Consent Mode v2 state via gtag
+    // This is required for Google to recognize consent was granted
+    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+    if (gtag) {
+      gtag("consent", "update", {
+        analytics_storage: categories.analytics ? "granted" : "denied",
+        ad_storage: categories.marketing ? "granted" : "denied",
+        ad_user_data: categories.marketing ? "granted" : "denied",
+        ad_personalization: categories.marketing ? "granted" : "denied",
+      });
+    }
+
+    // Push consent update event for GTM triggers
     this.pushToDataLayer({
       event: "consent_update",
       consent_analytics: categories.analytics ? "granted" : "denied",
@@ -137,6 +148,17 @@ class GTMProvider implements AnalyticsProvider {
    */
   denyConsent(): void {
     if (!this.initialized) return;
+
+    // Update Google Consent Mode v2 state via gtag
+    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+    if (gtag) {
+      gtag("consent", "update", {
+        analytics_storage: "denied",
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+      });
+    }
 
     this.pushToDataLayer({
       event: "consent_update",
