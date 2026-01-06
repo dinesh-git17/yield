@@ -14,10 +14,24 @@ export const TOUR_STEPS: TourStep[] = [
     position: "right",
   },
   {
+    targetId: "tour-info-icon",
+    title: "Compare Algorithms",
+    description:
+      "Click this icon to see a side-by-side comparison of all algorithms in this category.",
+    position: "right",
+  },
+  {
     targetId: "tour-algo-list",
     title: "Pick an Algorithm",
     description:
       "Select a specific algorithm to visualize. You can compare different approaches here.",
+    position: "right",
+  },
+  {
+    targetId: "tour-complexity",
+    title: "Check Complexity",
+    description:
+      "View Big-O notation and performance characteristics of the current algorithm at a glance.",
     position: "right",
   },
   {
@@ -33,5 +47,12 @@ export const TOUR_STEPS: TourStep[] = [
     description:
       "Switch to 'Learn' mode for a step-by-step interactive tutorial on the selected algorithm.",
     position: "right",
+  },
+  {
+    targetId: "tour-code",
+    title: "Follow the Code",
+    description:
+      "Watch the algorithm's code execute line-by-line. The highlighted line shows exactly what's happening.",
+    position: "left",
   },
 ];

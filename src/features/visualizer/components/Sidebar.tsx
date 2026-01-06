@@ -273,6 +273,7 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               {/* Complexity */}
               <motion.button
                 type="button"
+                data-tour-id="tour-complexity"
                 onClick={openComplexityModal}
                 whileHover={buttonInteraction.hover}
                 whileTap={buttonInteraction.tap}
@@ -629,6 +630,7 @@ function SidebarItem({
         <Link
           href={infoLink}
           onClick={(e) => e.stopPropagation()}
+          data-tour-id="tour-info-icon"
           className={cn(
             "relative z-10 rounded p-0.5",
             "text-sky-400 transition-colors",

@@ -120,15 +120,31 @@ export const TourOverlay = memo(function TourOverlay() {
         if (rect.width === 0 || rect.height === 0) {
           return;
         }
+
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Clamp the rect to viewport bounds before adding padding
+        const clampedLeft = Math.max(0, rect.left);
+        const clampedTop = Math.max(0, rect.top);
+        const clampedRight = Math.min(viewportWidth, rect.right);
+        const clampedBottom = Math.min(viewportHeight, rect.bottom);
+
+        // Apply padding but keep within viewport
+        const paddedLeft = Math.max(0, clampedLeft - HIGHLIGHT_PADDING);
+        const paddedTop = Math.max(0, clampedTop - HIGHLIGHT_PADDING);
+        const paddedRight = Math.min(viewportWidth, clampedRight + HIGHLIGHT_PADDING);
+        const paddedBottom = Math.min(viewportHeight, clampedBottom + HIGHLIGHT_PADDING);
+
         const paddedRect = {
-          left: rect.left - HIGHLIGHT_PADDING,
-          top: rect.top - HIGHLIGHT_PADDING,
-          width: rect.width + HIGHLIGHT_PADDING * 2,
-          height: rect.height + HIGHLIGHT_PADDING * 2,
-          right: rect.right + HIGHLIGHT_PADDING,
-          bottom: rect.bottom + HIGHLIGHT_PADDING,
-          x: rect.x - HIGHLIGHT_PADDING,
-          y: rect.y - HIGHLIGHT_PADDING,
+          left: paddedLeft,
+          top: paddedTop,
+          width: paddedRight - paddedLeft,
+          height: paddedBottom - paddedTop,
+          right: paddedRight,
+          bottom: paddedBottom,
+          x: paddedLeft,
+          y: paddedTop,
           toJSON: rect.toJSON.bind(rect),
         } as DOMRect;
 
