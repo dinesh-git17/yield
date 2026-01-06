@@ -6,6 +6,18 @@
       "recommended": true
     }
   },
+  "overrides": [
+    {
+      "includes": ["src/features/analytics/components/GoogleTagManager.tsx"],
+      "linter": {
+        "rules": {
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          }
+        }
+      }
+    }
+  ],
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
