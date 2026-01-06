@@ -114,7 +114,7 @@ export const TreeControlBar = memo(function TreeControlBar({
       animate={{ opacity: 1, y: 0 }}
       transition={SPRING_PRESETS.entrance}
       className={cn(
-        "bg-surface-elevated/95 border-border flex items-center gap-3 rounded-lg border px-3 py-2 shadow-lg backdrop-blur-sm",
+        "bg-surface-elevated/95 border-border flex items-center gap-2 rounded-lg border px-2 py-2 shadow-lg backdrop-blur-sm md:gap-3 md:px-3",
         className
       )}
     >
@@ -130,7 +130,7 @@ export const TreeControlBar = memo(function TreeControlBar({
             onKeyDown={handleKeyDown}
             placeholder={`${TREE_CONFIG.VALUE_MIN}-${TREE_CONFIG.VALUE_MAX}`}
             className={cn(
-              "bg-surface border-border text-primary h-8 w-16 rounded-md border px-2 text-center text-sm tabular-nums",
+              "bg-surface border-border text-primary h-8 w-14 shrink-0 rounded-md border px-2 text-center text-sm tabular-nums md:w-16",
               "placeholder:text-muted/50",
               "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2"
             )}
@@ -206,7 +206,7 @@ interface ControlSectionProps {
 
 function ControlSection({ label, children }: ControlSectionProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex shrink-0 flex-col gap-1">
       <span className="text-muted text-[10px] font-medium uppercase tracking-wider">{label}</span>
       {children}
     </div>
@@ -214,7 +214,7 @@ function ControlSection({ label, children }: ControlSectionProps) {
 }
 
 function Divider() {
-  return <div className="bg-border h-8 w-px" />;
+  return <div className="bg-border h-6 w-px shrink-0 md:h-8" />;
 }
 
 interface OperationButtonProps {
@@ -243,7 +243,7 @@ const OperationButton = memo(function OperationButton({
       {...hoverAnimation}
       {...tapAnimation}
       className={cn(
-        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+        "flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors md:px-2.5",
         "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
         isActive
           ? "bg-emerald-500/20 text-emerald-400"
@@ -253,7 +253,7 @@ const OperationButton = memo(function OperationButton({
       aria-label={label}
     >
       {icon}
-      {label}
+      <span className="hidden md:inline">{label}</span>
     </motion.button>
   );
 });

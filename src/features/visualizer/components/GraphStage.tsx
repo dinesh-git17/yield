@@ -483,17 +483,17 @@ export function GraphStage({ className }: GraphStageProps) {
       : null;
 
   return (
-    <div className={cn("flex h-full flex-col", className)}>
-      {/* Header Bar */}
-      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
-        <h1 className="text-primary text-sm font-medium">
-          {graphState.isDirected ? "Directed Graph" : "Undirected Graph"}
+    <div className={cn("flex h-full min-h-0 flex-col", className)}>
+      {/* Header Bar - pl-14 on mobile to clear hamburger button */}
+      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between gap-2 overflow-x-auto border-b pl-14 pr-2 md:px-4">
+        <h1 className="text-primary text-xs font-medium md:text-sm">
+          {graphState.isDirected ? "Directed" : "Undirected"}
         </h1>
 
         {/* Controls */}
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-2 md:gap-4">
           {/* Graph Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             {/* Generate Dropdown */}
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
@@ -503,14 +503,14 @@ export function GraphStage({ className }: GraphStageProps) {
                   whileHover={isPlaying ? {} : buttonInteraction.hover}
                   whileTap={isPlaying ? {} : buttonInteraction.tap}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium",
+                    "flex shrink-0 items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium md:gap-1.5 md:px-2.5",
                     "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20",
                     "focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-2",
                     isPlaying && "cursor-not-allowed opacity-50"
                   )}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  Generate
+                  <span className="hidden md:inline">Generate</span>
                   <ChevronDown className="h-3 w-3" />
                 </motion.button>
               </DropdownMenu.Trigger>
@@ -555,10 +555,10 @@ export function GraphStage({ className }: GraphStageProps) {
             />
           </div>
 
-          <div className="bg-border h-6 w-px" />
+          <div className="bg-border hidden h-6 w-px md:block" />
 
           {/* Playback Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <ControlButton
               label="Step"
               icon={<SkipForward className="h-3.5 w-3.5" />}
@@ -592,7 +592,7 @@ export function GraphStage({ className }: GraphStageProps) {
         ref={containerRef}
         role="application"
         aria-label="Graph canvas - double-click to add nodes, shift-drag to connect"
-        className="bg-dot-pattern relative flex-1 overflow-hidden"
+        className="bg-dot-pattern relative min-h-0 flex-1 overflow-hidden"
         onDoubleClick={handleCanvasDoubleClick}
         onMouseMove={handleCanvasMouseMove}
         onMouseUp={handleCanvasMouseUp}
@@ -881,20 +881,23 @@ function EmptyGraphHint() {
 function InteractionHint() {
   return (
     <motion.div
-      className={cn("rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm", "px-4 py-3")}
+      className={cn(
+        "rounded-xl border border-white/10 bg-black/40 backdrop-blur-sm",
+        "px-3 py-2 md:px-4 md:py-3"
+      )}
     >
-      <div className="flex items-center gap-6 text-xs">
+      <div className="flex flex-col items-start gap-2 text-xs md:flex-row md:items-center md:gap-6">
         <div className="flex items-center gap-2">
           <Circle className="h-3 w-3 text-violet-400" />
-          <span className="text-muted">Double-click to add node</span>
+          <span className="text-muted">Double-click to add</span>
         </div>
         <div className="flex items-center gap-2">
           <GitBranch className="h-3 w-3 text-cyan-400" />
-          <span className="text-muted">Shift+drag between nodes to connect</span>
+          <span className="text-muted">Shift+drag to connect</span>
         </div>
         <div className="flex items-center gap-2">
           <MousePointer2 className="h-3 w-3 text-amber-400" />
-          <span className="text-muted">Drag to move nodes</span>
+          <span className="text-muted">Drag to move</span>
         </div>
       </div>
     </motion.div>
@@ -925,14 +928,14 @@ function ControlButton({ label, icon, onClick, disabled }: ControlButtonProps) {
       animate={{ opacity: disabled ? 0.5 : 1 }}
       transition={SPRING_PRESETS.snappy}
       className={cn(
-        "bg-surface-elevated border-border text-primary flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium",
+        "bg-surface-elevated border-border text-primary flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium md:px-3",
         "focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed"
       )}
       aria-label={label}
     >
       {icon}
-      {label}
+      <span className="hidden md:inline">{label}</span>
     </motion.button>
   );
 }
@@ -963,7 +966,7 @@ function PlayPauseButton({ isPlaying, hasStarted, onClick, disabled }: PlayPause
       animate={{ opacity: disabled ? 0.5 : 1 }}
       transition={SPRING_PRESETS.snappy}
       className={cn(
-        "bg-violet-500 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-white",
+        "bg-violet-500 flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-white md:px-3",
         "focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed"
       )}
@@ -981,7 +984,7 @@ function PlayPauseButton({ isPlaying, hasStarted, onClick, disabled }: PlayPause
           {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </motion.span>
       </AnimatePresence>
-      {label}
+      <span className="hidden md:inline">{label}</span>
     </motion.button>
   );
 }
@@ -1017,7 +1020,7 @@ function ActionButton({
       animate={{ opacity: disabled ? 0.5 : 1 }}
       transition={SPRING_PRESETS.snappy}
       className={cn(
-        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+        "flex shrink-0 items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors md:gap-1.5 md:px-2.5",
         "focus-visible:ring-violet-500 focus-visible:outline-none focus-visible:ring-2",
         variant === "secondary" && "bg-slate-500/10 text-slate-400 hover:bg-slate-500/20",
         variant === "active" && "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20",
@@ -1027,7 +1030,7 @@ function ActionButton({
       aria-label={label}
     >
       {icon}
-      {label}
+      <span className="hidden md:inline">{label}</span>
     </motion.button>
   );
 }

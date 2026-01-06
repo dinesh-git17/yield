@@ -69,7 +69,7 @@ export const GridNode = memo(
       // biome-ignore lint/a11y/useSemanticElements: Grid nodes are visual cells for drag-painting, not semantic buttons
       <div
         className={cn(
-          "h-6 w-6 shrink-0 border border-border/30 transition-colors duration-75",
+          "h-3 w-3 shrink-0 border border-border/30 transition-colors duration-75 md:h-6 md:w-6",
           "cursor-pointer select-none",
           // Empty state
           state === "empty" && "bg-surface hover:bg-surface-elevated",

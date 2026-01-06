@@ -296,17 +296,17 @@ export function TreeStage({ className }: TreeStageProps) {
   }, [handleClearAll, fillRandomHeap, setTreeAlgorithm, controller]);
 
   return (
-    <div className={cn("flex h-full flex-col", className)}>
-      {/* Header Bar */}
-      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">
+    <div className={cn("flex h-full min-h-0 flex-col", className)}>
+      {/* Header Bar - pl-14 on mobile to clear hamburger button */}
+      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between gap-2 overflow-x-auto border-b pl-14 pr-2 md:px-4">
+        <div className="flex items-center gap-2 md:gap-3">
+          <h1 className="text-primary text-xs font-medium md:text-sm">
             {DATA_STRUCTURE_LABELS[treeDataStructure]}
           </h1>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-2 md:gap-4">
           {/* Traversal Dropdown */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -316,13 +316,18 @@ export function TreeStage({ className }: TreeStageProps) {
                 whileHover={isPlaying || isEmpty ? {} : buttonInteraction.hover}
                 whileTap={isPlaying || isEmpty ? {} : buttonInteraction.tap}
                 className={cn(
-                  "bg-surface-elevated border-border text-primary flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium",
+                  "bg-surface-elevated border-border text-primary flex shrink-0 items-center gap-1 rounded-md border px-2 py-1.5 text-xs font-medium md:gap-2 md:px-3",
                   "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
                   (isPlaying || isEmpty) && "cursor-not-allowed opacity-50"
                 )}
               >
-                <span>
+                <span className="hidden md:inline">
                   {TRAVERSALS.find((t) => t.value === selectedTraversal)?.label ?? "Traversals"}
+                </span>
+                <span className="md:hidden">
+                  {selectedTraversal
+                    ? TRAVERSALS.find((t) => t.value === selectedTraversal)?.label.split(" ")[0]
+                    : "Walk"}
                 </span>
                 <ChevronDown className="h-3 w-3" />
               </motion.button>
@@ -352,10 +357,10 @@ export function TreeStage({ className }: TreeStageProps) {
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
 
-          <div className="bg-border h-6 w-px" />
+          <div className="bg-border hidden h-6 w-px md:block" />
 
           {/* Tree Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <ActionButton
               label="Random"
               icon={<Dices className="h-3.5 w-3.5" />}
@@ -388,10 +393,10 @@ export function TreeStage({ className }: TreeStageProps) {
             />
           </div>
 
-          <div className="bg-border h-6 w-px" />
+          <div className="bg-border hidden h-6 w-px md:block" />
 
           {/* Playback Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <ControlButton
               label="Step"
               icon={<SkipForward className="h-3.5 w-3.5" />}
@@ -421,7 +426,7 @@ export function TreeStage({ className }: TreeStageProps) {
       </header>
 
       {/* Visualization Area */}
-      <div className="bg-dot-pattern relative flex-1 overflow-hidden">
+      <div className="bg-dot-pattern relative min-h-0 flex-1 overflow-hidden">
         {isEmpty ? (
           <EmptyTreeHint />
         ) : (
@@ -931,14 +936,14 @@ function ControlButton({ label, icon, onClick, disabled }: ControlButtonProps) {
       animate={{ opacity: disabled ? 0.5 : 1 }}
       transition={SPRING_PRESETS.snappy}
       className={cn(
-        "bg-surface-elevated border-border text-primary flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium",
+        "bg-surface-elevated border-border text-primary flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium md:px-3",
         "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed"
       )}
       aria-label={label}
     >
       {icon}
-      {label}
+      <span className="hidden md:inline">{label}</span>
     </motion.button>
   );
 }
@@ -969,7 +974,7 @@ function PlayPauseButton({ isPlaying, hasStarted, onClick, disabled }: PlayPause
       animate={{ opacity: disabled ? 0.5 : 1 }}
       transition={SPRING_PRESETS.snappy}
       className={cn(
-        "bg-emerald-500 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-white",
+        "bg-emerald-500 flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-white md:px-3",
         "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed"
       )}
@@ -987,7 +992,7 @@ function PlayPauseButton({ isPlaying, hasStarted, onClick, disabled }: PlayPause
           {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </motion.span>
       </AnimatePresence>
-      {label}
+      <span className="hidden md:inline">{label}</span>
     </motion.button>
   );
 }
@@ -1023,7 +1028,7 @@ function ActionButton({
       animate={{ opacity: disabled ? 0.5 : 1 }}
       transition={SPRING_PRESETS.snappy}
       className={cn(
-        "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+        "flex shrink-0 items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors md:gap-1.5 md:px-2.5",
         "focus-visible:ring-emerald-500 focus-visible:outline-none focus-visible:ring-2",
         variant === "secondary" && "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20",
         variant === "heapify" && "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20",
@@ -1034,7 +1039,7 @@ function ActionButton({
       aria-label={label}
     >
       {icon}
-      {label}
+      <span className="hidden md:inline">{label}</span>
     </motion.button>
   );
 }

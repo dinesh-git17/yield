@@ -28,10 +28,10 @@ export function SortingStage({ className }: SortingStageProps) {
 
   if (!isReady) {
     return (
-      <div className={cn("flex h-full flex-col", className)}>
-        <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-primary text-sm font-medium">{algorithmInfo.label}</h1>
+      <div className={cn("flex h-full min-h-0 flex-col", className)}>
+        <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b pl-14 pr-2 md:px-4">
+          <div className="flex items-center gap-2 md:gap-3">
+            <h1 className="text-primary text-xs font-medium md:text-sm">{algorithmInfo.label}</h1>
             <motion.span
               variants={badgeVariants}
               initial="hidden"
@@ -53,11 +53,11 @@ export function SortingStage({ className }: SortingStageProps) {
   const isComplete = status === "complete";
 
   return (
-    <div className={cn("flex h-full flex-col", className)}>
-      {/* Header Bar */}
-      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">{algorithmInfo.label}</h1>
+    <div className={cn("flex h-full min-h-0 flex-col", className)}>
+      {/* Header Bar - pl-14 on mobile to clear hamburger button */}
+      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b pl-14 pr-2 md:px-4">
+        <div className="flex items-center gap-2 md:gap-3">
+          <h1 className="text-primary text-xs font-medium md:text-sm">{algorithmInfo.label}</h1>
           <motion.span
             key={sortingAlgorithm}
             variants={badgeVariants}
@@ -92,8 +92,8 @@ export function SortingStage({ className }: SortingStageProps) {
       </header>
 
       {/* Visualization Area */}
-      <div className="bg-dot-pattern relative flex flex-1 items-end justify-center overflow-hidden p-6 pb-28">
-        <div className="flex h-full max-h-[480px] w-full max-w-4xl items-end justify-center gap-1 border-b border-border/50">
+      <div className="bg-dot-pattern relative flex min-h-0 flex-1 items-end justify-center overflow-hidden p-4 pb-20 md:p-6 md:pb-28">
+        <div className="flex h-full max-h-[400px] w-full max-w-4xl items-end justify-center gap-0.5 border-b border-border/50 md:max-h-[480px] md:gap-1">
           {bars.map((bar, index) => (
             <SortingBar
               key={bar.id}
@@ -108,7 +108,7 @@ export function SortingStage({ className }: SortingStageProps) {
         </div>
 
         {/* Floating Control Bar */}
-        <div className="absolute inset-x-0 bottom-6 z-30 flex justify-center">
+        <div className="absolute inset-x-0 bottom-3 z-30 flex justify-center px-2 md:bottom-6 md:px-0">
           <ControlBar />
         </div>
 
