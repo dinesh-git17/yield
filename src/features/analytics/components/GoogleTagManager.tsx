@@ -65,27 +65,27 @@ const EEA_REGIONS = [
   "IS",
   "LI",
   "NO", // EEA non-EU members
-].join("','");
+];
 
 const GTM_CONSENT_SCRIPT = `window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 
-// EEA + UK + Switzerland: Denied by default (GDPR)
+// Global baseline: Granted by default (non-regulated regions)
+gtag('consent', 'default', {
+  'analytics_storage': 'granted',
+  'ad_storage': 'granted',
+  'ad_user_data': 'granted',
+  'ad_personalization': 'granted'
+});
+
+// EEA + UK + Switzerland: Override to denied (GDPR requires opt-in)
 gtag('consent', 'default', {
   'analytics_storage': 'denied',
   'ad_storage': 'denied',
   'ad_user_data': 'denied',
   'ad_personalization': 'denied',
   'wait_for_update': 500,
-  'region': ['${EEA_REGIONS}']
-});
-
-// All other regions: Granted by default
-gtag('consent', 'default', {
-  'analytics_storage': 'granted',
-  'ad_storage': 'granted',
-  'ad_user_data': 'granted',
-  'ad_personalization': 'granted'
+  'region': ${JSON.stringify(EEA_REGIONS)}
 });`;
 
 // =============================================================================
