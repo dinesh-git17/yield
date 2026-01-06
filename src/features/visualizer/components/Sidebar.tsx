@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BadgeHelp, BookOpen, ChevronsLeft } from "lucide-react";
+import { BadgeHelp, BadgeInfo, BookOpen, ChevronsLeft } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
@@ -168,6 +168,7 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
             onClick={() => handleModeSelect("sorting")}
+            infoLink="/learn/sorting"
           />
           <SidebarItem
             id="cat-pathfinding"
@@ -176,6 +177,7 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
             onClick={() => handleModeSelect("pathfinding")}
+            infoLink="/learn/pathfinding"
           />
           <SidebarItem
             id="cat-trees"
@@ -184,6 +186,7 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
             onClick={() => handleModeSelect("tree")}
+            infoLink="/learn/tree"
           />
           <SidebarItem
             id="cat-graphs"
@@ -192,6 +195,7 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
             hoveredItem={hoveredItem}
             onHover={setHoveredItem}
             onClick={() => handleModeSelect("graph")}
+            infoLink="/learn/graph"
           />
         </SidebarGroup>
 
@@ -473,6 +477,8 @@ interface SidebarItemProps {
   hoveredItem: string | null;
   onHover: (id: string | null) => void;
   onClick?: () => void;
+  /** Optional link to index/info page (renders BadgeInfo icon) */
+  infoLink?: string;
 }
 
 function SidebarItem({
@@ -483,6 +489,7 @@ function SidebarItem({
   hoveredItem,
   onHover,
   onClick,
+  infoLink,
 }: SidebarItemProps) {
   const isHovered = hoveredItem === id && !disabled && !isActive;
 
@@ -493,7 +500,7 @@ function SidebarItem({
       onClick={onClick}
       onMouseEnter={() => !disabled && onHover(id)}
       className={cn(
-        "relative flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+        "relative flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors",
         isActive && "text-accent",
         !isActive && !disabled && "text-primary hover:text-accent",
         disabled && "text-muted cursor-not-allowed opacity-50"
@@ -511,6 +518,21 @@ function SidebarItem({
       {isActive && <span className="bg-accent-muted absolute inset-0 rounded-md" />}
       {/* Label text */}
       <span className="relative z-10">{label}</span>
+      {/* Info link icon - only shown when active */}
+      {infoLink && isActive && (
+        <Link
+          href={infoLink}
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "relative z-10 rounded p-0.5",
+            "text-sky-400 transition-colors",
+            "hover:text-sky-300"
+          )}
+          title={`Compare all ${label.toLowerCase()}`}
+        >
+          <BadgeInfo className="h-4 w-4" />
+        </Link>
+      )}
     </button>
   );
 }

@@ -56,6 +56,10 @@ export interface SortingArticle {
   whenNotToUse: string;
   /** Related algorithms for cross-linking */
   relatedAlgorithms: RelatedAlgorithm[];
+  /** Whether the algorithm preserves the relative order of equal elements */
+  isStable: boolean;
+  /** Whether the algorithm sorts without extra memory proportional to input size */
+  isInPlace: boolean;
 }
 
 /**
@@ -142,6 +146,8 @@ The only redeeming quality of Bubble Sort is that if you pass through the list a
         relationship: "same swap pattern, no nested loops",
       },
     ],
+    isStable: true,
+    isInPlace: true,
   },
 
   selection: {
@@ -215,6 +221,8 @@ Imagine organizing a hand of cards. You look at all the cards, find the Ace, and
         relationship: "adaptive alternative",
       },
     ],
+    isStable: false,
+    isInPlace: true,
   },
 
   insertion: {
@@ -290,6 +298,8 @@ Unlike Selection Sort which swaps, Insertion Sort *slides*. This is better for t
         relationship: "stable at scale",
       },
     ],
+    isStable: true,
+    isInPlace: true,
   },
 
   gnome: {
@@ -359,6 +369,8 @@ It produces the exact same sequence of swaps as Insertion Sort, but instead of a
         relationship: "also adaptive, uses swaps",
       },
     ],
+    isStable: true,
+    isInPlace: true,
   },
 
   quick: {
@@ -436,6 +448,8 @@ If you pick a bad pivot (like always picking the first item on a sorted list), Q
         relationship: "in-place O(n log n) alternative",
       },
     ],
+    isStable: false,
+    isInPlace: true,
   },
 
   merge: {
@@ -511,6 +525,8 @@ Merging two sorted lists is easy ($O(n)$). You just look at the head of both lis
         relationship: "stable at small scale",
       },
     ],
+    isStable: true,
+    isInPlace: false,
   },
 
   heap: {
@@ -585,6 +601,8 @@ It repurposes the "Heap" data structure—usually used for Priority Queues—to 
         relationship: "conceptual ancestor",
       },
     ],
+    isStable: false,
+    isInPlace: true,
   },
 };
 
