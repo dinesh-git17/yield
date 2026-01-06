@@ -16,7 +16,7 @@ import {
   Shield,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
   type GraphAlgorithmType,
@@ -177,44 +177,46 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
         </div>
 
         {/* Algorithm Categories */}
-        <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
-          <SidebarItem
-            id="cat-sorting"
-            label="Sorting"
-            isActive={mode === "sorting"}
-            hoveredItem={hoveredItem}
-            onHover={setHoveredItem}
-            onClick={() => handleModeSelect("sorting")}
-            infoLink="/learn/sorting"
-          />
-          <SidebarItem
-            id="cat-pathfinding"
-            label="Pathfinding"
-            isActive={mode === "pathfinding"}
-            hoveredItem={hoveredItem}
-            onHover={setHoveredItem}
-            onClick={() => handleModeSelect("pathfinding")}
-            infoLink="/learn/pathfinding"
-          />
-          <SidebarItem
-            id="cat-trees"
-            label="Trees"
-            isActive={mode === "tree"}
-            hoveredItem={hoveredItem}
-            onHover={setHoveredItem}
-            onClick={() => handleModeSelect("tree")}
-            infoLink="/learn/tree"
-          />
-          <SidebarItem
-            id="cat-graphs"
-            label="Graphs"
-            isActive={mode === "graph"}
-            hoveredItem={hoveredItem}
-            onHover={setHoveredItem}
-            onClick={() => handleModeSelect("graph")}
-            infoLink="/learn/graph"
-          />
-        </SidebarGroup>
+        <div data-tour-id="tour-modes">
+          <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+            <SidebarItem
+              id="cat-sorting"
+              label="Sorting"
+              isActive={mode === "sorting"}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => handleModeSelect("sorting")}
+              infoLink="/learn/sorting"
+            />
+            <SidebarItem
+              id="cat-pathfinding"
+              label="Pathfinding"
+              isActive={mode === "pathfinding"}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => handleModeSelect("pathfinding")}
+              infoLink="/learn/pathfinding"
+            />
+            <SidebarItem
+              id="cat-trees"
+              label="Trees"
+              isActive={mode === "tree"}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => handleModeSelect("tree")}
+              infoLink="/learn/tree"
+            />
+            <SidebarItem
+              id="cat-graphs"
+              label="Graphs"
+              isActive={mode === "graph"}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => handleModeSelect("graph")}
+              infoLink="/learn/graph"
+            />
+          </SidebarGroup>
+        </div>
 
         <div className="border-border-subtle my-4 border-t" />
 
@@ -227,27 +229,33 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               </span>
             </div>
 
-            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
-              {SORTING_ALGORITHMS.map((algo) => (
-                <SidebarItem
-                  key={algo.id}
-                  id={`algo-${algo.id}`}
-                  label={algo.label}
-                  isActive={sortingAlgorithm === algo.id}
-                  disabled={!algo.enabled}
-                  hoveredItem={hoveredItem}
-                  onHover={setHoveredItem}
-                  onClick={() => algo.enabled && handleSortingAlgorithmSelect(algo.id)}
-                />
-              ))}
-            </SidebarGroup>
+            <div data-tour-id="tour-algo-list">
+              <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+                {SORTING_ALGORITHMS.map((algo) => (
+                  <SidebarItem
+                    key={algo.id}
+                    id={`algo-${algo.id}`}
+                    label={algo.label}
+                    isActive={sortingAlgorithm === algo.id}
+                    disabled={!algo.enabled}
+                    hoveredItem={hoveredItem}
+                    onHover={setHoveredItem}
+                    onClick={() => algo.enabled && handleSortingAlgorithmSelect(algo.id)}
+                  />
+                ))}
+              </SidebarGroup>
+            </div>
 
             <div className="border-border-subtle my-4 border-t" />
 
             {/* CTA Group: Theory, Complexity, Learn */}
             <div className="space-y-2">
               {/* Theory */}
-              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+              <motion.div
+                data-tour-id="tour-theory"
+                whileHover={buttonInteraction.hover}
+                whileTap={buttonInteraction.tap}
+              >
                 <Link
                   href="/learn"
                   className={cn(
@@ -280,7 +288,11 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               </motion.button>
 
               {/* Learn */}
-              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+              <motion.div
+                data-tour-id="tour-learn"
+                whileHover={buttonInteraction.hover}
+                whileTap={buttonInteraction.tap}
+              >
                 <Link
                   href={`/learn/sorting/${sortingAlgorithm}`}
                   className={cn(
@@ -640,6 +652,25 @@ const FOOTER_LINKS = [
 ] as const;
 
 function FooterMenu() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const buttonClasses = cn(
+    "text-muted/60 hover:text-muted rounded-md p-1 transition-colors",
+    "hover:bg-surface-elevated focus:outline-none"
+  );
+
+  if (!mounted) {
+    return (
+      <button type="button" className={buttonClasses} aria-label="More options">
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+    );
+  }
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -647,10 +678,7 @@ function FooterMenu() {
           type="button"
           whileHover={buttonInteraction.hover}
           whileTap={buttonInteraction.tap}
-          className={cn(
-            "text-muted/60 hover:text-muted rounded-md p-1 transition-colors",
-            "hover:bg-surface-elevated focus:outline-none"
-          )}
+          className={buttonClasses}
           aria-label="More options"
         >
           <MoreHorizontal className="h-4 w-4" />

@@ -3,6 +3,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { memo, useEffect, useState } from "react";
+import { useOnboardingStore } from "@/features/onboarding";
+import { useAnalytics } from "@/lib/analytics";
 import { SPRING_PRESETS, useReducedMotion } from "@/lib/motion";
 
 /**
@@ -53,21 +55,36 @@ export interface SplashScreenProps {
  *
  * @accessibility Respects prefers-reduced-motion by showing static logo pulse instead.
  */
+/**
+ * Delay (ms) before starting the onboarding tour after content reveal.
+ * Ensures sidebar elements are rendered and positioned before tour starts.
+ */
+const TOUR_START_DELAY_MS = 800;
+
 export const SplashScreen = memo(function SplashScreen({ children }: SplashScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
   const reducedMotion = useReducedMotion();
+  const startTour = useOnboardingStore((state) => state.startTour);
+  const { hasConsentDecision } = useAnalytics();
 
   useEffect(() => {
     const displayTime = reducedMotion ? REDUCED_MOTION_DISPLAY_MS : MIN_DISPLAY_TIME_MS;
 
     const timer = setTimeout(() => {
       setIsLoading(false);
-      setTimeout(() => setShowContent(true), CONTENT_REVEAL_DELAY_MS);
+      setTimeout(() => {
+        setShowContent(true);
+        // Only auto-start tour if user already made consent decision (returning user)
+        // First-time users will see the tour after interacting with consent banner
+        if (hasConsentDecision) {
+          setTimeout(startTour, TOUR_START_DELAY_MS);
+        }
+      }, CONTENT_REVEAL_DELAY_MS);
     }, displayTime);
 
     return () => clearTimeout(timer);
-  }, [reducedMotion]);
+  }, [reducedMotion, startTour, hasConsentDecision]);
 
   return (
     <>

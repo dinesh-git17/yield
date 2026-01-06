@@ -4,9 +4,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Cookie, Settings, Shield, X } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 
+import { useOnboardingStore } from "@/features/onboarding";
 import { ANALYTICS_EVENTS, useAnalytics } from "@/lib/analytics";
 import { buttonInteraction } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+
+const TOUR_START_DELAY_MS = 500;
 
 // =============================================================================
 // Animation Variants
@@ -64,6 +67,7 @@ const PREFERENCES_VARIANTS = {
 
 function ConsentBannerComponent() {
   const { hasConsentDecision, updateConsent, trackEvent } = useAnalytics();
+  const startTour = useOnboardingStore((state) => state.startTour);
   const [showPreferences, setShowPreferences] = useState(false);
   const [preferences, setPreferences] = useState({
     analytics: false,
@@ -75,6 +79,10 @@ function ConsentBannerComponent() {
     return null;
   }
 
+  const triggerOnboardingTour = () => {
+    setTimeout(startTour, TOUR_START_DELAY_MS);
+  };
+
   const handleAcceptAll = () => {
     updateConsent({ analytics: true, marketing: true });
     trackEvent({
@@ -85,12 +93,14 @@ function ConsentBannerComponent() {
         marketing_enabled: true,
       },
     });
+    triggerOnboardingTour();
   };
 
   const handleRejectAll = () => {
     updateConsent({ analytics: false, marketing: false });
     // Note: This event won't actually fire since analytics is denied
     // But we update consent anyway
+    triggerOnboardingTour();
   };
 
   const handleSavePreferences = () => {
@@ -105,6 +115,7 @@ function ConsentBannerComponent() {
         },
       });
     }
+    triggerOnboardingTour();
   };
 
   const togglePreferences = () => {
@@ -114,7 +125,7 @@ function ConsentBannerComponent() {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed right-0 bottom-0 left-0 z-50 p-4 md:p-6"
+        className="fixed bottom-0 left-0 right-0 z-50 p-4 md:left-[180px] md:right-[420px] md:p-6"
         variants={BANNER_VARIANTS}
         initial="hidden"
         animate="visible"
