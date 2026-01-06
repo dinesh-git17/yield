@@ -29,9 +29,9 @@ export function SortingStage({ className }: SortingStageProps) {
   if (!isReady) {
     return (
       <div className={cn("flex h-full min-h-0 flex-col", className)}>
-        <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-2 md:px-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-primary text-sm font-medium">{algorithmInfo.label}</h1>
+        <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b pl-14 pr-2 md:px-4">
+          <div className="flex items-center gap-2 md:gap-3">
+            <h1 className="text-primary text-xs font-medium md:text-sm">{algorithmInfo.label}</h1>
             <motion.span
               variants={badgeVariants}
               initial="hidden"
@@ -54,10 +54,10 @@ export function SortingStage({ className }: SortingStageProps) {
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col", className)}>
-      {/* Header Bar */}
-      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-2 md:px-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">{algorithmInfo.label}</h1>
+      {/* Header Bar - pl-14 on mobile to clear hamburger button */}
+      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b pl-14 pr-2 md:px-4">
+        <div className="flex items-center gap-2 md:gap-3">
+          <h1 className="text-primary text-xs font-medium md:text-sm">{algorithmInfo.label}</h1>
           <motion.span
             key={sortingAlgorithm}
             variants={badgeVariants}

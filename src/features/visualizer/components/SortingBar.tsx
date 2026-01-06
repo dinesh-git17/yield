@@ -137,7 +137,7 @@ function SortingBarComponent({
       layout={isFastMode}
       animate={animateProps}
       transition={transitionProps}
-      className="w-4 min-w-2 rounded-t-md"
+      className="min-w-0.5 max-w-4 flex-1 rounded-t-md"
       style={{
         height: `${heightPercent}%`,
         boxShadow,

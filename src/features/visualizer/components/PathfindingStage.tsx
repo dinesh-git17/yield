@@ -71,32 +71,27 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col", className)}>
-      {/* Header Bar */}
-      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between gap-2 overflow-x-auto border-b px-2 md:px-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-primary text-sm font-medium">{metadata.label}</h1>
+      {/* Header Bar - pl-14 on mobile to clear hamburger button */}
+      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between gap-2 overflow-x-auto border-b pl-14 pr-2 md:px-4">
+        <div className="flex items-center gap-2 md:gap-3">
+          <h1 className="text-primary text-xs font-medium md:text-sm">{metadata.label}</h1>
           <motion.span
             key={pathfindingAlgorithm}
             variants={badgeVariants}
             initial="hidden"
             animate="visible"
-            className="bg-cyan-500/10 text-cyan-400 rounded-full px-2 py-0.5 text-xs font-medium"
+            className="bg-cyan-500/10 text-cyan-400 hidden rounded-full px-2 py-0.5 text-xs font-medium md:inline-flex"
           >
             {gridConfig.rows} x {gridConfig.cols}
           </motion.span>
           {metadata.guaranteesShortestPath && (
-            <span className="text-emerald-400 text-xs">Shortest Path</span>
+            <span className="text-emerald-400 hidden text-xs md:inline">Shortest Path</span>
           )}
         </div>
 
-        {/* Playback Controls */}
-        <div className="flex items-center gap-2">
-          <ControlButton
-            label="Step"
-            icon={<SkipForward className="h-3.5 w-3.5" />}
-            onClick={controller.nextStep}
-            disabled={isComplete || isGeneratingMaze}
-          />
+        {/* Header Controls */}
+        <div className="flex shrink-0 items-center gap-1 md:gap-2">
+          {/* Setup controls - always visible */}
           <ControlButton
             label="Clear Walls"
             icon={<Trash2 className="h-3.5 w-3.5" />}
@@ -104,17 +99,27 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
             disabled={isPlaying || isGeneratingMaze}
           />
           <GenerateDropdown onGenerate={handleGenerate} disabled={isPlaying || isGeneratingMaze} />
-          <ControlButton
-            label="Reset"
-            icon={<RotateCcw className="h-3.5 w-3.5" />}
-            onClick={handleResetAll}
-            disabled={isIdle && !isGeneratingMaze}
-          />
-          <PlayPauseButton
-            isPlaying={isPlaying}
-            onClick={isPlaying ? controller.pause : controller.play}
-            disabled={isComplete || isGeneratingMaze}
-          />
+
+          {/* Playback controls - hidden on mobile (moved to control bar) */}
+          <div className="hidden items-center gap-2 md:flex">
+            <ControlButton
+              label="Step"
+              icon={<SkipForward className="h-3.5 w-3.5" />}
+              onClick={controller.nextStep}
+              disabled={isComplete || isGeneratingMaze}
+            />
+            <ControlButton
+              label="Reset"
+              icon={<RotateCcw className="h-3.5 w-3.5" />}
+              onClick={handleResetAll}
+              disabled={isIdle && !isGeneratingMaze}
+            />
+            <PlayPauseButton
+              isPlaying={isPlaying}
+              onClick={isPlaying ? controller.pause : controller.play}
+              disabled={isComplete || isGeneratingMaze}
+            />
+          </div>
         </div>
       </header>
 
@@ -137,8 +142,8 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
           <PathfindingControlBar />
         </div>
 
-        {/* Instructions Legend */}
-        <div className="absolute bottom-4 left-4 flex items-center gap-4">
+        {/* Instructions Legend - Hidden on mobile */}
+        <div className="absolute bottom-4 left-4 hidden items-center gap-4 md:flex">
           <span className="text-muted text-xs">
             <span className="bg-emerald-500 mr-1.5 inline-block h-2.5 w-2.5 rounded-sm" />
             Start
@@ -271,14 +276,14 @@ function ControlButton({ label, icon, onClick, disabled }: ControlButtonProps) {
       animate={{ opacity: disabled ? 0.5 : 1 }}
       transition={SPRING_PRESETS.snappy}
       className={cn(
-        "bg-surface-elevated border-border text-primary flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium",
+        "bg-surface-elevated border-border text-primary flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium md:px-3",
         "focus-visible:ring-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed"
       )}
       aria-label={label}
     >
       {icon}
-      {label}
+      <span className="hidden md:inline">{label}</span>
     </motion.button>
   );
 }
@@ -303,7 +308,7 @@ function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps)
       animate={{ opacity: disabled ? 0.5 : 1 }}
       transition={SPRING_PRESETS.snappy}
       className={cn(
-        "bg-cyan-500 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-white",
+        "bg-cyan-500 flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-white md:px-3",
         "focus-visible:ring-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed"
       )}
@@ -321,7 +326,7 @@ function PlayPauseButton({ isPlaying, onClick, disabled }: PlayPauseButtonProps)
           {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </motion.span>
       </AnimatePresence>
-      {isPlaying ? "Pause" : "Visualize"}
+      <span className="hidden md:inline">{isPlaying ? "Pause" : "Visualize"}</span>
     </motion.button>
   );
 }
