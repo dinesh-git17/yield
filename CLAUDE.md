@@ -193,5 +193,81 @@ describe("bubbleSort", () => {
 
 ---
 
+## 8. Security
+
+### 8.1 Security Headers
+
+All routes serve the following security headers (configured in `next.config.ts`):
+
+- **Content-Security-Policy (CSP):** Restricts script/style/image sources to trusted origins.
+  - `script-src`: self, GTM, Google Analytics (requires `unsafe-inline` for GTM consent script)
+  - `style-src`: self, Google Fonts (requires `unsafe-inline` for KaTeX)
+  - `img-src`: self, data URIs, HTTPS sources
+  - `frame-ancestors`: self only (prevents clickjacking)
+- **Strict-Transport-Security (HSTS):** 1 year, includes subdomains, preload-ready.
+- **X-Content-Type-Options:** nosniff (prevents MIME type sniffing).
+- **X-Frame-Options:** SAMEORIGIN (backup for CSP frame-ancestors).
+- **Referrer-Policy:** strict-origin-when-cross-origin.
+- **Permissions-Policy:** Restricts access to sensitive browser APIs (camera, microphone, etc.).
+
+**Note:** The `poweredByHeader` is disabled to reduce fingerprinting.
+
+### 8.2 Environment Variables
+
+- All environment variables are validated at startup via `src/lib/env.ts`.
+- Only `NEXT_PUBLIC_` prefixed variables are used (client-safe by design).
+- No secrets or API keys are stored in the codebase or environment.
+- Missing required variables in production cause clear startup failures.
+- Validation includes format checking for GTM ID and GA Measurement ID.
+
+### 8.3 Input Validation
+
+- URL parameters are validated via whitelist patterns (see `UrlStateSync.tsx`).
+- Only pre-approved algorithm/mode values are accepted.
+- Invalid input is silently ignored or returns 404.
+- No user input is directly rendered without validation.
+
+### 8.4 dangerouslySetInnerHTML Usage
+
+All instances are justified and reviewed:
+
+1. **JSON-LD scripts** (learning pages): Server-generated from static content, produces inert JSON.
+2. **KaTeX math rendering**: Trusted library with sanitized output.
+3. **GTM consent script**: Static, hardcoded Google snippet.
+4. **GTM loader script**: Static snippet with only GTM ID interpolation.
+
+All content originates from static TypeScript files, never from user input.
+
+### 8.5 Analytics & Privacy
+
+- Analytics is consent-gated (GDPR/CCPA compliant).
+- Region-aware defaults: EEA/UK/Switzerland deny by default.
+- No tracking occurs until explicit user consent.
+- Consent state is stored in localStorage (non-sensitive).
+- No PII is collected or transmitted.
+
+### 8.6 Production Deployment Checklist
+
+Before deploying to production:
+
+1. **HTTPS Required:** The application expects HTTPS in production. HSTS is enabled.
+2. **Reverse Proxy:** If behind a proxy (Vercel, Cloudflare), ensure headers are preserved.
+3. **Environment Variables:** Verify `NEXT_PUBLIC_BASE_URL` is set to the production domain.
+4. **CSP Monitoring:** Consider adding `report-uri` or `report-to` directive for CSP violation reports.
+
+### 8.7 Residual Risks & Future Improvements
+
+**Accepted Tradeoffs:**
+- CSP requires `unsafe-inline` for scripts (GTM requirement) and styles (KaTeX).
+- A nonce-based CSP would be more secure but requires GTM refactoring.
+
+**Future Improvements:**
+- Implement CSP nonce generation for inline scripts.
+- Add rate limiting if API routes are introduced.
+- Add Content-Security-Policy-Report-Only for monitoring before enforcement.
+- Consider Subresource Integrity (SRI) for external scripts.
+
+---
+
 **END OF CONTRACT**
 This document governs all engineering decisions for Yield.

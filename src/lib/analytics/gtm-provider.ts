@@ -5,6 +5,7 @@
  * All events are pushed to the dataLayer for GTM to process.
  */
 
+import { env } from "@/lib/env";
 import type { AnalyticsEvent, AnalyticsProvider, PageViewPayload } from "./types";
 
 // =============================================================================
@@ -31,7 +32,7 @@ class GTMProvider implements AnalyticsProvider {
   private debug: boolean;
 
   constructor(options: { debug?: boolean } = {}) {
-    this.debug = options.debug ?? process.env.NODE_ENV === "development";
+    this.debug = options.debug ?? env.nodeEnv === "development";
   }
 
   /**

@@ -1,12 +1,13 @@
 "use client";
 
 import Script from "next/script";
+import { env } from "@/lib/env";
 
 // =============================================================================
-// Environment Variables
+// Environment Variables (Validated)
 // =============================================================================
 
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+const GTM_ID = env.gtmId;
 
 // =============================================================================
 // Script Content (Static, Trusted)
@@ -104,7 +105,7 @@ gtag('consent', 'default', {
 export function GoogleTagManager() {
   // Don't render anything if GTM_ID is not configured
   if (!GTM_ID) {
-    if (process.env.NODE_ENV === "development") {
+    if (env.nodeEnv === "development") {
       console.warn("[Analytics] GTM_ID not configured. Skipping GTM initialization.");
     }
     return null;
