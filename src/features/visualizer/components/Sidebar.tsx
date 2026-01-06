@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BadgeHelp, BadgeInfo, BookOpen, ChevronsLeft } from "lucide-react";
+import { BadgeHelp, BadgeInfo, BookOpen, ChevronsLeft, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
@@ -227,38 +227,57 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
 
             <div className="border-border-subtle my-4 border-t" />
 
-            {/* Complexity Trigger */}
-            <motion.button
-              type="button"
-              onClick={openComplexityModal}
-              whileHover={buttonInteraction.hover}
-              whileTap={buttonInteraction.tap}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                "border border-white/10 bg-white/5 backdrop-blur-sm",
-                "text-primary hover:bg-white/10 transition-colors",
-                "dark:border-white/5 dark:bg-black/20"
-              )}
-            >
-              <BadgeHelp className="h-4 w-4 text-violet-400" />
-              <span className="text-sm font-medium">Complexity</span>
-            </motion.button>
+            {/* CTA Group: Theory, Complexity, Learn */}
+            <div className="space-y-2">
+              {/* Theory */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href="/learn"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-amber-500/20 bg-amber-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-amber-500/20 transition-colors",
+                    "dark:border-amber-500/10 dark:bg-amber-500/5"
+                  )}
+                >
+                  <GraduationCap className="h-4 w-4 text-amber-400" />
+                  <span className="text-sm font-medium">Theory</span>
+                </Link>
+              </motion.div>
 
-            {/* Learn Trigger */}
-            <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
-              <Link
-                href={`/learn/sorting/${sortingAlgorithm}`}
+              {/* Complexity */}
+              <motion.button
+                type="button"
+                onClick={openComplexityModal}
+                whileHover={buttonInteraction.hover}
+                whileTap={buttonInteraction.tap}
                 className={cn(
-                  "mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                  "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
-                  "text-primary hover:bg-sky-500/20 transition-colors",
-                  "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                  "border border-white/10 bg-white/5 backdrop-blur-sm",
+                  "text-primary hover:bg-white/10 transition-colors",
+                  "dark:border-white/5 dark:bg-black/20"
                 )}
               >
-                <BookOpen className="h-4 w-4 text-sky-400" />
-                <span className="text-sm font-medium">Learn</span>
-              </Link>
-            </motion.div>
+                <BadgeHelp className="h-4 w-4 text-violet-400" />
+                <span className="text-sm font-medium">Complexity</span>
+              </motion.button>
+
+              {/* Learn */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href={`/learn/sorting/${sortingAlgorithm}`}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-sky-500/20 transition-colors",
+                    "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4 text-sky-400" />
+                  <span className="text-sm font-medium">Learn</span>
+                </Link>
+              </motion.div>
+            </div>
           </>
         )}
 
@@ -288,38 +307,57 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
 
             <div className="border-border-subtle my-4 border-t" />
 
-            {/* Complexity Trigger */}
-            <motion.button
-              type="button"
-              onClick={openComplexityModal}
-              whileHover={buttonInteraction.hover}
-              whileTap={buttonInteraction.tap}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                "border border-white/10 bg-white/5 backdrop-blur-sm",
-                "text-primary hover:bg-white/10 transition-colors",
-                "dark:border-white/5 dark:bg-black/20"
-              )}
-            >
-              <BadgeHelp className="h-4 w-4 text-cyan-400" />
-              <span className="text-sm font-medium">Complexity</span>
-            </motion.button>
+            {/* CTA Group: Theory, Complexity, Learn */}
+            <div className="space-y-2">
+              {/* Theory */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href="/learn"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-amber-500/20 bg-amber-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-amber-500/20 transition-colors",
+                    "dark:border-amber-500/10 dark:bg-amber-500/5"
+                  )}
+                >
+                  <GraduationCap className="h-4 w-4 text-amber-400" />
+                  <span className="text-sm font-medium">Theory</span>
+                </Link>
+              </motion.div>
 
-            {/* Learn Trigger */}
-            <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
-              <Link
-                href={`/learn/pathfinding/${pathfindingAlgorithm}`}
+              {/* Complexity */}
+              <motion.button
+                type="button"
+                onClick={openComplexityModal}
+                whileHover={buttonInteraction.hover}
+                whileTap={buttonInteraction.tap}
                 className={cn(
-                  "mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                  "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
-                  "text-primary hover:bg-sky-500/20 transition-colors",
-                  "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                  "border border-white/10 bg-white/5 backdrop-blur-sm",
+                  "text-primary hover:bg-white/10 transition-colors",
+                  "dark:border-white/5 dark:bg-black/20"
                 )}
               >
-                <BookOpen className="h-4 w-4 text-sky-400" />
-                <span className="text-sm font-medium">Learn</span>
-              </Link>
-            </motion.div>
+                <BadgeHelp className="h-4 w-4 text-cyan-400" />
+                <span className="text-sm font-medium">Complexity</span>
+              </motion.button>
+
+              {/* Learn */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href={`/learn/pathfinding/${pathfindingAlgorithm}`}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-sky-500/20 transition-colors",
+                    "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4 text-sky-400" />
+                  <span className="text-sm font-medium">Learn</span>
+                </Link>
+              </motion.div>
+            </div>
           </>
         )}
 
@@ -349,38 +387,57 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
 
             <div className="border-border-subtle my-4 border-t" />
 
-            {/* Complexity Trigger */}
-            <motion.button
-              type="button"
-              onClick={openComplexityModal}
-              whileHover={buttonInteraction.hover}
-              whileTap={buttonInteraction.tap}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                "border border-white/10 bg-white/5 backdrop-blur-sm",
-                "text-primary hover:bg-white/10 transition-colors",
-                "dark:border-white/5 dark:bg-black/20"
-              )}
-            >
-              <BadgeHelp className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-medium">Complexity</span>
-            </motion.button>
+            {/* CTA Group: Theory, Complexity, Learn */}
+            <div className="space-y-2">
+              {/* Theory */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href="/learn"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-amber-500/20 bg-amber-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-amber-500/20 transition-colors",
+                    "dark:border-amber-500/10 dark:bg-amber-500/5"
+                  )}
+                >
+                  <GraduationCap className="h-4 w-4 text-amber-400" />
+                  <span className="text-sm font-medium">Theory</span>
+                </Link>
+              </motion.div>
 
-            {/* Learn Trigger */}
-            <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
-              <Link
-                href={`/learn/tree/${treeDataStructure}`}
+              {/* Complexity */}
+              <motion.button
+                type="button"
+                onClick={openComplexityModal}
+                whileHover={buttonInteraction.hover}
+                whileTap={buttonInteraction.tap}
                 className={cn(
-                  "mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                  "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
-                  "text-primary hover:bg-sky-500/20 transition-colors",
-                  "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                  "border border-white/10 bg-white/5 backdrop-blur-sm",
+                  "text-primary hover:bg-white/10 transition-colors",
+                  "dark:border-white/5 dark:bg-black/20"
                 )}
               >
-                <BookOpen className="h-4 w-4 text-sky-400" />
-                <span className="text-sm font-medium">Learn</span>
-              </Link>
-            </motion.div>
+                <BadgeHelp className="h-4 w-4 text-emerald-400" />
+                <span className="text-sm font-medium">Complexity</span>
+              </motion.button>
+
+              {/* Learn */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href={`/learn/tree/${treeDataStructure}`}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-sky-500/20 transition-colors",
+                    "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4 text-sky-400" />
+                  <span className="text-sm font-medium">Learn</span>
+                </Link>
+              </motion.div>
+            </div>
           </>
         )}
 
@@ -410,38 +467,57 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
 
             <div className="border-border-subtle my-4 border-t" />
 
-            {/* Complexity Trigger */}
-            <motion.button
-              type="button"
-              onClick={openComplexityModal}
-              whileHover={buttonInteraction.hover}
-              whileTap={buttonInteraction.tap}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                "border border-white/10 bg-white/5 backdrop-blur-sm",
-                "text-primary hover:bg-white/10 transition-colors",
-                "dark:border-white/5 dark:bg-black/20"
-              )}
-            >
-              <BadgeHelp className="h-4 w-4 text-rose-400" />
-              <span className="text-sm font-medium">Complexity</span>
-            </motion.button>
+            {/* CTA Group: Theory, Complexity, Learn */}
+            <div className="space-y-2">
+              {/* Theory */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href="/learn"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-amber-500/20 bg-amber-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-amber-500/20 transition-colors",
+                    "dark:border-amber-500/10 dark:bg-amber-500/5"
+                  )}
+                >
+                  <GraduationCap className="h-4 w-4 text-amber-400" />
+                  <span className="text-sm font-medium">Theory</span>
+                </Link>
+              </motion.div>
 
-            {/* Learn Trigger */}
-            <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
-              <Link
-                href={`/learn/graph/${graphAlgorithm}`}
+              {/* Complexity */}
+              <motion.button
+                type="button"
+                onClick={openComplexityModal}
+                whileHover={buttonInteraction.hover}
+                whileTap={buttonInteraction.tap}
                 className={cn(
-                  "mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
-                  "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
-                  "text-primary hover:bg-sky-500/20 transition-colors",
-                  "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                  "border border-white/10 bg-white/5 backdrop-blur-sm",
+                  "text-primary hover:bg-white/10 transition-colors",
+                  "dark:border-white/5 dark:bg-black/20"
                 )}
               >
-                <BookOpen className="h-4 w-4 text-sky-400" />
-                <span className="text-sm font-medium">Learn</span>
-              </Link>
-            </motion.div>
+                <BadgeHelp className="h-4 w-4 text-rose-400" />
+                <span className="text-sm font-medium">Complexity</span>
+              </motion.button>
+
+              {/* Learn */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href={`/learn/graph/${graphAlgorithm}`}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-sky-500/20 transition-colors",
+                    "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4 text-sky-400" />
+                  <span className="text-sm font-medium">Learn</span>
+                </Link>
+              </motion.div>
+            </div>
           </>
         )}
       </nav>
