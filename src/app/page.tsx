@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import {
   Canvas,
@@ -10,6 +11,12 @@ import {
   TreeProvider,
   UrlStateSync,
 } from "@/features/visualizer/components";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default function Home() {
   return (
