@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 /**
@@ -15,11 +16,11 @@ import type { NextConfig } from "next";
  */
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com;
+  script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://*.sentry.io;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   img-src 'self' data: https: blob:;
   font-src 'self' https://fonts.gstatic.com;
-  connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com;
+  connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://*.ingest.sentry.io https://*.sentry.io;
   frame-src 'self' https://www.googletagmanager.com;
   frame-ancestors 'self';
   base-uri 'self';
@@ -126,4 +127,39 @@ const nextConfig: NextConfig = {
 	reactStrictMode: true,
 };
 
-export default nextConfig;
+/**
+ * Sentry Configuration
+ *
+ * Wraps the Next.js config with Sentry for:
+ * - Automatic source map uploading
+ * - Error tracking integration
+ * - Performance monitoring
+ */
+export default withSentryConfig(nextConfig, {
+  // Sentry organization and project
+  org: "dinbuilds",
+  project: "yield",
+
+  // Suppress source map upload logs during build
+  silent: !process.env.CI,
+
+  // Upload source maps for better stack traces
+  // Requires SENTRY_AUTH_TOKEN environment variable
+  widenClientFileUpload: true,
+
+  // Automatically tree-shake Sentry logger statements
+  disableLogger: true,
+
+  // Configure source maps upload
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // Tunnel Sentry events to avoid ad blockers (optional)
+  // tunnelRoute: "/monitoring",
+
+  // Enable React component annotations for better error context
+  reactComponentAnnotation: {
+    enabled: true,
+  },
+});

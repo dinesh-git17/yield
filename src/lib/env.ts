@@ -20,10 +20,14 @@ export interface EnvConfig {
   gtmId: string | null;
   /** Google Analytics Measurement ID (optional, for direct GA4 access) */
   gaMeasurementId: string | null;
+  /** Sentry DSN for error tracking (optional, error tracking disabled if missing) */
+  sentryDsn: string | null;
   /** Current environment mode */
   nodeEnv: "development" | "production" | "test";
   /** Whether analytics is configured */
   analyticsEnabled: boolean;
+  /** Whether Sentry error tracking is configured */
+  sentryEnabled: boolean;
 }
 
 /**
@@ -101,6 +105,33 @@ function validateGaMeasurementId(value: string | undefined): string | null {
 }
 
 /**
+ * Validates Sentry DSN format.
+ * Returns null if not configured (error tracking will be disabled).
+ */
+function validateSentryDsn(value: string | undefined): string | null {
+  if (!value || value === "") {
+    return null;
+  }
+
+  // Sentry DSNs follow the pattern https://<key>@<org>.ingest.sentry.io/<project>
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || !url.hostname.includes("sentry.io")) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(`[env] Invalid Sentry DSN format: ${value}`);
+      }
+      return null;
+    }
+    return value;
+  } catch {
+    if (process.env.NODE_ENV === "development") {
+      console.warn(`[env] Invalid Sentry DSN: ${value}`);
+    }
+    return null;
+  }
+}
+
+/**
  * Parses and validates NODE_ENV.
  */
 function validateNodeEnv(): "development" | "production" | "test" {
@@ -122,9 +153,13 @@ export const env: EnvConfig = Object.freeze({
   baseUrl: validateUrl(process.env.NEXT_PUBLIC_BASE_URL, "NEXT_PUBLIC_BASE_URL"),
   gtmId: validateGtmId(process.env.NEXT_PUBLIC_GTM_ID),
   gaMeasurementId: validateGaMeasurementId(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID),
+  sentryDsn: validateSentryDsn(process.env.NEXT_PUBLIC_SENTRY_DSN),
   nodeEnv: validateNodeEnv(),
   get analyticsEnabled() {
     return this.gtmId !== null;
+  },
+  get sentryEnabled() {
+    return this.sentryDsn !== null;
   },
 });
 

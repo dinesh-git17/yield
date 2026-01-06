@@ -1,7 +1,20 @@
 "use client";
 
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { motion } from "framer-motion";
-import { BadgeHelp, BadgeInfo, BookOpen, ChevronsLeft, GraduationCap } from "lucide-react";
+import {
+  BadgeHelp,
+  BadgeInfo,
+  BookOpen,
+  ChevronsLeft,
+  FileText,
+  GraduationCap,
+  HelpCircle,
+  Info,
+  Mail,
+  MoreHorizontal,
+  Shield,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
@@ -527,10 +540,11 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-border-subtle border-t px-4 py-3">
+      <div className="border-border-subtle flex items-center justify-between border-t px-4 py-3">
         <p className="text-muted/60 text-[11px] font-medium tracking-wide">
           © {new Date().getFullYear()} Yield
         </p>
+        <FooterMenu />
       </div>
 
       {/* Complexity Modal */}
@@ -614,5 +628,75 @@ function SidebarItem({
         </Link>
       )}
     </button>
+  );
+}
+
+const FOOTER_LINKS = [
+  { id: "about", label: "About", icon: Info, href: "/about", enabled: true },
+  { id: "privacy", label: "Privacy", icon: Shield, href: "/privacy", enabled: true },
+  { id: "terms", label: "Terms", icon: FileText, href: "/terms", enabled: true },
+  { id: "faq", label: "FAQ", icon: HelpCircle, href: "/faq", enabled: true },
+  { id: "contact", label: "Contact", icon: Mail, href: "/contact", enabled: true },
+] as const;
+
+function FooterMenu() {
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <motion.button
+          type="button"
+          whileHover={buttonInteraction.hover}
+          whileTap={buttonInteraction.tap}
+          className={cn(
+            "text-muted/60 hover:text-muted rounded-md p-1 transition-colors",
+            "hover:bg-surface-elevated focus:outline-none"
+          )}
+          aria-label="More options"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </motion.button>
+      </DropdownMenu.Trigger>
+
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          side="right"
+          align="end"
+          sideOffset={8}
+          className={cn(
+            "bg-surface border-border z-50 min-w-[140px] rounded-lg border p-1 shadow-lg",
+            "animate-in fade-in-0 zoom-in-95 data-[side=right]:slide-in-from-left-2"
+          )}
+        >
+          {FOOTER_LINKS.map((link) =>
+            link.enabled ? (
+              <DropdownMenu.Item key={link.id} asChild>
+                <Link
+                  href={link.href}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none",
+                    "text-primary hover:bg-surface-elevated focus:bg-surface-elevated"
+                  )}
+                >
+                  <link.icon className="h-3.5 w-3.5" />
+                  <span>{link.label}</span>
+                </Link>
+              </DropdownMenu.Item>
+            ) : (
+              <DropdownMenu.Item
+                key={link.id}
+                disabled
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none",
+                  "text-muted cursor-not-allowed opacity-50"
+                )}
+              >
+                <link.icon className="h-3.5 w-3.5" />
+                <span>{link.label}</span>
+              </DropdownMenu.Item>
+            )
+          )}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
