@@ -25,17 +25,67 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 }
 
 /**
- * GTM Consent Mode default state - sets all consent categories to denied.
- * This ensures GDPR/CCPA compliance by default.
+ * GTM Consent Mode default state with region-specific settings.
+ *
+ * - EEA + UK + Switzerland: Denied by default (GDPR requires opt-in)
+ * - All other regions: Granted by default (no consent requirement)
+ *
+ * This prevents the "0% consent rate" issue in GTM diagnostics for non-EEA traffic.
  */
+const EEA_REGIONS = [
+  "AT",
+  "BE",
+  "BG",
+  "HR",
+  "CY",
+  "CZ",
+  "DK",
+  "EE",
+  "FI",
+  "FR",
+  "DE",
+  "GR",
+  "HU",
+  "IE",
+  "IT",
+  "LV",
+  "LT",
+  "LU",
+  "MT",
+  "NL",
+  "PL",
+  "PT",
+  "RO",
+  "SK",
+  "SI",
+  "ES",
+  "SE", // EU members
+  "GB", // UK (post-Brexit, still has similar requirements)
+  "CH", // Switzerland
+  "IS",
+  "LI",
+  "NO", // EEA non-EU members
+].join("','");
+
 const GTM_CONSENT_SCRIPT = `window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+
+// EEA + UK + Switzerland: Denied by default (GDPR)
 gtag('consent', 'default', {
   'analytics_storage': 'denied',
   'ad_storage': 'denied',
   'ad_user_data': 'denied',
   'ad_personalization': 'denied',
-  'wait_for_update': 500
+  'wait_for_update': 500,
+  'region': ['${EEA_REGIONS}']
+});
+
+// All other regions: Granted by default
+gtag('consent', 'default', {
+  'analytics_storage': 'granted',
+  'ad_storage': 'granted',
+  'ad_user_data': 'granted',
+  'ad_personalization': 'granted'
 });`;
 
 // =============================================================================
@@ -65,18 +115,18 @@ export function GoogleTagManager() {
 
   return (
     <>
+      {/* GTM Default Consent State - MUST load before GTM */}
+      <Script
+        id="gtm-consent-default"
+        strategy="beforeInteractive"
+        dangerouslySetInnerHTML={consentScriptProps}
+      />
+
       {/* GTM Script */}
       <Script
         id="gtm-script"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={gtmScriptProps}
-      />
-
-      {/* GTM Default Consent State */}
-      <Script
-        id="gtm-consent-default"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={consentScriptProps}
       />
 
       {/* GTM NoScript Fallback */}
