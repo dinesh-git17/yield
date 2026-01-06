@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { motion } from "framer-motion";
 import { AlertCircle, Home, RefreshCw } from "lucide-react";
 import Link from "next/link";
@@ -7,7 +8,7 @@ import { useEffect } from "react";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-export default function GlobalError({
+export default function ErrorPage({
   error,
   reset,
 }: {
@@ -15,8 +16,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Optionally log the error to an observability service
-    console.error(error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
