@@ -146,7 +146,7 @@ export function CodePanel({ className }: CodePanelProps) {
 
       {/* Code Display - IDE-style with sticky gutter */}
       <div className="flex-1 overflow-auto">
-        <pre className="font-mono text-[13px] leading-7 py-6">
+        <pre className="font-mono text-[13px] leading-7 py-6 pr-2">
           <code className="relative block">
             {/* Single persistent highlight that animates position (sorting, tree, and graph modes) */}
             <AnimatePresence>
