@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SplashScreen } from "@/components/SplashScreen";
 import { AnalyticsWrapper } from "@/features/analytics";
+import { env } from "@/lib/env";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,9 +17,9 @@ const geistMono = Geist_Mono({
 
 /**
  * Base URL for canonical URLs, OpenGraph, and sitemap generation.
- * Falls back to localhost for development.
+ * Validated at startup via lib/env.ts.
  */
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+const BASE_URL = env.baseUrl;
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

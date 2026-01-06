@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { env } from "@/lib/env";
 import { generateLearnRoutes, VALID_MODES } from "@/lib/seo";
 
 /**
@@ -6,7 +7,7 @@ import { generateLearnRoutes, VALID_MODES } from "@/lib/seo";
  * Includes all static pages, category hubs, and algorithm detail pages.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const baseUrl = env.baseUrl;
   const lastModified = new Date();
 
   const staticRoutes: MetadataRoute.Sitemap = [

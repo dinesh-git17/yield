@@ -7,6 +7,7 @@
  * - Provides a clean API for the application
  */
 
+import { env } from "@/lib/env";
 import { gtmProvider } from "./gtm-provider";
 import {
   type AnalyticsEvent,
@@ -35,7 +36,7 @@ class AnalyticsService {
   private debug: boolean;
 
   constructor() {
-    this.debug = process.env.NODE_ENV === "development";
+    this.debug = env.nodeEnv === "development";
   }
 
   /**

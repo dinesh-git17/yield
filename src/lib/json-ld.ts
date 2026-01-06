@@ -3,9 +3,10 @@
  * Generates schema.org compliant markup for search engines.
  */
 
+import { env } from "./env";
 import type { VisualizerMode } from "./store";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+const BASE_URL = env.baseUrl;
 
 /**
  * Mode labels for human-readable breadcrumbs.
