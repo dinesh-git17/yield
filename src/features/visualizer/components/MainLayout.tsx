@@ -10,6 +10,7 @@ import {
   useCallback,
   useState,
 } from "react";
+import { TourOverlay } from "@/features/onboarding";
 import {
   buttonInteraction,
   panelVariants,
@@ -185,6 +186,9 @@ export function MainLayout({ sidebar, canvas, codePanel }: MainLayoutProps) {
 
       {/* Desktop Recommendation Modal - Outside LayoutGroup to avoid layout animation interference */}
       <DesktopRecommendationModal />
+
+      {/* Onboarding Tour Overlay */}
+      <TourOverlay />
     </>
   );
 }

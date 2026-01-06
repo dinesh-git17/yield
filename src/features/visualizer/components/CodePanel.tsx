@@ -134,7 +134,7 @@ export function CodePanel({ className }: CodePanelProps) {
   }, []);
 
   return (
-    <div className={cn("flex h-full flex-col", className)}>
+    <div data-tour-id="tour-code" className={cn("flex h-full flex-col", className)}>
       {/* Header */}
       <header className="border-border-subtle flex h-14 shrink-0 items-center justify-between border-b px-6">
         <div className="flex items-center gap-2">
