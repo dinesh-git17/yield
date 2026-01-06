@@ -7,205 +7,262 @@
 [![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License: FSL-1.1](https://img.shields.io/badge/License-FSL--1.1-blue.svg?style=flat)](LICENSE)
 
-**An interactive algorithm visualizer that makes data structures and algorithms intuitive, beautiful, and slightly less terrifying than a whiteboard interview.**
+**An interactive algorithm visualizer that turns data structures and algorithms into something you can actually see, step through, and understand.**
 
-> `yield` is a JavaScript keyword that pauses generator execution. This project does the opposite: it accelerates your understanding.
+> `yield` is a JavaScript keyword that pauses execution.  
+> This project does the opposite.
 
-<br />
+---
 
 ## Overview
 
-Yield began as a personal learning tool born from the realization that reading about "rotating an AVL tree" in CLRS is roughly as exciting as reading a terms of service agreement.
+Yield is a desktop-first algorithm visualization platform built for developers, students, and educators who want to understand *how algorithms behave*, not just memorize their complexity.
 
-The goal was simple: build something that shows what actually happens inside these algorithms. What started as a study aid turned into something genuinely mesmerizing to watch. Bubble Sort struggling through a reverse-sorted array has never looked so good.
+Most visualizers replay pre-recorded animations. Yield executes **real algorithm implementations** using JavaScript generators. Every comparison, swap, rotation, visit, and traversal is produced by actual code and rendered step by step. If the algorithm does something unexpected, the visualization does too.
 
-This project is now open source for anyone who wants to learn, teach, or just watch algorithms do their thing.
+The goal is simple: remove the mystery between pseudocode and reality. The side effect is that some algorithms are exposed for who they really are.
 
-<br />
+---
 
-## Features
+## Why Yield Exists
 
-Yield is not just moving bars. It is a complete visualization suite across four algorithm domains.
+Reading about algorithms is one thing. Watching them fail, recover, rebalance, and occasionally embarrass themselves is another.
 
-### Sorting
+Yield was built to:
+- Make algorithm behavior explicit
+- Eliminate hand-wavy animations
+- Encourage stepping, pausing, and questioning
+- Let the code speak for itself
 
-The classic visualization, done right.
+Bubble Sort, in particular, has never looked more honest.
 
-| Algorithm      | Time Complexity | Notes                            |
-| -------------- | --------------- | -------------------------------- |
-| Quick Sort     | O(n log n) avg  | Lomuto partition scheme          |
-| Merge Sort     | O(n log n)      | Divide and conquer               |
-| Heap Sort      | O(n log n)      | In-place, not stable             |
-| Insertion Sort | O(n^2)          | Good for nearly sorted           |
-| Selection Sort | O(n^2)          | Minimal swaps                    |
-| Bubble Sort    | O(n^2)          | For educational shaming purposes |
-| Gnome Sort     | O(n^2)          | The zipper pattern               |
+---
 
-Adjustable array size (5 to 50 elements) and playback speed (0.5x to 4x). Step through one operation at a time or let it run.
+## Core Features
 
-### Pathfinding
+### Real Algorithm Execution
 
-Watch algorithms navigate, get stuck, and find their way through a 2D grid.
+- All algorithms are implemented as **JavaScript generators**
+- Each `yield` represents a real operation
+- No animation scripts or fake states
+- Visualization stays perfectly synchronized with logic
 
-| Algorithm         | Optimal Path     | Pattern                             |
-| ----------------- | ---------------- | ----------------------------------- |
-| A\*               | Yes              | Directed expansion with heuristic   |
-| Dijkstra          | Yes              | Radial expansion                    |
-| BFS               | Yes (unweighted) | Flood fill                          |
-| DFS               | No               | Deep snake exploration              |
-| Greedy Best-First | No               | Heuristic-only, fast but blind      |
-| Bidirectional A\* | Yes              | Dual frontier meeting in the middle |
-| Flood Fill        | N/A              | Complete coverage                   |
-| Random Walk       | No               | Chaos mode                          |
+### Step-Driven Playback
 
-Includes maze generation algorithms: Recursive Division (chamber-style) and Recursive Backtracker (perfect mazes with long corridors).
+- Play, pause, step, reset
+- Adjustable playback speed (0.5x → 4x)
+- Clear completion states
+- Deterministic execution for reproducible demos
+
+### Live Code Synchronization
+
+- Syntax-highlighted code panel
+- Current line highlighted during execution
+- Step labels explain what just happened
+- Copy-to-clipboard support for reference
+
+### Desktop-First UX
+
+- Designed for mouse and keyboard
+- Sidebar-driven navigation
+- Hover states, focus rings, and keyboard accessibility
+- Optimized for wide viewports and long sessions
+
+### Deep Linking
+
+- Share exact visualization states via URL
+- Includes selected mode, algorithm, and inputs
+- Useful for teaching, demos, and debugging conversations
+
+---
+
+## Algorithm Coverage
+
+### Sorting Algorithms
+
+| Algorithm | Notes |
+|---------|------|
+| Bubble Sort | For educational purposes and personal reflection |
+| Selection Sort | Minimal swaps, maximal patience |
+| Insertion Sort | Surprisingly effective on nearly sorted input |
+| Gnome Sort | Walks forward, walks back, eventually succeeds |
+| Merge Sort | Divide and conquer |
+| Quick Sort | Lomuto partition scheme with visible pivots |
+| Heap Sort | In-place and unapologetically unstable |
+
+Array size and playback speed are fully adjustable.
+
+---
+
+### Pathfinding Algorithms
+
+| Algorithm | Behavior |
+|---------|----------|
+| BFS | Uniform flood expansion |
+| DFS | Deep, winding exploration |
+| Dijkstra | Weighted shortest paths |
+| A* | Heuristic-guided search |
+| Greedy Best-First | Fast, optimistic, occasionally wrong |
+| Bidirectional A* | Two frontiers, one meeting |
+| Flood Fill | Complete coverage |
+| Random Walk | Chaos, visualized |
+
+Includes interactive wall drawing, draggable start/end nodes, and distance heat maps.
+
+---
 
 ### Trees
 
-Interactive hierarchical data structures with full operation visualization.
+**Data Structures**
+- Binary Search Tree
+- AVL Tree
+- Max Heap
+- Splay Tree
 
-| Structure          | Operations             | Special Features                          |
-| ------------------ | ---------------------- | ----------------------------------------- |
-| Binary Search Tree | Insert, Search, Delete | Standard BST rules                        |
-| AVL Tree           | Insert, Search, Delete | Auto-balancing rotations (LL, RR, LR, RL) |
-| Max Heap           | Insert, Extract Max    | Bubble up and sink down                   |
-| Splay Tree         | Insert, Search, Delete | Move-to-root via zig, zig-zig, zig-zag    |
+**Operations**
+- Insert, search, delete
+- In-order, pre-order, post-order, level-order traversals
+- Explicit rotations and restructuring
 
-All four traversal orders (in-order, pre-order, post-order, level-order) are available with step-by-step execution.
+AVL rotations and Splay operations are rendered step by step so nothing happens silently.
 
-### Graphs
+---
 
-Node-based algorithms for connectivity, spanning trees, and ordering.
+### Graph Algorithms
 
-| Algorithm | Category              | Use Case                                |
-| --------- | --------------------- | --------------------------------------- |
-| Prim's    | Minimum Spanning Tree | Greedy edge selection from growing tree |
-| Kruskal's | Minimum Spanning Tree | Union-Find with sorted edges            |
-| Kahn's    | Topological Sort      | Dependency resolution, cycle detection  |
+| Algorithm | Purpose |
+|---------|--------|
+| Prim’s | Minimum spanning tree |
+| Kruskal’s | Union-Find driven MST |
+| Kahn’s | Topological sorting and cycle detection |
 
-<br />
+Graphs support interactive node placement and edge editing.
+
+---
+
+## How It Works
+
+### Generator-Driven Engine
+
+Every algorithm is written as a generator function. Each `yield` emits a structured step describing what just occurred. The visualization engine consumes these steps and updates the UI incrementally.
+
+This design enables:
+- Pause and resume without re-execution
+- Precise step inspection
+- Deterministic playback
+- Clean separation of logic and rendering
+
+### State Management
+
+- Centralized state powered by Zustand
+- Domain-specific slices for sorting, pathfinding, trees, and graphs
+- Fine-grained selectors to avoid unnecessary re-renders
+
+### Rendering and Performance
+
+- Memoized leaf components
+- GPU-accelerated animations via Framer Motion
+- No layout thrashing
+- Designed to stay responsive even during dense visualizations
+
+---
+
+## Learning System
+
+Each algorithm includes:
+- A dedicated learning page
+- Complexity analysis rendered with math notation
+- Multi-language code examples
+- Preset demos that can be launched directly
+
+Yield is intended to be explored, not rushed.
+
+---
+
+## Accessibility
+
+- Keyboard-navigable controls
+- Visible focus indicators
+- ARIA labels with state context
+- Reduced-motion support via system preferences
+- Color is never the sole signal of state
+
+---
 
 ## Tech Stack
 
-| Layer     | Technology          | Purpose                                  |
-| --------- | ------------------- | ---------------------------------------- |
-| Framework | Next.js 16          | App Router, server components            |
-| Language  | TypeScript (strict) | Type safety, zero `any` tolerance        |
-| Styling   | Tailwind CSS v4     | Utility-first, CSS variables for theming |
-| State     | Zustand             | Lightweight global state                 |
-| Animation | Framer Motion       | GPU-accelerated transforms               |
-| Testing   | Vitest              | Fast unit tests for all algorithms       |
-| Linting   | Biome               | Formatting and linting in one            |
+| Layer | Technology |
+|-----|-----------|
+| Framework | Next.js 16 (App Router) |
+| UI | React 19 |
+| Language | TypeScript (strict mode) |
+| Styling | Tailwind CSS v4 |
+| State | Zustand |
+| Animation | Framer Motion |
+| Testing | Vitest |
+| Linting | Biome |
+| Analytics | GA4 via GTM (consent-gated) |
+| Monitoring | Sentry |
 
-<br />
+---
 
 ## Getting Started
 
-Prerequisites: Node.js 18 or higher and pnpm (or npm).
+### Prerequisites
+- Node.js 18+
+- pnpm (recommended) or npm
+
+### Setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/dinesh-git17/yield.git
 cd yield
 
-# Install dependencies
 pnpm install
-
-# Start development server
 pnpm dev
-
-# Run tests
-pnpm test
-
-# Type check
-npx tsc
-
-# Lint
-pnpm lint:check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open `http://localhost:3000` in your browser.
 
-<br />
+### Useful Scripts
 
-## Project Structure
-
-Feature-Sliced Design keeps concerns separated. Algorithms know nothing about React. Visualizers know nothing about algorithm internals. State flows through Zustand.
-
-```
-src/
-├── app/                      # Next.js routing layer
-├── features/
-│   ├── algorithms/           # Pure TypeScript generators
-│   │   ├── sorting/          # Bubble, Quick, Merge, Heap, etc.
-│   │   ├── pathfinding/      # BFS, DFS, A*, Dijkstra, etc.
-│   │   ├── tree/             # BST, AVL, Heap, Splay
-│   │   ├── graph/            # Prim, Kruskal, Kahn
-│   │   ├── maze/             # Recursive Division, Backtracker
-│   │   └── hooks/            # Controller hooks for each domain
-│   ├── visualizer/           # React components for rendering
-│   │   ├── components/       # Stage components per domain
-│   │   └── context/          # React contexts for state sharing
-│   ├── controls/             # Playback UI, algorithm selectors
-│   └── learning/             # Educational content and tooltips
-├── lib/                      # Zustand store, utilities
-└── ui/                       # Generic Radix-based components
+```bash
+pnpm dev          # Start development server
+pnpm test         # Run tests
+pnpm lint:check   # Lint and format check
+pnpm build        # Production build
 ```
 
-Every algorithm is a generator function. Every step is a yielded object describing the operation. The controller consumes steps and updates visual state. No side effects in algorithm code.
+---
 
-<br />
+## Project Philosophy
 
-## Design Philosophy
+- Algorithms should explain themselves
+- Visuals should never lie
+- Performance matters
+- Type safety is not optional
+- Fewer abstractions beat clever ones
+- If something looks slow, it probably is
 
-**Generators are the engine.** Every algorithm yields discrete steps (compare, swap, visit, rotate). This enables pause, step, rewind, and speed control without reimplementing logic.
+The time complexity of building this project was approximately O(n!) relative to sleep.
 
-**Separation of concerns.** Algorithm code is framework-agnostic. You could run it in Node, in a worker, or in the browser. The visualizer subscribes to state and renders.
-
-**Type everything.** Every generator has explicit `Yield`, `Return`, and `Next` types. Every step type is a discriminated union. TypeScript catches mismatches at compile time.
-
-**Performance matters.** Visualizers render at 60fps during sorting. Memoization is mandatory. Layout thrashing is forbidden. Framer Motion uses transform properties for GPU acceleration.
-
-**Ship less code.** No abstractions for hypothetical future requirements. No feature flags for code you can just change. Three similar lines of code is better than a premature abstraction.
-
-<br />
+---
 
 ## Contributing
 
-Contributions are welcome. This was built solo, so there are certainly rough edges.
+Contributions are welcome.
 
-**Found a bug?** Open an issue with reproduction steps.
+- Found a bug? Open an issue with reproduction steps.
+- Adding an algorithm? Implement it as a generator and include tests.
+- Fixing a typo? You are already improving the project.
 
-**Adding an algorithm?** Fork the repo, implement as a generator, add tests, submit a PR.
-
-**Fixed a typo?** You are the real MVP.
-
-### Development Guidelines
-
-1. **No `any`.** Use `unknown` and narrow with type guards.
-2. **Performance first.** If the visualizer lags at 50 elements, something is wrong.
-3. **Test edge cases.** Empty arrays, single elements, already sorted, reverse sorted.
-4. **Biome is the authority.** Run `pnpm lint` before committing.
-
-<br />
-
-## Complexity Analysis
-
-The time complexity of building this project was roughly O(n!) relative to my sleep schedule.
-
-The space complexity is O(1) because it lives rent-free in my head.
-
-<br />
+---
 
 ## License
 
 Functional Source License 1.1 (FSL-1.1-Apache-2.0).
 
-You can view, fork, and contribute to this project. You cannot use it to create a competing commercial product or service. On January 1, 2029, the license converts to Apache 2.0.
-
-See [LICENSE](LICENSE) for full terms.
-
-<br />
+On January 1, 2029, this license automatically converts to Apache 2.0.
 
 ---
 
