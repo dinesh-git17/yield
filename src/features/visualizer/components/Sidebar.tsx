@@ -523,10 +523,10 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-border-subtle border-t p-3">
-        <div className="text-muted text-xs">
-          {mode === "graph" ? "Phase 7: Graphs" : "Phase 6: Trees"}
-        </div>
+      <div className="border-border-subtle border-t px-4 py-3">
+        <p className="text-muted/60 text-[11px] font-medium tracking-wide">
+          © {new Date().getFullYear()} Yield
+        </p>
       </div>
 
       {/* Complexity Modal */}
