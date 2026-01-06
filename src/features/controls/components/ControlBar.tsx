@@ -65,26 +65,28 @@ export const ControlBar = memo(function ControlBar({ className }: ControlBarProp
       animate={{ opacity: 1, y: 0 }}
       transition={SPRING_PRESETS.entrance}
       className={cn(
-        "bg-surface-elevated/95 border-border flex items-center gap-4 rounded-lg border px-4 py-2 shadow-lg backdrop-blur-sm",
+        "bg-surface-elevated/95 border-border flex w-full items-center gap-2 rounded-lg border px-2 py-2 shadow-lg backdrop-blur-sm md:w-auto md:gap-4 md:px-4",
         className
       )}
     >
-      {/* Algorithm Tab Selector */}
-      <ControlSection label="Algorithm">
-        <AlgorithmWheel />
-      </ControlSection>
+      {/* Algorithm Tab Selector - Hidden on mobile (accessible via drawer) */}
+      <div className="hidden md:block">
+        <ControlSection label="Algorithm">
+          <AlgorithmWheel />
+        </ControlSection>
+      </div>
 
-      <Divider />
+      <Divider className="hidden md:block" />
 
       {/* Size Slider */}
-      <ControlSection label={`Size: ${arraySize}`}>
+      <ControlSection label={`Size: ${arraySize}`} className="flex-1 md:flex-none">
         <Slider.Root
           value={[sliderValue]}
           onValueChange={handleSizeChange}
           min={0}
           max={100}
           step={1}
-          className="relative flex h-5 w-32 touch-none select-none items-center"
+          className="relative flex h-5 w-full min-w-16 touch-none select-none items-center md:w-32"
           aria-label="Array size"
         >
           <Slider.Track className="bg-border relative h-1.5 grow rounded-full">
@@ -92,7 +94,7 @@ export const ControlBar = memo(function ControlBar({ className }: ControlBarProp
           </Slider.Track>
           <Slider.Thumb
             className={cn(
-              "bg-surface-elevated border-border block h-4 w-4 rounded-full border-2 shadow-md",
+              "bg-surface-elevated border-border block h-5 w-5 rounded-full border-2 shadow-md md:h-4 md:w-4",
               "hover:border-accent transition-colors",
               "focus-visible:ring-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             )}
@@ -115,7 +117,7 @@ export const ControlBar = memo(function ControlBar({ className }: ControlBarProp
               key={option.value}
               value={String(option.value)}
               className={cn(
-                "text-muted relative rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                "text-muted relative rounded-md px-2 py-1 text-xs font-medium transition-colors md:px-2.5 md:py-1.5",
                 "focus-visible:ring-accent focus-visible:outline-none focus-visible:ring-2",
                 "data-[state=on]:text-primary"
               )}
@@ -140,17 +142,22 @@ export const ControlBar = memo(function ControlBar({ className }: ControlBarProp
 interface ControlSectionProps {
   label: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-function ControlSection({ label, children }: ControlSectionProps) {
+function ControlSection({ label, children, className }: ControlSectionProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={cn("flex flex-col gap-1", className)}>
       <span className="text-muted text-[10px] font-medium uppercase tracking-wider">{label}</span>
       {children}
     </div>
   );
 }
 
-function Divider() {
-  return <div className="bg-border h-6 w-px" />;
+interface DividerProps {
+  className?: string;
+}
+
+function Divider({ className }: DividerProps) {
+  return <div className={cn("bg-border h-6 w-px", className)} />;
 }

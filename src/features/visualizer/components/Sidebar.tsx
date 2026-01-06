@@ -20,6 +20,8 @@ import { Logo } from "./Logo";
 export interface SidebarProps {
   className?: string;
   onCollapse?: () => void;
+  /** Hide the header (logo + collapse button). Used in mobile drawer which has its own header. */
+  hideHeader?: boolean;
 }
 
 const SORTING_ALGORITHMS: { id: SortingAlgorithmType; label: string; enabled: boolean }[] = [
@@ -68,7 +70,7 @@ const GRAPH_ALGORITHMS: {
   { id: "kahn", label: "Topological Sort", enabled: true },
 ];
 
-export function Sidebar({ className, onCollapse }: SidebarProps) {
+export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
 
@@ -128,28 +130,30 @@ export function Sidebar({ className, onCollapse }: SidebarProps) {
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
-      {/* Header */}
-      <div className="border-border-subtle flex h-14 items-center justify-between border-b px-4">
-        <Logo />
-        {onCollapse && (
-          <motion.button
-            type="button"
-            onClick={onCollapse}
-            whileHover={buttonInteraction.hover}
-            whileTap={buttonInteraction.tap}
-            className="text-muted hover:text-primary hover:bg-border/50 rounded-md p-1.5 transition-colors"
-            aria-label="Collapse sidebar"
-          >
-            <motion.span
-              className="block"
-              initial={{ rotate: 0 }}
-              transition={SPRING_PRESETS.snappy}
+      {/* Header - Hidden when used in mobile drawer */}
+      {!hideHeader && (
+        <div className="border-border-subtle flex h-14 items-center justify-between border-b px-4">
+          <Logo />
+          {onCollapse && (
+            <motion.button
+              type="button"
+              onClick={onCollapse}
+              whileHover={buttonInteraction.hover}
+              whileTap={buttonInteraction.tap}
+              className="text-muted hover:text-primary hover:bg-border/50 rounded-md p-1.5 transition-colors"
+              aria-label="Collapse sidebar"
             >
-              <ChevronsLeft className="h-4 w-4" />
-            </motion.span>
-          </motion.button>
-        )}
-      </div>
+              <motion.span
+                className="block"
+                initial={{ rotate: 0 }}
+                transition={SPRING_PRESETS.snappy}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </motion.span>
+            </motion.button>
+          )}
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-3" onMouseLeave={() => setHoveredItem(null)}>

@@ -70,9 +70,9 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
     controller.status === "playing" || controller.status === "complete" || isGeneratingMaze;
 
   return (
-    <div className={cn("flex h-full flex-col", className)}>
+    <div className={cn("flex h-full min-h-0 flex-col", className)}>
       {/* Header Bar */}
-      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
+      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between gap-2 overflow-x-auto border-b px-2 md:px-4">
         <div className="flex items-center gap-3">
           <h1 className="text-primary text-sm font-medium">{metadata.label}</h1>
           <motion.span
@@ -119,7 +119,7 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
       </header>
 
       {/* Visualization Area */}
-      <div className="bg-dot-pattern relative flex flex-1 items-center justify-center overflow-auto p-6">
+      <div className="bg-dot-pattern relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-4 md:p-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}

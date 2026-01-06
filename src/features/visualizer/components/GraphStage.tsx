@@ -483,9 +483,9 @@ export function GraphStage({ className }: GraphStageProps) {
       : null;
 
   return (
-    <div className={cn("flex h-full flex-col", className)}>
+    <div className={cn("flex h-full min-h-0 flex-col", className)}>
       {/* Header Bar */}
-      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between border-b px-4">
+      <header className="border-border-subtle bg-surface flex h-14 shrink-0 items-center justify-between gap-2 overflow-x-auto border-b px-2 md:px-4">
         <h1 className="text-primary text-sm font-medium">
           {graphState.isDirected ? "Directed Graph" : "Undirected Graph"}
         </h1>
@@ -592,7 +592,7 @@ export function GraphStage({ className }: GraphStageProps) {
         ref={containerRef}
         role="application"
         aria-label="Graph canvas - double-click to add nodes, shift-drag to connect"
-        className="bg-dot-pattern relative flex-1 overflow-hidden"
+        className="bg-dot-pattern relative min-h-0 flex-1 overflow-hidden"
         onDoubleClick={handleCanvasDoubleClick}
         onMouseMove={handleCanvasMouseMove}
         onMouseUp={handleCanvasMouseUp}
