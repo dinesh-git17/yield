@@ -12,9 +12,24 @@ import type { GraphAlgorithmType } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Graph Algorithms | Learn | Yield",
+  title: "Graph Algorithms | Learn",
   description:
     "Compare graph algorithms side-by-side. Understand MST algorithms, topological sorting, and when to use each.",
+  alternates: {
+    canonical: "/learn/graph",
+  },
+  openGraph: {
+    title: "Graph Algorithms — Yield",
+    description:
+      "Compare Prim's, Kruskal's MST and Kahn's topological sort. Interactive comparison tables, decision guides, and live demos.",
+    url: "/learn/graph",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Graph Algorithms — Yield",
+    description: "Compare Prim's, Kruskal's MST and Kahn's topological sort side-by-side.",
+  },
 };
 
 const GRAPH_ORDER: GraphAlgorithmType[] = ["prim", "kruskal", "kahn"];

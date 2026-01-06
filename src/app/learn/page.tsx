@@ -14,9 +14,25 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Learn Algorithms | Yield",
+  title: "Learn Algorithms",
   description:
     "Master algorithms through interactive learning. Explore sorting, pathfinding, trees, and graph algorithms with side-by-side comparisons, decision guides, and live demos.",
+  alternates: {
+    canonical: "/learn",
+  },
+  openGraph: {
+    title: "Learn Algorithms — Yield",
+    description:
+      "Master algorithms through interactive learning. Explore sorting, pathfinding, trees, and graph algorithms with side-by-side comparisons, decision guides, and live demos.",
+    url: "/learn",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Learn Algorithms — Yield",
+    description:
+      "Master algorithms through interactive learning. Explore sorting, pathfinding, trees, and graph algorithms.",
+  },
 };
 
 interface ModeCardProps {

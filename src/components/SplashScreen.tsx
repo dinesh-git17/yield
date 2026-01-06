@@ -76,8 +76,9 @@ export const SplashScreen = memo(function SplashScreen({ children }: SplashScree
       </AnimatePresence>
       <div
         className={`transition-opacity duration-700 ${
-          showContent ? "opacity-100" : "opacity-0 h-screen overflow-hidden"
+          showContent ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
+        aria-hidden={!showContent}
       >
         {children}
       </div>

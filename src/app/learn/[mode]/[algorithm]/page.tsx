@@ -25,6 +25,7 @@ import {
 } from "@/features/learning/content/pathfinding";
 import { getSortingArticle, type SortingArticle } from "@/features/learning/content/sorting";
 import { getTreeArticle, type TreeArticle } from "@/features/learning/content/trees";
+import { generateBreadcrumbJsonLd, generateTechArticleJsonLd } from "@/lib/json-ld";
 import type {
   GraphAlgorithmType,
   PathfindingAlgorithmType,
@@ -188,348 +189,389 @@ export default async function LearnPage({ params }: LearnPageProps) {
 
   const config = modeConfig[content.mode];
 
-  return (
-    <article className="space-y-16">
-      {/* Hero Section */}
-      <header className="space-y-6 text-center">
-        <div className="space-y-2">
-          <p className="text-accent text-sm font-medium uppercase tracking-wider">{config.label}</p>
-          <h1 className="text-primary text-4xl font-bold tracking-tight sm:text-5xl">
-            {article.title}
-          </h1>
-          <p className="text-muted text-xl italic">&ldquo;{article.tagline}&rdquo;</p>
-        </div>
+  // Get complexity for JSON-LD proficiency level
+  const complexity =
+    content.mode === "tree"
+      ? content.article.searchComplexity.complexity
+      : content.mode === "graph"
+        ? content.article.timeComplexity.complexity
+        : (metadata?.complexity ?? "O(n)");
 
-        {/* Complexity Badges */}
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          {/* Tree mode shows search complexity + self-balancing */}
-          {content.mode === "tree" ? (
-            <>
-              <ComplexityBadge
-                icon={<Clock className="h-4 w-4" />}
-                label="Search"
-                value={content.article.searchComplexity.complexity}
-                variant={getComplexityVariant(content.article.searchComplexity.complexity)}
-              />
-              <ComplexityBadge
-                icon={<HardDrive className="h-4 w-4" />}
-                label="Space"
-                value={content.article.spaceComplexity.complexity}
-                variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
-              />
-              <ComplexityBadge
-                icon={<TreeDeciduous className="h-4 w-4" />}
-                label="Self-Balancing"
-                value={content.article.selfBalancing ? "Yes" : "No"}
-                variant={content.article.selfBalancing ? "excellent" : "fair"}
-              />
-            </>
-          ) : content.mode === "graph" ? (
-            <>
-              <ComplexityBadge
-                icon={<Clock className="h-4 w-4" />}
-                label="Time"
-                value={content.article.timeComplexity.complexity}
-                variant={getComplexityVariant(content.article.timeComplexity.complexity)}
-              />
-              <ComplexityBadge
-                icon={<HardDrive className="h-4 w-4" />}
-                label="Space"
-                value={content.article.spaceComplexity.complexity}
-                variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
-              />
-              <ComplexityBadge
-                icon={<Network className="h-4 w-4" />}
-                label="Output"
-                value={content.article.output}
+  // Generate JSON-LD structured data
+  const techArticleJsonLd = generateTechArticleJsonLd({
+    title: article.title,
+    description: `${article.tagline}. ${article.mechanics.slice(0, 200)}`,
+    mode: content.mode,
+    slug: algorithm,
+    complexity,
+  });
+
+  const breadcrumbJsonLd = generateBreadcrumbJsonLd({
+    mode: content.mode,
+    algorithmTitle: article.title,
+    slug: algorithm,
+  });
+
+  return (
+    <>
+      {/* JSON-LD Structured Data for SEO rich snippets */}
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD requires inline script, content is sanitized server-side */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: techArticleJsonLd }} />
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD requires inline script, content is sanitized server-side */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
+
+      <article className="space-y-16">
+        {/* Hero Section */}
+        <header className="space-y-6 text-center">
+          <div className="space-y-2">
+            <p className="text-accent text-sm font-medium uppercase tracking-wider">
+              {config.label}
+            </p>
+            <h1 className="text-primary text-4xl font-bold tracking-tight sm:text-5xl">
+              {article.title}
+            </h1>
+            <p className="text-muted text-xl italic">&ldquo;{article.tagline}&rdquo;</p>
+          </div>
+
+          {/* Complexity Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {/* Tree mode shows search complexity + self-balancing */}
+            {content.mode === "tree" ? (
+              <>
+                <ComplexityBadge
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Search"
+                  value={content.article.searchComplexity.complexity}
+                  variant={getComplexityVariant(content.article.searchComplexity.complexity)}
+                />
+                <ComplexityBadge
+                  icon={<HardDrive className="h-4 w-4" />}
+                  label="Space"
+                  value={content.article.spaceComplexity.complexity}
+                  variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
+                />
+                <ComplexityBadge
+                  icon={<TreeDeciduous className="h-4 w-4" />}
+                  label="Self-Balancing"
+                  value={content.article.selfBalancing ? "Yes" : "No"}
+                  variant={content.article.selfBalancing ? "excellent" : "fair"}
+                />
+              </>
+            ) : content.mode === "graph" ? (
+              <>
+                <ComplexityBadge
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Time"
+                  value={content.article.timeComplexity.complexity}
+                  variant={getComplexityVariant(content.article.timeComplexity.complexity)}
+                />
+                <ComplexityBadge
+                  icon={<HardDrive className="h-4 w-4" />}
+                  label="Space"
+                  value={content.article.spaceComplexity.complexity}
+                  variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
+                />
+                <ComplexityBadge
+                  icon={<Network className="h-4 w-4" />}
+                  label="Output"
+                  value={content.article.output}
+                  variant="good"
+                />
+              </>
+            ) : (
+              <>
+                <ComplexityBadge
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Time"
+                  value={metadata?.complexity ?? "N/A"}
+                  variant={getComplexityVariant(metadata?.complexity ?? "")}
+                />
+                <ComplexityBadge
+                  icon={<HardDrive className="h-4 w-4" />}
+                  label="Space"
+                  value={metadata?.spaceComplexity ?? "N/A"}
+                  variant={getComplexityVariant(metadata?.spaceComplexity ?? "")}
+                />
+                {/* Pathfinding-specific: Shortest Path Guarantee */}
+                {content.mode === "pathfinding" && (
+                  <ComplexityBadge
+                    icon={<Route className="h-4 w-4" />}
+                    label="Shortest Path"
+                    value={content.article.guaranteesShortestPath ? "Guaranteed" : "Not Guaranteed"}
+                    variant={content.article.guaranteesShortestPath ? "excellent" : "fair"}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </header>
+
+        {/* History Section */}
+        <Section title="History" icon={<Lightbulb className="h-5 w-5" />}>
+          <Prose content={article.history} />
+        </Section>
+
+        {/* Core Property Section - Trees only */}
+        {content.mode === "tree" && (
+          <Section title="Core Property" icon={<TreeDeciduous className="h-5 w-5" />}>
+            <Prose content={content.article.coreProperty} />
+          </Section>
+        )}
+
+        {/* How it Works Section */}
+        <Section title="How It Works" icon={config.icon}>
+          <Prose content={article.mechanics} />
+
+          {/* Complexity Details - mode-specific rendering */}
+          {content.mode === "sorting" && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <ComplexityCard
+                title="Best Case"
+                complexity={content.article.bestCase.complexity}
+                explanation={content.article.bestCase.explanation}
                 variant="good"
               />
-            </>
-          ) : (
-            <>
-              <ComplexityBadge
-                icon={<Clock className="h-4 w-4" />}
-                label="Time"
-                value={metadata?.complexity ?? "N/A"}
-                variant={getComplexityVariant(metadata?.complexity ?? "")}
+              <ComplexityCard
+                title="Worst Case"
+                complexity={content.article.worstCase.complexity}
+                explanation={content.article.worstCase.explanation}
+                variant="fair"
               />
-              <ComplexityBadge
-                icon={<HardDrive className="h-4 w-4" />}
-                label="Space"
-                value={metadata?.spaceComplexity ?? "N/A"}
-                variant={getComplexityVariant(metadata?.spaceComplexity ?? "")}
+              <ComplexityCard
+                title="Average Case"
+                complexity={content.article.averageCase.complexity}
+                explanation={content.article.averageCase.explanation}
+                variant="neutral"
               />
-              {/* Pathfinding-specific: Shortest Path Guarantee */}
-              {content.mode === "pathfinding" && (
-                <ComplexityBadge
-                  icon={<Route className="h-4 w-4" />}
-                  label="Shortest Path"
-                  value={content.article.guaranteesShortestPath ? "Guaranteed" : "Not Guaranteed"}
-                  variant={content.article.guaranteesShortestPath ? "excellent" : "fair"}
-                />
-              )}
-            </>
+              <ComplexityCard
+                title="Space"
+                complexity={content.article.spaceComplexity.complexity}
+                explanation={content.article.spaceComplexity.explanation}
+                variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+              />
+            </div>
           )}
-        </div>
-      </header>
-
-      {/* History Section */}
-      <Section title="History" icon={<Lightbulb className="h-5 w-5" />}>
-        <Prose content={article.history} />
-      </Section>
-
-      {/* Core Property Section - Trees only */}
-      {content.mode === "tree" && (
-        <Section title="Core Property" icon={<TreeDeciduous className="h-5 w-5" />}>
-          <Prose content={content.article.coreProperty} />
+          {content.mode === "pathfinding" && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <ComplexityCard
+                title="Time Complexity"
+                complexity={content.article.timeComplexity.complexity}
+                explanation={content.article.timeComplexity.explanation}
+                variant="neutral"
+              />
+              <ComplexityCard
+                title="Space Complexity"
+                complexity={content.article.spaceComplexity.complexity}
+                explanation={content.article.spaceComplexity.explanation}
+                variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+              />
+              <ComplexityCard
+                title="Data Structure"
+                complexity={content.article.dataStructure}
+                explanation={`The core data structure powering ${content.article.title}.`}
+                variant="neutral"
+              />
+              <ComplexityCard
+                title="Visual Pattern"
+                complexity={content.article.visualPattern}
+                explanation="How this algorithm appears during visualization."
+                variant="neutral"
+                stacked
+              />
+            </div>
+          )}
+          {content.mode === "tree" && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <ComplexityCard
+                title="Search"
+                complexity={content.article.searchComplexity.complexity}
+                explanation={content.article.searchComplexity.explanation}
+                variant={getComplexityCardVariant(content.article.searchComplexity.complexity)}
+              />
+              <ComplexityCard
+                title="Insert"
+                complexity={content.article.insertComplexity.complexity}
+                explanation={content.article.insertComplexity.explanation}
+                variant={getComplexityCardVariant(content.article.insertComplexity.complexity)}
+              />
+              <ComplexityCard
+                title="Delete"
+                complexity={content.article.deleteComplexity.complexity}
+                explanation={content.article.deleteComplexity.explanation}
+                variant={getComplexityCardVariant(content.article.deleteComplexity.complexity)}
+              />
+              <ComplexityCard
+                title="Space"
+                complexity={content.article.spaceComplexity.complexity}
+                explanation={content.article.spaceComplexity.explanation}
+                variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+              />
+            </div>
+          )}
+          {content.mode === "graph" && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <ComplexityCard
+                title="Time Complexity"
+                complexity={content.article.timeComplexity.complexity}
+                explanation={content.article.timeComplexity.explanation}
+                variant="neutral"
+              />
+              <ComplexityCard
+                title="Space Complexity"
+                complexity={content.article.spaceComplexity.complexity}
+                explanation={content.article.spaceComplexity.explanation}
+                variant="neutral"
+              />
+              <ComplexityCard
+                title="Data Structure"
+                complexity={content.article.dataStructure}
+                explanation={`The core data structure powering ${content.article.title}.`}
+                variant="neutral"
+              />
+              <ComplexityCard
+                title="Visual Pattern"
+                complexity={content.article.visualPattern}
+                explanation="How this algorithm appears during visualization."
+                variant="neutral"
+                stacked
+              />
+            </div>
+          )}
         </Section>
-      )}
 
-      {/* How it Works Section */}
-      <Section title="How It Works" icon={config.icon}>
-        <Prose content={article.mechanics} />
+        {/* Code Walkthrough Section */}
+        <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
+          <p className="text-muted mb-4 text-sm">
+            {content.mode === "tree"
+              ? "Complete data structure implementations in multiple programming languages. Select a language to view idiomatic code."
+              : "Real implementations in multiple programming languages. Select a language to view idiomatic code."}
+          </p>
+          <CodeTabs mode={content.mode} algorithm={algorithm} />
+        </Section>
 
-        {/* Complexity Details - mode-specific rendering */}
-        {content.mode === "sorting" && (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <ComplexityCard
-              title="Best Case"
-              complexity={content.article.bestCase.complexity}
-              explanation={content.article.bestCase.explanation}
-              variant="good"
-            />
-            <ComplexityCard
-              title="Worst Case"
-              complexity={content.article.worstCase.complexity}
-              explanation={content.article.worstCase.explanation}
-              variant="fair"
-            />
-            <ComplexityCard
-              title="Average Case"
-              complexity={content.article.averageCase.complexity}
-              explanation={content.article.averageCase.explanation}
-              variant="neutral"
-            />
-            <ComplexityCard
-              title="Space"
-              complexity={content.article.spaceComplexity.complexity}
-              explanation={content.article.spaceComplexity.explanation}
-              variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
-            />
-          </div>
-        )}
-        {content.mode === "pathfinding" && (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <ComplexityCard
-              title="Time Complexity"
-              complexity={content.article.timeComplexity.complexity}
-              explanation={content.article.timeComplexity.explanation}
-              variant="neutral"
-            />
-            <ComplexityCard
-              title="Space Complexity"
-              complexity={content.article.spaceComplexity.complexity}
-              explanation={content.article.spaceComplexity.explanation}
-              variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
-            />
-            <ComplexityCard
-              title="Data Structure"
-              complexity={content.article.dataStructure}
-              explanation={`The core data structure powering ${content.article.title}.`}
-              variant="neutral"
-            />
-            <ComplexityCard
-              title="Visual Pattern"
-              complexity={content.article.visualPattern}
-              explanation="How this algorithm appears during visualization."
-              variant="neutral"
-              stacked
-            />
-          </div>
-        )}
-        {content.mode === "tree" && (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <ComplexityCard
-              title="Search"
-              complexity={content.article.searchComplexity.complexity}
-              explanation={content.article.searchComplexity.explanation}
-              variant={getComplexityCardVariant(content.article.searchComplexity.complexity)}
-            />
-            <ComplexityCard
-              title="Insert"
-              complexity={content.article.insertComplexity.complexity}
-              explanation={content.article.insertComplexity.explanation}
-              variant={getComplexityCardVariant(content.article.insertComplexity.complexity)}
-            />
-            <ComplexityCard
-              title="Delete"
-              complexity={content.article.deleteComplexity.complexity}
-              explanation={content.article.deleteComplexity.explanation}
-              variant={getComplexityCardVariant(content.article.deleteComplexity.complexity)}
-            />
-            <ComplexityCard
-              title="Space"
-              complexity={content.article.spaceComplexity.complexity}
-              explanation={content.article.spaceComplexity.explanation}
-              variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
-            />
-          </div>
-        )}
-        {content.mode === "graph" && (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <ComplexityCard
-              title="Time Complexity"
-              complexity={content.article.timeComplexity.complexity}
-              explanation={content.article.timeComplexity.explanation}
-              variant="neutral"
-            />
-            <ComplexityCard
-              title="Space Complexity"
-              complexity={content.article.spaceComplexity.complexity}
-              explanation={content.article.spaceComplexity.explanation}
-              variant="neutral"
-            />
-            <ComplexityCard
-              title="Data Structure"
-              complexity={content.article.dataStructure}
-              explanation={`The core data structure powering ${content.article.title}.`}
-              variant="neutral"
-            />
-            <ComplexityCard
-              title="Visual Pattern"
-              complexity={content.article.visualPattern}
-              explanation="How this algorithm appears during visualization."
-              variant="neutral"
-              stacked
-            />
-          </div>
-        )}
-      </Section>
-
-      {/* Code Walkthrough Section */}
-      <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
-        <p className="text-muted mb-4 text-sm">
-          {content.mode === "tree"
-            ? "Complete data structure implementations in multiple programming languages. Select a language to view idiomatic code."
-            : "Real implementations in multiple programming languages. Select a language to view idiomatic code."}
-        </p>
-        <CodeTabs mode={content.mode} algorithm={algorithm} />
-      </Section>
-
-      {/* Real World Use Cases Section */}
-      <Section title="Real World Use Cases">
-        <ul className="space-y-3">
-          {article.useCases.map((useCase, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: Static content never reorders
-            <li key={index} className="flex items-start gap-3">
-              <span className="bg-accent/20 text-accent mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium">
-                {index + 1}
-              </span>
-              <span className="text-primary/80">{parseTextWithMath(useCase)}</span>
-            </li>
-          ))}
-        </ul>
-      </Section>
-
-      {/* Key Insights Section */}
-      <Section title="Key Insights">
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {article.keyInsights.map((insight, index) => (
-            <li
+        {/* Real World Use Cases Section */}
+        <Section title="Real World Use Cases">
+          <ul className="space-y-3">
+            {article.useCases.map((useCase, index) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: Static content never reorders
-              key={index}
-              className={cn(
-                "flex items-start gap-2 rounded-lg border border-border p-4",
-                "bg-surface"
-              )}
-            >
-              <Lightbulb className="text-accent mt-0.5 h-4 w-4 shrink-0" />
-              <span className="text-primary/80 text-sm">{parseTextWithMath(insight)}</span>
-            </li>
-          ))}
-        </ul>
-      </Section>
+              <li key={index} className="flex items-start gap-3">
+                <span className="bg-accent/20 text-accent mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium">
+                  {index + 1}
+                </span>
+                <span className="text-primary/80">{parseTextWithMath(useCase)}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
 
-      {/* When to Use / When Not to Use */}
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div
-          className={cn(
-            "rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6",
-            "space-y-3"
-          )}
-        >
-          <div className="flex items-center gap-2 text-emerald-500">
-            <Target className="h-5 w-5" />
-            <h3 className="font-semibold">When to Use</h3>
+        {/* Key Insights Section */}
+        <Section title="Key Insights">
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {article.keyInsights.map((insight, index) => (
+              <li
+                // biome-ignore lint/suspicious/noArrayIndexKey: Static content never reorders
+                key={index}
+                className={cn(
+                  "flex items-start gap-2 rounded-lg border border-border p-4",
+                  "bg-surface"
+                )}
+              >
+                <Lightbulb className="text-accent mt-0.5 h-4 w-4 shrink-0" />
+                <span className="text-primary/80 text-sm">{parseTextWithMath(insight)}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+
+        {/* When to Use / When Not to Use */}
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div
+            className={cn(
+              "rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6",
+              "space-y-3"
+            )}
+          >
+            <div className="flex items-center gap-2 text-emerald-500">
+              <Target className="h-5 w-5" />
+              <h3 className="font-semibold">When to Use</h3>
+            </div>
+            <p className="text-primary/80 text-sm leading-relaxed">
+              {parseTextWithMath(article.whenToUse)}
+            </p>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">
-            {parseTextWithMath(article.whenToUse)}
-          </p>
+
+          <div
+            className={cn("rounded-xl border border-rose-500/30 bg-rose-500/10 p-6", "space-y-3")}
+          >
+            <div className="flex items-center gap-2 text-rose-500">
+              <XCircle className="h-5 w-5" />
+              <h3 className="font-semibold">When NOT to Use</h3>
+            </div>
+            <p className="text-primary/80 text-sm leading-relaxed">
+              {parseTextWithMath(article.whenNotToUse)}
+            </p>
+          </div>
         </div>
 
-        <div className={cn("rounded-xl border border-rose-500/30 bg-rose-500/10 p-6", "space-y-3")}>
-          <div className="flex items-center gap-2 text-rose-500">
-            <XCircle className="h-5 w-5" />
-            <h3 className="font-semibold">When NOT to Use</h3>
+        {/* Pitfall Section - Trees only */}
+        {content.mode === "tree" && (
+          <div
+            className={cn("rounded-xl border border-amber-500/30 bg-amber-500/10 p-6", "space-y-3")}
+          >
+            <div className="flex items-center gap-2 text-amber-500">
+              <AlertTriangle className="h-5 w-5" />
+              <h3 className="font-semibold">Watch Out</h3>
+            </div>
+            <p className="text-primary/80 text-sm leading-relaxed">
+              {parseTextWithMath(content.article.pitfall)}
+            </p>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">
-            {parseTextWithMath(article.whenNotToUse)}
-          </p>
-        </div>
-      </div>
+        )}
 
-      {/* Pitfall Section - Trees only */}
-      {content.mode === "tree" && (
-        <div
-          className={cn("rounded-xl border border-amber-500/30 bg-amber-500/10 p-6", "space-y-3")}
-        >
-          <div className="flex items-center gap-2 text-amber-500">
-            <AlertTriangle className="h-5 w-5" />
-            <h3 className="font-semibold">Watch Out</h3>
+        {/* Interview Tip Section - Graphs only */}
+        {content.mode === "graph" && (
+          <div
+            className={cn(
+              "rounded-xl border border-violet-500/30 bg-violet-500/10 p-6",
+              "space-y-3"
+            )}
+          >
+            <div className="flex items-center gap-2 text-violet-500">
+              <GraduationCap className="h-5 w-5" />
+              <h3 className="font-semibold">Interview Tip</h3>
+            </div>
+            <p className="text-primary/80 text-sm leading-relaxed">
+              {parseTextWithMath(content.article.interviewTip)}
+            </p>
           </div>
-          <p className="text-primary/80 text-sm leading-relaxed">
-            {parseTextWithMath(content.article.pitfall)}
-          </p>
+        )}
+
+        {/* Related Algorithms Section */}
+        <RelatedAlgorithms
+          relatedAlgorithms={article.relatedAlgorithms}
+          currentMode={content.mode}
+        />
+
+        {/* Try It Yourself Demos (Sorting only) */}
+        {content.mode === "sorting" && (
+          <TryItDemos algorithm={content.algorithm} demos={content.article.demos} />
+        )}
+
+        {/* Back to Visualizer CTA */}
+        <div className="pt-8 text-center">
+          <a
+            href={`/?mode=${mode}&algorithm=${algorithm}`}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-xl px-6 py-3",
+              "bg-accent text-white font-medium",
+              "transition-transform hover:scale-105 active:scale-95"
+            )}
+          >
+            Watch {article.title} in Action
+          </a>
         </div>
-      )}
-
-      {/* Interview Tip Section - Graphs only */}
-      {content.mode === "graph" && (
-        <div
-          className={cn("rounded-xl border border-violet-500/30 bg-violet-500/10 p-6", "space-y-3")}
-        >
-          <div className="flex items-center gap-2 text-violet-500">
-            <GraduationCap className="h-5 w-5" />
-            <h3 className="font-semibold">Interview Tip</h3>
-          </div>
-          <p className="text-primary/80 text-sm leading-relaxed">
-            {parseTextWithMath(content.article.interviewTip)}
-          </p>
-        </div>
-      )}
-
-      {/* Related Algorithms Section */}
-      <RelatedAlgorithms relatedAlgorithms={article.relatedAlgorithms} currentMode={content.mode} />
-
-      {/* Try It Yourself Demos (Sorting only) */}
-      {content.mode === "sorting" && (
-        <TryItDemos algorithm={content.algorithm} demos={content.article.demos} />
-      )}
-
-      {/* Back to Visualizer CTA */}
-      <div className="pt-8 text-center">
-        <a
-          href={`/?mode=${mode}&algorithm=${algorithm}`}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-6 py-3",
-            "bg-accent text-white font-medium",
-            "transition-transform hover:scale-105 active:scale-95"
-          )}
-        >
-          Watch {article.title} in Action
-        </a>
-      </div>
-    </article>
+      </article>
+    </>
   );
 }
 
@@ -924,9 +966,36 @@ export async function generateMetadata({ params }: LearnPageProps) {
       graph: "Graph Algorithms",
     } as const;
     const modeLabel = modeLabels[content.mode];
+    const title = `${content.article.title} | ${modeLabel} | Learn`;
+    const description = `Learn about ${content.article.title}: ${content.article.tagline}. ${content.article.mechanics.slice(0, 150)}...`;
+    const canonicalPath = `/learn/${mode}/${algorithm}`;
+
     return {
-      title: `${content.article.title} | ${modeLabel} | Learn | Yield`,
-      description: `Learn about ${content.article.title}: ${content.article.tagline}. ${content.article.mechanics.slice(0, 150)}...`,
+      title,
+      description,
+      alternates: {
+        canonical: canonicalPath,
+      },
+      openGraph: {
+        title: `${content.article.title} — ${modeLabel} Algorithm`,
+        description,
+        url: canonicalPath,
+        type: "article",
+        images: [
+          {
+            url: `/learn/${mode}/${algorithm}/opengraph-image`,
+            width: 1200,
+            height: 630,
+            alt: `${content.article.title} Algorithm Visualization`,
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `${content.article.title} — ${modeLabel} Algorithm`,
+        description,
+        images: [`/learn/${mode}/${algorithm}/opengraph-image`],
+      },
     };
   }
 

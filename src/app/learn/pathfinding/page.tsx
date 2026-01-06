@@ -12,9 +12,24 @@ import type { PathfindingAlgorithmType } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Pathfinding Algorithms | Learn | Yield",
+  title: "Pathfinding Algorithms | Learn",
   description:
     "Compare pathfinding algorithms side-by-side. Find the right algorithm for navigation, mazes, and graph traversal with our interactive comparison tables.",
+  alternates: {
+    canonical: "/learn/pathfinding",
+  },
+  openGraph: {
+    title: "Pathfinding Algorithms — Yield",
+    description:
+      "Compare BFS, DFS, Dijkstra, A* and more pathfinding algorithms. Interactive comparison tables, decision guides, and maze demos.",
+    url: "/learn/pathfinding",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pathfinding Algorithms — Yield",
+    description: "Compare BFS, DFS, Dijkstra, A* and more pathfinding algorithms side-by-side.",
+  },
 };
 
 const PATHFINDING_ORDER: PathfindingAlgorithmType[] = [
