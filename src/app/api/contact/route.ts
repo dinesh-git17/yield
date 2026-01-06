@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Send email via Resend
     const { error } = await resend.emails.send({
-      from: "Yield Contact <onboarding@resend.dev>",
+      from: "Yield Contact <noreply@yield.dineshd.dev>",
       to: RECIPIENT_EMAIL,
       replyTo: email,
       subject: subject || "Yield Contact Form",
