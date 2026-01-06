@@ -17,7 +17,7 @@ import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
 import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
-import { CodeTabs } from "@/features/learning/components";
+import { CodeTabs, RelatedAlgorithms } from "@/features/learning/components";
 import { type GraphArticle, getGraphArticle } from "@/features/learning/content/graphs";
 import {
   getPathfindingArticle,
@@ -507,6 +507,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
           </p>
         </div>
       )}
+
+      {/* Related Algorithms Section */}
+      <RelatedAlgorithms relatedAlgorithms={article.relatedAlgorithms} currentMode={content.mode} />
 
       {/* Back to Visualizer CTA */}
       <div className="pt-8 text-center">

@@ -1,4 +1,5 @@
 import type { TreeDataStructureType } from "@/lib/store";
+import type { RelatedAlgorithm } from "./sorting";
 
 /**
  * Educational article content for tree data structures.
@@ -50,6 +51,8 @@ export interface TreeArticle {
   pitfall: string;
   /** Visual pattern description for the visualization */
   visualPattern: string;
+  /** Related algorithms for cross-linking */
+  relatedAlgorithms: RelatedAlgorithm[];
 }
 
 /**
@@ -122,6 +125,21 @@ For every node, all nodes in its **Left Subtree** are smaller, and all nodes in 
 
     pitfall:
       "The Degenerate Case: If you insert 1, 2, 3, 4, 5 in order, you don't get a tree. You get a line. Complexity degrades to $O(n)$.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "avl",
+        relationship: "balanced version",
+      },
+      {
+        algorithm: "splay",
+        relationship: "self-adjusting variant",
+      },
+      {
+        algorithm: "max-heap",
+        relationship: "different ordering property",
+      },
+    ],
   },
 
   avl: {
@@ -188,6 +206,22 @@ Every insert or delete triggers a trace back up to the root to update heights an
 
     pitfall:
       "Rotation Overhead. Maintaining perfect balance is expensive. Each update requires traversing back up the tree.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "bst",
+        relationship: "simpler unbalanced version",
+      },
+      {
+        algorithm: "splay",
+        relationship: "amortized alternative",
+      },
+      {
+        algorithm: "dijkstra",
+        mode: "pathfinding",
+        relationship: "uses balanced trees for priority queue",
+      },
+    ],
   },
 
   "max-heap": {
@@ -258,6 +292,23 @@ For any given node $I$, the value of $I$ is greater than or equal to the values 
 
     pitfall:
       "Confusing it with a BST. In a Heap, the Left child could be larger than the Right child. The only rule is Parent > Children.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "heap",
+        mode: "sorting",
+        relationship: "sorting algorithm using this structure",
+      },
+      {
+        algorithm: "bst",
+        relationship: "different ordering, full search",
+      },
+      {
+        algorithm: "prim",
+        mode: "graph",
+        relationship: "uses heap for priority queue",
+      },
+    ],
   },
 
   splay: {
@@ -323,6 +374,22 @@ By applying these repeatedly, the accessed node surfs to the top, and the tree r
 
     pitfall:
       "The Linear Worst Case. If you access elements in strict increasing order, a Splay Tree can momentarily turn into a stick before fixing itself. It offers 'amortized' guarantees, not strict ones.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "bst",
+        relationship: "simpler version without splaying",
+      },
+      {
+        algorithm: "avl",
+        relationship: "strict balance alternative",
+      },
+      {
+        algorithm: "bfs",
+        mode: "pathfinding",
+        relationship: "level-order traversal",
+      },
+    ],
   },
 };
 

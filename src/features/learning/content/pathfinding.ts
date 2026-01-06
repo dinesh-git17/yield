@@ -1,4 +1,5 @@
 import type { PathfindingAlgorithmType } from "@/lib/store";
+import type { RelatedAlgorithm } from "./sorting";
 
 /**
  * Educational article content for pathfinding algorithms.
@@ -38,6 +39,8 @@ export interface PathfindingArticle {
   dataStructure: string;
   /** Visual pattern description for the visualization */
   visualPattern: string;
+  /** Related algorithms for cross-linking */
+  relatedAlgorithms: RelatedAlgorithm[];
 }
 
 /**
@@ -103,6 +106,21 @@ The Queue (FIFO) ensures fair processing. It prevents the algorithm from getting
 
     whenNotToUse:
       "Avoid BFS if the graph is weighted (it ignores costs) or if the target is likely to be very far away, as the memory usage can explode.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "dijkstra",
+        relationship: "weighted extension",
+      },
+      {
+        algorithm: "dfs",
+        relationship: "memory-efficient alternative",
+      },
+      {
+        algorithm: "flood",
+        relationship: "complete traversal variant",
+      },
+    ],
   },
 
   dfs: {
@@ -165,6 +183,22 @@ DFS might find a path that winds around the entire map before stumbling onto the
 
     whenNotToUse:
       "Never use DFS if you need the shortest path. Also avoid it on extremely deep graphs (like state-machines) without a depth limit, or you'll trigger a Stack Overflow.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "bfs",
+        relationship: "systematic alternative, shortest path",
+      },
+      {
+        algorithm: "flood",
+        relationship: "complete traversal variant",
+      },
+      {
+        algorithm: "kahn",
+        mode: "graph",
+        relationship: "topological sort alternative",
+      },
+    ],
   },
 
   dijkstra: {
@@ -226,6 +260,22 @@ It always processes the "closest" unprocessed node next. This ensures that once 
 
     whenNotToUse:
       "Avoid Dijkstra if all weights are equal (BFS is faster) or if you need to find the path very quickly in a massive map (use A*).",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "bfs",
+        relationship: "unweighted simplification",
+      },
+      {
+        algorithm: "astar",
+        relationship: "heuristic-guided extension",
+      },
+      {
+        algorithm: "prim",
+        mode: "graph",
+        relationship: "similar structure for MST",
+      },
+    ],
   },
 
   astar: {
@@ -289,6 +339,21 @@ This is the "educated guess." In a grid, we usually use the Manhattan Distance (
 
     whenNotToUse:
       "If you don't know where the goal is (exploration), or if the map is so small that the overhead of calculating heuristics isn't worth it.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "dijkstra",
+        relationship: "no heuristic version",
+      },
+      {
+        algorithm: "greedy",
+        relationship: "heuristic-only version",
+      },
+      {
+        algorithm: "bidirectional",
+        relationship: "dual-frontier optimization",
+      },
+    ],
   },
 
   greedy: {
@@ -346,6 +411,21 @@ Because it ignores the cost of the path taken so far, Greedy BFS can get fooled 
 
     whenNotToUse:
       "Do not use this for navigation apps or logistics. Sending a user on a route that is 50% longer just because it looked good at the start is a bad user experience.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "astar",
+        relationship: "optimal version with g(n)",
+      },
+      {
+        algorithm: "dfs",
+        relationship: "similar aggressive pattern",
+      },
+      {
+        algorithm: "random",
+        relationship: "even less intelligent",
+      },
+    ],
   },
 
   bidirectional: {
@@ -403,6 +483,21 @@ The hardest part isn't the search; it's the termination condition. Just because 
 
     whenNotToUse:
       "Avoid it if the graph is directed and cannot be reversed (like one-way streets where you can't calculate the backward path) or if the implementation complexity isn't worth the speed gain.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "astar",
+        relationship: "single-frontier version",
+      },
+      {
+        algorithm: "bfs",
+        relationship: "simpler unweighted version",
+      },
+      {
+        algorithm: "dijkstra",
+        relationship: "no heuristic version",
+      },
+    ],
   },
 
   flood: {
@@ -458,6 +553,21 @@ In Yield, we use this to generate a "Heatmap" or "Dijkstra Map." Instead of find
 
     whenNotToUse:
       "Do not use this for single-agent pathfinding. It is overkill to map the entire world just to walk to the grocery store.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "bfs",
+        relationship: "exploration base",
+      },
+      {
+        algorithm: "dfs",
+        relationship: "alternative traversal",
+      },
+      {
+        algorithm: "dijkstra",
+        relationship: "distance-aware variant",
+      },
+    ],
   },
 
   random: {
@@ -513,6 +623,21 @@ To show you why we need A*. Watching a Random Walk try to solve a maze is a pain
       "Use Random Walk for procedural generation (like digging worm tunnels) or for artistic visualizations. It can also be used for 'wandering' AI behavior when the NPC is idle.",
 
     whenNotToUse: "Never use this if you actually need to get somewhere.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "dfs",
+        relationship: "structured alternative",
+      },
+      {
+        algorithm: "greedy",
+        relationship: "slightly smarter approach",
+      },
+      {
+        algorithm: "flood",
+        relationship: "complete exploration",
+      },
+    ],
   },
 };
 

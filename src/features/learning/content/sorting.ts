@@ -1,4 +1,17 @@
-import type { SortingAlgorithmType } from "@/lib/store";
+import type { SortingAlgorithmType, VisualizerMode } from "@/lib/store";
+
+/**
+ * Represents a cross-reference to a related algorithm.
+ * Used for the "Related Algorithms" section on Learn pages.
+ */
+export interface RelatedAlgorithm {
+  /** Algorithm identifier (matches the slug in the URL) */
+  algorithm: string;
+  /** Visualization mode for cross-domain links (e.g., sorting → tree) */
+  mode?: VisualizerMode;
+  /** Human-readable relationship description (e.g., "stable alternative") */
+  relationship: string;
+}
 
 /**
  * Educational article content for sorting algorithms.
@@ -41,6 +54,8 @@ export interface SortingArticle {
   whenToUse: string;
   /** When NOT to use this algorithm */
   whenNotToUse: string;
+  /** Related algorithms for cross-linking */
+  relatedAlgorithms: RelatedAlgorithm[];
 }
 
 /**
@@ -112,6 +127,21 @@ The only redeeming quality of Bubble Sort is that if you pass through the list a
 
     whenNotToUse:
       "Any time performance matters. Even among the slow $O(n^2)$ algorithms, Insertion Sort is almost always better.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "insertion",
+        relationship: "faster adaptive alternative",
+      },
+      {
+        algorithm: "selection",
+        relationship: "similar simplicity, fewer swaps",
+      },
+      {
+        algorithm: "gnome",
+        relationship: "same swap pattern, no nested loops",
+      },
+    ],
   },
 
   selection: {
@@ -170,6 +200,21 @@ Imagine organizing a hand of cards. You look at all the cards, find the Ace, and
       "Use it when write operations are expensive (like on cheap flash storage) or when you need the sorting time to be perfectly predictable regardless of the input.",
 
     whenNotToUse: "If you need speed. If you need stability. If the list might already be sorted.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "bubble",
+        relationship: "similar simplicity, more swaps",
+      },
+      {
+        algorithm: "heap",
+        relationship: "uses selection concept at scale",
+      },
+      {
+        algorithm: "insertion",
+        relationship: "adaptive alternative",
+      },
+    ],
   },
 
   insertion: {
@@ -230,6 +275,21 @@ Unlike Selection Sort which swaps, Insertion Sort *slides*. This is better for t
       "Use it if the array is small (under 50 items) or if you know the data is already mostly sorted. This is often the default 'base case' optimization for advanced developers.",
 
     whenNotToUse: "Don't use it on large, random datasets. It will choke.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "quick",
+        relationship: "uses Insertion Sort as base case",
+      },
+      {
+        algorithm: "gnome",
+        relationship: "equivalent swap pattern",
+      },
+      {
+        algorithm: "merge",
+        relationship: "stable at scale",
+      },
+    ],
   },
 
   gnome: {
@@ -288,6 +348,17 @@ It produces the exact same sequence of swaps as Insertion Sort, but instead of a
       "When you need to write a sort function in 5 lines of code and you don't care how fast it runs. Or when you want to confuse an interviewer.",
 
     whenNotToUse: "In production. Just use Insertion Sort.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "insertion",
+        relationship: "functionally equivalent, more common",
+      },
+      {
+        algorithm: "bubble",
+        relationship: "also adaptive, uses swaps",
+      },
+    ],
   },
 
   quick: {
@@ -350,6 +421,21 @@ If you pick a bad pivot (like always picking the first item on a sorted list), Q
 
     whenNotToUse:
       "If you need a Stable sort, or if you are worried about malicious input data designed to trigger the worst-case scenario (DoS attacks).",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "merge",
+        relationship: "stable divide-and-conquer sibling",
+      },
+      {
+        algorithm: "insertion",
+        relationship: "base case optimization",
+      },
+      {
+        algorithm: "heap",
+        relationship: "in-place O(n log n) alternative",
+      },
+    ],
   },
 
   merge: {
@@ -410,6 +496,21 @@ Merging two sorted lists is easy ($O(n)$). You just look at the head of both lis
 
     whenNotToUse:
       "If you are tight on RAM. The $O(n)$ auxiliary space can be a dealbreaker on embedded devices.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "quick",
+        relationship: "faster on average, unstable",
+      },
+      {
+        algorithm: "heap",
+        relationship: "in-place O(n log n) alternative",
+      },
+      {
+        algorithm: "insertion",
+        relationship: "stable at small scale",
+      },
+    ],
   },
 
   heap: {
@@ -468,6 +569,22 @@ It repurposes the "Heap" data structure—usually used for Priority Queues—to 
 
     whenNotToUse:
       "If you want raw speed (Quick Sort is faster) or stability (Merge Sort is stable).",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "max-heap",
+        mode: "tree",
+        relationship: "underlying data structure",
+      },
+      {
+        algorithm: "merge",
+        relationship: "guaranteed O(n log n), uses memory",
+      },
+      {
+        algorithm: "selection",
+        relationship: "conceptual ancestor",
+      },
+    ],
   },
 };
 
