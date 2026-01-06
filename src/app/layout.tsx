@@ -13,9 +13,77 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/**
+ * Base URL for canonical URLs, OpenGraph, and sitemap generation.
+ * Falls back to localhost for development.
+ */
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Yield — Algorithm Visualizer",
-  description: "Interactive algorithm visualization powered by Generator functions",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "Yield — Algorithm Visualizer",
+    template: "%s | Yield",
+  },
+  description:
+    "Interactive algorithm visualization for sorting, pathfinding, trees, and graphs. Learn computer science concepts through step-by-step animations powered by Generator functions.",
+  keywords: [
+    "algorithm visualizer",
+    "sorting algorithms",
+    "pathfinding algorithms",
+    "data structures",
+    "bubble sort",
+    "quick sort",
+    "merge sort",
+    "dijkstra",
+    "A* search",
+    "binary search tree",
+    "computer science",
+    "interview prep",
+    "learn algorithms",
+  ],
+  authors: [{ name: "DinBuilds" }],
+  creator: "DinBuilds",
+  publisher: "DinBuilds",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "Yield",
+    title: "Yield — Algorithm Visualizer",
+    description:
+      "Interactive algorithm visualization for sorting, pathfinding, trees, and graphs. Learn computer science concepts through step-by-step animations.",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Yield — Algorithm Visualizer",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Yield — Algorithm Visualizer",
+    description:
+      "Interactive algorithm visualization for sorting, pathfinding, trees, and graphs. Learn computer science concepts through step-by-step animations.",
+    images: ["/og-image.jpg"],
+    creator: "@DinBuilds",
+  },
   manifest: "/manifest.json",
   icons: {
     icon: [

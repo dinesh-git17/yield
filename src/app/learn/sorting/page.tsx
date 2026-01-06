@@ -12,9 +12,24 @@ import type { SortingAlgorithmType } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Sorting Algorithms | Learn | Yield",
+  title: "Sorting Algorithms | Learn",
   description:
     "Compare sorting algorithms side-by-side. Find the right algorithm for your use case with our interactive comparison tables and decision guides.",
+  alternates: {
+    canonical: "/learn/sorting",
+  },
+  openGraph: {
+    title: "Sorting Algorithms — Yield",
+    description:
+      "Compare Bubble, Quick, Merge, Heap and more sorting algorithms. Interactive comparison tables, decision guides, and live demos.",
+    url: "/learn/sorting",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sorting Algorithms — Yield",
+    description: "Compare Bubble, Quick, Merge, Heap and more sorting algorithms side-by-side.",
+  },
 };
 
 const SORTING_ORDER: SortingAlgorithmType[] = [

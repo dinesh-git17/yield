@@ -12,9 +12,24 @@ import type { TreeDataStructureType } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Tree Data Structures | Learn | Yield",
+  title: "Tree Data Structures | Learn",
   description:
     "Compare tree data structures side-by-side. Understand the tradeoffs between BST, AVL, Max Heap, and Splay trees.",
+  alternates: {
+    canonical: "/learn/tree",
+  },
+  openGraph: {
+    title: "Tree Data Structures — Yield",
+    description:
+      "Compare BST, AVL, Max Heap, and Splay trees. Interactive comparison tables, decision guides, and live demos.",
+    url: "/learn/tree",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tree Data Structures — Yield",
+    description: "Compare BST, AVL, Max Heap, and Splay trees side-by-side.",
+  },
 };
 
 const TREE_ORDER: TreeDataStructureType[] = ["bst", "avl", "max-heap", "splay"];
