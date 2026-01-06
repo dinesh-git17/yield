@@ -72,18 +72,35 @@ export function SortingProvider({ children }: SortingProviderProps) {
   const storeInitialArray = useYieldStore((state) => state.initialArray);
   const [initialValues, setInitialValues] = useState<number[] | null>(null);
   const initialArraySizeRef = useRef(arraySize);
+  // Track the storeInitialArray we've already consumed to avoid re-applying
+  const consumedInitialArrayRef = useRef<number[] | null>(null);
 
   // Generate initial values only on client to avoid hydration mismatch
-  // If store has an initialArray from URL, use it; otherwise generate random
+  // We need to handle the race condition where UrlStateSync (nested in Suspense)
+  // sets storeInitialArray AFTER this component has already generated random values.
   useEffect(() => {
+    // Case 1: First mount - generate initial values
     if (initialValues === null) {
       if (storeInitialArray && storeInitialArray.length > 0) {
-        // Use the array from URL state (demo preset)
+        // URL array was already available (rare, but possible)
         setInitialValues(storeInitialArray);
+        consumedInitialArrayRef.current = storeInitialArray;
       } else {
         // Generate random shuffled values
         setInitialValues(generateShuffledValues(initialArraySizeRef.current));
       }
+      return;
+    }
+
+    // Case 2: storeInitialArray arrived late (UrlStateSync ran after our first effect)
+    // Only apply if it's a new array we haven't consumed yet
+    if (
+      storeInitialArray &&
+      storeInitialArray.length > 0 &&
+      storeInitialArray !== consumedInitialArrayRef.current
+    ) {
+      setInitialValues(storeInitialArray);
+      consumedInitialArrayRef.current = storeInitialArray;
     }
   }, [initialValues, storeInitialArray]);
 
@@ -131,6 +148,16 @@ function SortingProviderReady({
   const controller = useSortingController(initialValues, sortingAlgorithm);
   const prevArraySizeRef = useRef(arraySize);
   const prevAlgorithmRef = useRef(sortingAlgorithm);
+  const prevInitialValuesRef = useRef(initialValues);
+
+  // Handle late-arriving URL initial array (from UrlStateSync race condition)
+  // When initialValues prop changes, reset the controller with the new values
+  useEffect(() => {
+    if (prevInitialValuesRef.current !== initialValues) {
+      controller.resetWithValues(initialValues);
+      prevInitialValuesRef.current = initialValues;
+    }
+  }, [initialValues, controller.resetWithValues]);
 
   // Handle array size changes smoothly without remounting
   useEffect(() => {
