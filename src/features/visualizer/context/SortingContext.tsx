@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type StepType,
   type UseSortingControllerReturn,
@@ -61,15 +69,23 @@ export interface SortingProviderProps {
 
 export function SortingProvider({ children }: SortingProviderProps) {
   const arraySize = useYieldStore((state) => state.arraySize);
+  const storeInitialArray = useYieldStore((state) => state.initialArray);
   const [initialValues, setInitialValues] = useState<number[] | null>(null);
   const initialArraySizeRef = useRef(arraySize);
 
   // Generate initial values only on client to avoid hydration mismatch
+  // If store has an initialArray from URL, use it; otherwise generate random
   useEffect(() => {
     if (initialValues === null) {
-      setInitialValues(generateShuffledValues(initialArraySizeRef.current));
+      if (storeInitialArray && storeInitialArray.length > 0) {
+        // Use the array from URL state (demo preset)
+        setInitialValues(storeInitialArray);
+      } else {
+        // Generate random shuffled values
+        setInitialValues(generateShuffledValues(initialArraySizeRef.current));
+      }
     }
-  }, [initialValues]);
+  }, [initialValues, storeInitialArray]);
 
   if (initialValues === null) {
     return <SortingProviderLoading>{children}</SortingProviderLoading>;
@@ -111,6 +127,7 @@ function SortingProviderReady({
   const arraySize = useYieldStore((state) => state.arraySize);
   const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
+  const clearInitialArray = useYieldStore((state) => state.clearInitialArray);
   const controller = useSortingController(initialValues, sortingAlgorithm);
   const prevArraySizeRef = useRef(arraySize);
   const prevAlgorithmRef = useRef(sortingAlgorithm);
@@ -139,12 +156,20 @@ function SortingProviderReady({
     controller.setSpeed(intervalMs);
   }, [playbackSpeed, controller.setSpeed]);
 
+  // Enhanced reset that clears the initial array and generates fresh random values
+  const resetWithFreshValues = useCallback(() => {
+    clearInitialArray();
+    const newValues = generateShuffledValues(arraySize);
+    controller.resetWithValues(newValues);
+  }, [clearInitialArray, arraySize, controller.resetWithValues]);
+
   const value: SortingContextValue = useMemo(
     () => ({
       ...controller,
+      reset: resetWithFreshValues,
       isReady: true,
     }),
-    [controller]
+    [controller, resetWithFreshValues]
   );
 
   return <SortingContext.Provider value={value}>{children}</SortingContext.Provider>;

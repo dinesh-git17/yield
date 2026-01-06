@@ -10,3 +10,4 @@ export {
   type DecisionGuideProps,
 } from "./DecisionGuide";
 export { RelatedAlgorithms, type RelatedAlgorithmsProps } from "./RelatedAlgorithms";
+export { TryItDemos, type TryItDemosProps } from "./TryItDemos";

@@ -14,6 +14,19 @@ export interface RelatedAlgorithm {
 }
 
 /**
+ * A pre-configured demo array for the "Try It Yourself" section.
+ * Links to the visualizer with a specific input to demonstrate algorithm behavior.
+ */
+export interface SortingDemo {
+  /** Short label for the demo (e.g., "Worst Case") */
+  label: string;
+  /** Explanation of what this demo shows */
+  description: string;
+  /** The specific array values to visualize */
+  array: number[];
+}
+
+/**
  * Educational article content for sorting algorithms.
  * This registry contains all the textbook-style content for the Learn pages.
  */
@@ -60,6 +73,8 @@ export interface SortingArticle {
   isStable: boolean;
   /** Whether the algorithm sorts without extra memory proportional to input size */
   isInPlace: boolean;
+  /** Pre-configured demo arrays for the "Try It Yourself" section */
+  demos: SortingDemo[];
 }
 
 /**
@@ -148,6 +163,23 @@ The only redeeming quality of Bubble Sort is that if you pass through the list a
     ],
     isStable: true,
     isInPlace: true,
+    demos: [
+      {
+        label: "Worst Case",
+        description: "Reverse sorted — watch every element bubble across the entire array",
+        array: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+      },
+      {
+        label: "Best Case",
+        description: "Already sorted — early exit optimization kicks in after one pass",
+        array: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+      },
+      {
+        label: "Nearly Sorted",
+        description: "One element out of place — shows adaptive behavior",
+        array: [10, 20, 30, 40, 100, 50, 60, 70, 80, 90],
+      },
+    ],
   },
 
   selection: {
@@ -223,6 +255,23 @@ Imagine organizing a hand of cards. You look at all the cards, find the Ace, and
     ],
     isStable: false,
     isInPlace: true,
+    demos: [
+      {
+        label: "Consistent Work",
+        description: "Random order — same O(n²) comparisons regardless of input",
+        array: [64, 25, 12, 22, 11, 90, 45, 33, 78, 55],
+      },
+      {
+        label: "Sorted Input",
+        description: "Already sorted — still scans entire array, no shortcuts",
+        array: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+      },
+      {
+        label: "Minimum Swaps",
+        description: "Reverse sorted — maximum comparisons but same number of swaps",
+        array: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+      },
+    ],
   },
 
   insertion: {
@@ -300,6 +349,23 @@ Unlike Selection Sort which swaps, Insertion Sort *slides*. This is better for t
     ],
     isStable: true,
     isInPlace: true,
+    demos: [
+      {
+        label: "Best Case",
+        description: "Already sorted — O(n) scan with no shifts needed",
+        array: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+      },
+      {
+        label: "Worst Case",
+        description: "Reverse sorted — every element shifts to the front",
+        array: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+      },
+      {
+        label: "Nearly Sorted",
+        description: "Two elements swapped — minimal work needed",
+        array: [10, 20, 30, 80, 50, 60, 70, 40, 90, 100],
+      },
+    ],
   },
 
   gnome: {
@@ -371,6 +437,23 @@ It produces the exact same sequence of swaps as Insertion Sort, but instead of a
     ],
     isStable: true,
     isInPlace: true,
+    demos: [
+      {
+        label: "Best Case",
+        description: "Sorted input — gnome walks forward without backtracking",
+        array: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+      },
+      {
+        label: "Worst Case",
+        description: "Reverse sorted — maximum backtracking after every swap",
+        array: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+      },
+      {
+        label: "Zipper Pattern",
+        description: "Interleaved values — watch the gnome zigzag",
+        array: [20, 10, 40, 30, 60, 50, 80, 70, 100, 90],
+      },
+    ],
   },
 
   quick: {
@@ -450,6 +533,23 @@ If you pick a bad pivot (like always picking the first item on a sorted list), Q
     ],
     isStable: false,
     isInPlace: true,
+    demos: [
+      {
+        label: "Worst Case",
+        description: "Sorted input with last-element pivot — degrades to O(n²)",
+        array: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+      },
+      {
+        label: "Random Input",
+        description: "Typical case — efficient O(n log n) partitioning",
+        array: [64, 34, 25, 12, 22, 11, 90, 45, 78, 55],
+      },
+      {
+        label: "Few Unique",
+        description: "Many duplicates — watch partition behavior",
+        array: [50, 30, 50, 30, 50, 30, 50, 30, 50, 30],
+      },
+    ],
   },
 
   merge: {
@@ -527,6 +627,23 @@ Merging two sorted lists is easy ($O(n)$). You just look at the head of both lis
     ],
     isStable: true,
     isInPlace: false,
+    demos: [
+      {
+        label: "Consistent Work",
+        description: "Always O(n log n) — same recursive splits regardless of input",
+        array: [38, 27, 43, 3, 9, 82, 10, 55, 64, 21],
+      },
+      {
+        label: "Sorted Input",
+        description: "Already sorted — still divides and merges, no shortcuts",
+        array: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+      },
+      {
+        label: "Reverse Sorted",
+        description: "Reverse order — exact same work as sorted input",
+        array: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+      },
+    ],
   },
 
   heap: {
@@ -603,6 +720,23 @@ It repurposes the "Heap" data structure—usually used for Priority Queues—to 
     ],
     isStable: false,
     isInPlace: true,
+    demos: [
+      {
+        label: "Random Input",
+        description: "Typical case — watch heapify then extract-max",
+        array: [45, 78, 23, 91, 12, 67, 34, 56, 89, 10],
+      },
+      {
+        label: "Sorted Input",
+        description: "Already sorted — same O(n log n) work as random",
+        array: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+      },
+      {
+        label: "Reverse Sorted",
+        description: "Reverse order — heapify is fast, extractions take same time",
+        array: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10],
+      },
+    ],
   },
 };
 

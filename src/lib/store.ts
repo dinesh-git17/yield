@@ -411,6 +411,8 @@ export interface YieldStore {
   // Sorting state (preserved when switching modes)
   sortingAlgorithm: SortingAlgorithmType;
   arraySize: number;
+  /** Initial array from URL state for "Try It" demos. When set, visualizer uses this instead of random. */
+  initialArray: number[] | null;
 
   // Pathfinding state (preserved when switching modes)
   pathfindingAlgorithm: PathfindingAlgorithmType;
@@ -436,6 +438,10 @@ export interface YieldStore {
   // Sorting actions
   setSortingAlgorithm: (algo: SortingAlgorithmType) => void;
   setArraySize: (size: number) => void;
+  /** Sets the initial array for demos. Clears on algorithm/size change. */
+  setInitialArray: (array: number[] | null) => void;
+  /** Clears the initial array, returning to random generation. */
+  clearInitialArray: () => void;
 
   // Pathfinding actions
   setPathfindingAlgorithm: (algo: PathfindingAlgorithmType) => void;
@@ -1547,6 +1553,7 @@ export const useYieldStore = create<YieldStore>((set) => ({
   // Sorting initial state
   sortingAlgorithm: SORTING_CONFIG.ALGORITHM_DEFAULT,
   arraySize: SORTING_CONFIG.ARRAY_SIZE_DEFAULT,
+  initialArray: null,
 
   // Pathfinding initial state
   pathfindingAlgorithm: PATHFINDING_CONFIG.ALGORITHM_DEFAULT,
@@ -1570,7 +1577,7 @@ export const useYieldStore = create<YieldStore>((set) => ({
   setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
 
   // Sorting actions
-  setSortingAlgorithm: (algo) => set({ sortingAlgorithm: algo }),
+  setSortingAlgorithm: (algo) => set({ sortingAlgorithm: algo, initialArray: null }),
 
   setArraySize: (size) =>
     set({
@@ -1578,7 +1585,12 @@ export const useYieldStore = create<YieldStore>((set) => ({
         SORTING_CONFIG.ARRAY_SIZE_MIN,
         Math.min(SORTING_CONFIG.ARRAY_SIZE_MAX, size)
       ),
+      initialArray: null,
     }),
+
+  setInitialArray: (array) => set({ initialArray: array }),
+
+  clearInitialArray: () => set({ initialArray: null }),
 
   // Pathfinding actions
   setPathfindingAlgorithm: (algo) => set({ pathfindingAlgorithm: algo }),
