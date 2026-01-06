@@ -1,4 +1,5 @@
 import type { GraphAlgorithmType } from "@/lib/store";
+import type { RelatedAlgorithm } from "./sorting";
 
 /**
  * Educational article content for graph algorithms.
@@ -40,6 +41,8 @@ export interface GraphArticle {
   interviewTip: string;
   /** Visual pattern description for the visualization */
   visualPattern: string;
+  /** Related algorithms for cross-linking */
+  relatedAlgorithms: RelatedAlgorithm[];
 }
 
 /**
@@ -103,6 +106,23 @@ Dijkstra picks the next node based on the *total distance from the start*. Prim 
 
     interviewTip:
       "Remember that Prim's is essentially Dijkstra's algorithm, just with a slightly different sorting key in the Priority Queue. If you know one, you know the other.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "kruskal",
+        relationship: "MST alternative for sparse graphs",
+      },
+      {
+        algorithm: "dijkstra",
+        mode: "pathfinding",
+        relationship: "similar priority queue structure",
+      },
+      {
+        algorithm: "max-heap",
+        mode: "tree",
+        relationship: "priority queue implementation",
+      },
+    ],
   },
 
   kruskal: {
@@ -165,6 +185,23 @@ The algorithm relies heavily on a data structure called "Union-Find" (or Disjoin
 
     interviewTip:
       "The interview question is almost never 'Implement Kruskal.' It is 'Implement Union-Find.' Make sure you understand Path Compression and Union by Rank.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "prim",
+        relationship: "MST alternative for dense graphs",
+      },
+      {
+        algorithm: "merge",
+        mode: "sorting",
+        relationship: "sorting as a prerequisite step",
+      },
+      {
+        algorithm: "bfs",
+        mode: "pathfinding",
+        relationship: "edge-based vs node-based traversal",
+      },
+    ],
   },
 
   kahn: {
@@ -228,6 +265,23 @@ If the queue empties but you haven't processed all nodes, it means there is a cy
 
     interviewTip:
       "This is the go-to algorithm for the 'Course Schedule' problem on LeetCode. Remember: if the output length != number of nodes, you have a cycle.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "dfs",
+        mode: "pathfinding",
+        relationship: "DFS-based topological sort alternative",
+      },
+      {
+        algorithm: "bfs",
+        mode: "pathfinding",
+        relationship: "similar queue-based approach",
+      },
+      {
+        algorithm: "prim",
+        relationship: "different graph problem (MST)",
+      },
+    ],
   },
 };
 

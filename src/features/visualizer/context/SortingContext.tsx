@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type StepType,
   type UseSortingControllerReturn,
@@ -61,15 +69,40 @@ export interface SortingProviderProps {
 
 export function SortingProvider({ children }: SortingProviderProps) {
   const arraySize = useYieldStore((state) => state.arraySize);
+  const storeInitialArray = useYieldStore((state) => state.initialArray);
   const [initialValues, setInitialValues] = useState<number[] | null>(null);
   const initialArraySizeRef = useRef(arraySize);
+  // Track the storeInitialArray we've already consumed to avoid re-applying
+  const consumedInitialArrayRef = useRef<number[] | null>(null);
 
   // Generate initial values only on client to avoid hydration mismatch
+  // We need to handle the race condition where UrlStateSync (nested in Suspense)
+  // sets storeInitialArray AFTER this component has already generated random values.
   useEffect(() => {
+    // Case 1: First mount - generate initial values
     if (initialValues === null) {
-      setInitialValues(generateShuffledValues(initialArraySizeRef.current));
+      if (storeInitialArray && storeInitialArray.length > 0) {
+        // URL array was already available (rare, but possible)
+        setInitialValues(storeInitialArray);
+        consumedInitialArrayRef.current = storeInitialArray;
+      } else {
+        // Generate random shuffled values
+        setInitialValues(generateShuffledValues(initialArraySizeRef.current));
+      }
+      return;
     }
-  }, [initialValues]);
+
+    // Case 2: storeInitialArray arrived late (UrlStateSync ran after our first effect)
+    // Only apply if it's a new array we haven't consumed yet
+    if (
+      storeInitialArray &&
+      storeInitialArray.length > 0 &&
+      storeInitialArray !== consumedInitialArrayRef.current
+    ) {
+      setInitialValues(storeInitialArray);
+      consumedInitialArrayRef.current = storeInitialArray;
+    }
+  }, [initialValues, storeInitialArray]);
 
   if (initialValues === null) {
     return <SortingProviderLoading>{children}</SortingProviderLoading>;
@@ -111,9 +144,20 @@ function SortingProviderReady({
   const arraySize = useYieldStore((state) => state.arraySize);
   const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
+  const clearInitialArray = useYieldStore((state) => state.clearInitialArray);
   const controller = useSortingController(initialValues, sortingAlgorithm);
   const prevArraySizeRef = useRef(arraySize);
   const prevAlgorithmRef = useRef(sortingAlgorithm);
+  const prevInitialValuesRef = useRef(initialValues);
+
+  // Handle late-arriving URL initial array (from UrlStateSync race condition)
+  // When initialValues prop changes, reset the controller with the new values
+  useEffect(() => {
+    if (prevInitialValuesRef.current !== initialValues) {
+      controller.resetWithValues(initialValues);
+      prevInitialValuesRef.current = initialValues;
+    }
+  }, [initialValues, controller.resetWithValues]);
 
   // Handle array size changes smoothly without remounting
   useEffect(() => {
@@ -139,12 +183,20 @@ function SortingProviderReady({
     controller.setSpeed(intervalMs);
   }, [playbackSpeed, controller.setSpeed]);
 
+  // Enhanced reset that clears the initial array and generates fresh random values
+  const resetWithFreshValues = useCallback(() => {
+    clearInitialArray();
+    const newValues = generateShuffledValues(arraySize);
+    controller.resetWithValues(newValues);
+  }, [clearInitialArray, arraySize, controller.resetWithValues]);
+
   const value: SortingContextValue = useMemo(
     () => ({
       ...controller,
+      reset: resetWithFreshValues,
       isReady: true,
     }),
-    [controller]
+    [controller, resetWithFreshValues]
   );
 
   return <SortingContext.Provider value={value}>{children}</SortingContext.Provider>;

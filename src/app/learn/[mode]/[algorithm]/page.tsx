@@ -17,7 +17,7 @@ import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
 import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
-import { CodeTabs } from "@/features/learning/components";
+import { CodeTabs, RelatedAlgorithms, TryItDemos } from "@/features/learning/components";
 import { type GraphArticle, getGraphArticle } from "@/features/learning/content/graphs";
 import {
   getPathfindingArticle,
@@ -506,6 +506,14 @@ export default async function LearnPage({ params }: LearnPageProps) {
             {parseTextWithMath(content.article.interviewTip)}
           </p>
         </div>
+      )}
+
+      {/* Related Algorithms Section */}
+      <RelatedAlgorithms relatedAlgorithms={article.relatedAlgorithms} currentMode={content.mode} />
+
+      {/* Try It Yourself Demos (Sorting only) */}
+      {content.mode === "sorting" && (
+        <TryItDemos algorithm={content.algorithm} demos={content.article.demos} />
       )}
 
       {/* Back to Visualizer CTA */}
