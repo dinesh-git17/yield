@@ -7,6 +7,7 @@ import {
   InterviewProvider,
   MainLayout,
   PathfindingProvider,
+  PatternProvider,
   Sidebar,
   SortingProvider,
   TreeProvider,
@@ -26,11 +27,13 @@ export default function Home() {
         <TreeProvider>
           <GraphProvider>
             <InterviewProvider>
-              {/* Sync URL params to store (enables deep linking) */}
-              <Suspense fallback={null}>
-                <UrlStateSync />
-              </Suspense>
-              <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+              <PatternProvider>
+                {/* Sync URL params to store (enables deep linking) */}
+                <Suspense fallback={null}>
+                  <UrlStateSync />
+                </Suspense>
+                <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+              </PatternProvider>
             </InterviewProvider>
           </GraphProvider>
         </TreeProvider>

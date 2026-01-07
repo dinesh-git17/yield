@@ -5,6 +5,8 @@ export type {
   InterviewProviderProps,
   PathfindingContextValue,
   PathfindingProviderProps,
+  PatternContextValue,
+  PatternProviderProps,
   SortingContextValue,
   SortingProviderProps,
   TreeContextValue,
@@ -14,11 +16,13 @@ export {
   GraphProvider,
   InterviewProvider,
   PathfindingProvider,
+  PatternProvider,
   SortingProvider,
   TreeProvider,
   useGraph,
   useInterview,
   usePathfinding,
+  usePattern,
   useSorting,
   useTree,
 } from "../context";
@@ -39,6 +43,8 @@ export type { MainLayoutProps } from "./MainLayout";
 export { MainLayout } from "./MainLayout";
 export type { PathfindingStageProps } from "./PathfindingStage";
 export { PathfindingStage } from "./PathfindingStage";
+export type { PatternStageProps } from "./PatternStage";
+export { PatternStage } from "./PatternStage";
 // Pathfinding components
 export type { GridNodeProps, GridProps, NodeState } from "./pathfinding";
 export { Grid, GridNode } from "./pathfinding";
