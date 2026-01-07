@@ -5,9 +5,15 @@ import { create } from "zustand";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * The four visualization domains supported by Yield.
+ * The six visualization domains supported by Yield.
  */
-export type VisualizerMode = "sorting" | "pathfinding" | "tree" | "graph";
+export type VisualizerMode =
+  | "sorting"
+  | "pathfinding"
+  | "tree"
+  | "graph"
+  | "interview"
+  | "patterns";
 
 /**
  * Supported sorting algorithms.

@@ -32,14 +32,14 @@ export const DEFAULT_CONSENT_STATE: ConsentState = {
 /** Algorithm selection event */
 export interface AlgorithmSelectedPayload {
   algorithm_name: string;
-  mode: "sorting" | "pathfinding" | "tree" | "graph";
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns";
   previous_algorithm?: string | undefined;
 }
 
 /** Simulation lifecycle events */
 export interface SimulationStartPayload {
   algorithm_name: string;
-  mode: "sorting" | "pathfinding" | "tree" | "graph";
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns";
   array_size?: number | undefined;
   grid_size?: { rows: number; cols: number } | undefined;
   tree_node_count?: number | undefined;
@@ -48,7 +48,7 @@ export interface SimulationStartPayload {
 
 export interface SimulationCompletePayload {
   algorithm_name: string;
-  mode: "sorting" | "pathfinding" | "tree" | "graph";
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns";
   duration_ms: number;
   step_count: number;
   array_size?: number | undefined;
@@ -58,7 +58,7 @@ export interface SimulationCompletePayload {
 /** Playback control events */
 export interface SpeedChangePayload {
   speed: number;
-  mode: "sorting" | "pathfinding" | "tree" | "graph";
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns";
 }
 
 export interface ArraySizeChangePayload {
@@ -82,13 +82,13 @@ export interface MazeGeneratedPayload {
 export interface CodePanelPayload {
   action: "open" | "close";
   algorithm_name: string;
-  mode: "sorting" | "pathfinding" | "tree" | "graph";
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns";
 }
 
 export interface ComplexityModalPayload {
   action: "open" | "close";
   algorithm_name: string;
-  mode: "sorting" | "pathfinding" | "tree" | "graph";
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns";
 }
 
 /** Tree-specific operations */

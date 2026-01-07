@@ -223,6 +223,24 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               onClick={() => handleModeSelect("graph")}
               infoLink="/learn/graph"
             />
+            <SidebarItem
+              id="cat-interview"
+              label="Interview"
+              isActive={mode === "interview"}
+              disabled={true}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => handleModeSelect("interview")}
+            />
+            <SidebarItem
+              id="cat-patterns"
+              label="Patterns"
+              isActive={mode === "patterns"}
+              disabled={true}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => handleModeSelect("patterns")}
+            />
           </SidebarGroup>
         </div>
 

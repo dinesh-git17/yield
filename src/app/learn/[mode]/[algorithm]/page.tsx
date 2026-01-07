@@ -31,7 +31,6 @@ import type {
   PathfindingAlgorithmType,
   SortingAlgorithmType,
   TreeDataStructureType,
-  VisualizerMode,
 } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +41,9 @@ interface LearnPageProps {
   }>;
 }
 
-const VALID_MODES = ["sorting", "pathfinding", "tree", "graph"] as const;
+/** Modes that have learn page content */
+type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph";
+const VALID_MODES: readonly LearnableMode[] = ["sorting", "pathfinding", "tree", "graph"];
 const VALID_SORTING_ALGORITHMS = [
   "bubble",
   "selection",
@@ -65,8 +66,8 @@ const VALID_PATHFINDING_ALGORITHMS = [
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
 const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
 
-function isValidMode(mode: string): mode is VisualizerMode {
-  return VALID_MODES.includes(mode as VisualizerMode);
+function isValidMode(mode: string): mode is LearnableMode {
+  return VALID_MODES.includes(mode as LearnableMode);
 }
 
 function isValidSortingAlgorithm(algorithm: string): algorithm is SortingAlgorithmType {

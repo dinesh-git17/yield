@@ -350,7 +350,7 @@ function getComplexityVariant(complexity: string): ComplexityCardProps["variant"
 
 function getTimeDescription(
   complexity: string,
-  mode: "sorting" | "pathfinding" | "tree" | "graph"
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns"
 ): string {
   if (mode === "pathfinding") {
     if (complexity.includes("V + E")) {
@@ -390,7 +390,7 @@ function getTimeDescription(
 
 function getSpaceDescription(
   complexity: string,
-  mode: "sorting" | "pathfinding" | "tree" | "graph"
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns"
 ): string {
   if (mode === "pathfinding") {
     if (complexity === "O(V)") {
