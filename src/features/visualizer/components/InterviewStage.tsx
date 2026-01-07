@@ -2,14 +2,23 @@
 
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronRight, Droplets, Pause, Play, RotateCcw, StepForward } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  Droplets,
+  Layers,
+  Pause,
+  Play,
+  RotateCcw,
+  StepForward,
+} from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   getInterviewProblemMetadata,
+  getPresetsForProblem,
   INTERVIEW_CONFIG,
   INTERVIEW_INSIGHTS,
   INTERVIEW_STEP_LABELS,
-  RAIN_WATER_PRESETS,
 } from "@/features/algorithms/interview/config";
 import type { InterviewStep } from "@/features/algorithms/interview/types";
 import { useSponsorship } from "@/features/sponsorship";
@@ -17,6 +26,7 @@ import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { type PlaybackSpeedMultiplier, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useInterview } from "../context";
+import { AreaOverlay } from "./AreaOverlay";
 import { RainWaterBar } from "./RainWaterBar";
 
 export interface InterviewStageProps {
@@ -25,7 +35,7 @@ export interface InterviewStageProps {
 
 /**
  * Interview visualization stage.
- * Renders the rain water problem visualization with educational UI.
+ * Renders both rain water and histogram problem visualizations with educational UI.
  * Note: Expects to be rendered within an InterviewProvider (provided at page level).
  */
 export function InterviewStage({ className }: InterviewStageProps) {
@@ -39,11 +49,29 @@ const SPEED_OPTIONS: { value: PlaybackSpeedMultiplier; label: string }[] = [
   { value: 4, label: "4x" },
 ];
 
-const PRESET_OPTIONS = [
-  { value: "classic", label: "Classic" },
-  { value: "valley", label: "Valley" },
-  { value: "pool", label: "Pool" },
-  { value: "random", label: "Random" },
+/**
+ * Step sequence for Rain Water (Two Pointers) algorithm.
+ */
+const RAIN_WATER_STEP_SEQUENCE: InterviewStep["type"][] = [
+  "init",
+  "compare",
+  "move-left",
+  "update-max-left",
+  "move-right",
+  "update-max-right",
+  "fill-water",
+  "complete",
+];
+
+/**
+ * Step sequence for Largest Rectangle (Monotonic Stack) algorithm.
+ */
+const HISTOGRAM_STEP_SEQUENCE: InterviewStep["type"][] = [
+  "stack-push",
+  "stack-pop",
+  "calculate-area",
+  "update-max-area",
+  "complete",
 ];
 
 function InterviewStageContent({ className }: { className?: string }) {
@@ -53,6 +81,10 @@ function InterviewStageContent({ className }: { className?: string }) {
     currentStepIndex,
     currentStepType,
     totalWater,
+    maxArea,
+    calculatingRectangle,
+    maxRectangle,
+    stack,
     speed,
     play,
     pause,
@@ -71,6 +103,19 @@ function InterviewStageContent({ className }: { className?: string }) {
   const problemMetadata = useMemo(
     () => getInterviewProblemMetadata(interviewProblem),
     [interviewProblem]
+  );
+
+  const isHistogramProblem = interviewProblem === "largest-rectangle-histogram";
+
+  // Get presets based on problem type
+  const presets = useMemo(() => getPresetsForProblem(interviewProblem), [interviewProblem]);
+  const presetOptions = useMemo(
+    () =>
+      Object.keys(presets).map((key) => ({
+        value: key,
+        label: key.charAt(0).toUpperCase() + key.slice(1),
+      })),
+    [presets]
   );
 
   // Track visualization completions for engagement
@@ -105,14 +150,14 @@ function InterviewStageContent({ className }: { className?: string }) {
         setInterviewHeights(heights);
         resetWithHeights(heights);
       } else {
-        const presetHeights = RAIN_WATER_PRESETS[preset];
+        const presetHeights = presets[preset];
         if (presetHeights && presetHeights.length > 0) {
           setInterviewHeights(presetHeights);
           resetWithHeights(presetHeights);
         }
       }
     },
-    [setInterviewHeights, resetWithHeights]
+    [setInterviewHeights, resetWithHeights, presets]
   );
 
   if (!isReady) {
@@ -189,12 +234,35 @@ function InterviewStageContent({ className }: { className?: string }) {
           currentStepType={currentStepType}
           isComplete={isComplete}
           totalWater={totalWater}
+          maxArea={maxArea}
           stepCount={currentStepIndex}
+          isHistogramProblem={isHistogramProblem}
         />
 
         {/* Bar Visualization */}
         <div className="flex flex-1 items-end justify-center px-4 pb-20 md:px-6 md:pb-24">
-          <div className="border-border/50 flex h-full max-h-[280px] w-full max-w-3xl items-end justify-center gap-1 border-b pb-2 md:max-h-[320px] md:gap-2">
+          <div className="border-border/50 relative flex h-full max-h-[280px] w-full max-w-3xl items-end justify-center gap-1 border-b pb-2 md:max-h-[320px] md:gap-2">
+            {/* Area Overlay for Histogram */}
+            {isHistogramProblem && (
+              <>
+                <AreaOverlay
+                  rectangle={calculatingRectangle}
+                  isMaxRectangle={false}
+                  barCount={bars.length}
+                  maxHeight={INTERVIEW_CONFIG.MAX_HEIGHT}
+                />
+                {/* Show max rectangle persistently after it's found */}
+                {maxRectangle && !calculatingRectangle && (
+                  <AreaOverlay
+                    rectangle={maxRectangle}
+                    isMaxRectangle={true}
+                    barCount={bars.length}
+                    maxHeight={INTERVIEW_CONFIG.MAX_HEIGHT}
+                  />
+                )}
+              </>
+            )}
+
             {bars.map((bar) => (
               <RainWaterBar
                 key={bar.id}
@@ -215,41 +283,110 @@ function InterviewStageContent({ className }: { className?: string }) {
             playbackSpeed={playbackSpeed}
             onSpeedChange={handleSpeedChange}
             onPresetChange={handlePresetChange}
+            presetOptions={presetOptions}
             disabled={isPlaying}
+            presetLabel={isHistogramProblem ? "Histogram" : "Terrain"}
           />
         </div>
 
         {/* Stats Overlay */}
         <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
           <div className="bg-surface-elevated/90 border-border flex items-center gap-2 rounded-lg border px-3 py-1.5 shadow-sm backdrop-blur-sm">
-            <Droplets className="h-4 w-4 text-sky-400" />
-            <span className="text-primary text-sm font-medium tabular-nums">
-              {totalWater} units
-            </span>
+            {isHistogramProblem ? (
+              <>
+                <Layers className="h-4 w-4 text-emerald-400" />
+                <span className="text-primary text-sm font-medium tabular-nums">
+                  {maxArea} area
+                </span>
+              </>
+            ) : (
+              <>
+                <Droplets className="h-4 w-4 text-sky-400" />
+                <span className="text-primary text-sm font-medium tabular-nums">
+                  {totalWater} units
+                </span>
+              </>
+            )}
           </div>
+          {isHistogramProblem && stack.length > 0 && (
+            <div className="bg-surface-elevated/90 border-border flex items-center gap-2 rounded-lg border px-3 py-1.5 shadow-sm backdrop-blur-sm">
+              <span className="text-muted text-xs">Stack:</span>
+              <span className="text-primary text-xs font-mono tabular-nums">
+                [{stack.join(", ")}]
+              </span>
+            </div>
+          )}
           <span className="text-muted text-xs">
             Step: {currentStepIndex} {isComplete && "(Complete)"}
           </span>
         </div>
 
-        {/* Pointer Legend */}
-        <div className="absolute bottom-4 left-4 hidden flex-col gap-1 md:bottom-6 md:flex">
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: "#f59e0b" }} />
-            <span className="text-muted text-xs">Left Pointer</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: "#f43f5e" }} />
-            <span className="text-muted text-xs">Right Pointer</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className="h-3 w-3 rounded-sm"
-              style={{ backgroundColor: "rgba(56, 189, 248, 0.7)" }}
-            />
-            <span className="text-muted text-xs">Trapped Water</span>
-          </div>
-        </div>
+        {/* Problem-Specific Legend */}
+        {isHistogramProblem ? <HistogramLegend /> : <RainWaterLegend />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Legend for Rain Water problem.
+ */
+function RainWaterLegend() {
+  return (
+    <div className="absolute bottom-4 left-4 hidden flex-col gap-1 md:bottom-6 md:flex">
+      <div className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: "#f59e0b" }} />
+        <span className="text-muted text-xs">Left Pointer</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: "#f43f5e" }} />
+        <span className="text-muted text-xs">Right Pointer</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span
+          className="h-3 w-3 rounded-sm"
+          style={{ backgroundColor: "rgba(56, 189, 248, 0.7)" }}
+        />
+        <span className="text-muted text-xs">Trapped Water</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Legend for Histogram problem.
+ */
+function HistogramLegend() {
+  return (
+    <div className="absolute bottom-4 left-4 hidden flex-col gap-1 md:bottom-6 md:flex">
+      <div className="flex items-center gap-2">
+        <span
+          className="h-3 w-3 rounded-sm border-2"
+          style={{ backgroundColor: "#3b82f6", borderColor: "rgba(59, 130, 246, 0.8)" }}
+        />
+        <span className="text-muted text-xs">In Stack</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: "#f59e0b" }} />
+        <span className="text-muted text-xs">Current (i)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: "#ef4444" }} />
+        <span className="text-muted text-xs">Popped (H)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span
+          className="h-3 w-3 rounded-sm"
+          style={{ backgroundColor: "rgba(139, 92, 246, 0.5)" }}
+        />
+        <span className="text-muted text-xs">Rectangle Area</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span
+          className="h-3 w-3 rounded-sm"
+          style={{ backgroundColor: "rgba(16, 185, 129, 0.5)" }}
+        />
+        <span className="text-muted text-xs">Max Rectangle</span>
       </div>
     </div>
   );
@@ -285,34 +422,25 @@ function DifficultyBadge({ difficulty }: DifficultyBadgeProps) {
   );
 }
 
-/**
- * The ordered sequence of step types in the algorithm.
- * This defines the visual flow shown to users.
- */
-const ALGORITHM_STEP_SEQUENCE: InterviewStep["type"][] = [
-  "init",
-  "compare",
-  "move-left",
-  "update-max-left",
-  "move-right",
-  "update-max-right",
-  "fill-water",
-  "complete",
-];
-
 interface AlgorithmStepsPanelProps {
   currentStepType: InterviewStep["type"] | null;
   isComplete: boolean;
   totalWater: number;
+  maxArea: number;
   stepCount: number;
+  isHistogramProblem: boolean;
 }
 
 const AlgorithmStepsPanel = memo(function AlgorithmStepsPanel({
   currentStepType,
   isComplete,
   totalWater,
+  maxArea,
   stepCount,
+  isHistogramProblem,
 }: AlgorithmStepsPanelProps) {
+  const stepSequence = isHistogramProblem ? HISTOGRAM_STEP_SEQUENCE : RAIN_WATER_STEP_SEQUENCE;
+
   // Show completion summary when done
   if (isComplete) {
     return (
@@ -328,8 +456,14 @@ const AlgorithmStepsPanel = memo(function AlgorithmStepsPanel({
         <div className="flex flex-col">
           <span className="text-primary text-sm font-semibold">Complete!</span>
           <span className="text-muted text-xs">
-            <span className="font-medium text-sky-400">{totalWater} units</span> in {stepCount}{" "}
-            steps
+            {isHistogramProblem ? (
+              <>
+                Max area: <span className="font-medium text-emerald-400">{maxArea}</span>
+              </>
+            ) : (
+              <span className="font-medium text-sky-400">{totalWater} units</span>
+            )}{" "}
+            in {stepCount} steps
           </span>
         </div>
       </motion.div>
@@ -338,7 +472,7 @@ const AlgorithmStepsPanel = memo(function AlgorithmStepsPanel({
 
   return (
     <div className="absolute top-4 left-4 z-10 flex max-w-sm flex-col gap-1">
-      {ALGORITHM_STEP_SEQUENCE.map((stepType) => {
+      {stepSequence.map((stepType) => {
         const isActive = currentStepType === stepType;
         const label = INTERVIEW_STEP_LABELS[stepType];
 
@@ -392,14 +526,18 @@ interface InterviewControlBarProps {
   playbackSpeed: PlaybackSpeedMultiplier;
   onSpeedChange: (value: string) => void;
   onPresetChange: (preset: string) => void;
+  presetOptions: { value: string; label: string }[];
   disabled?: boolean;
+  presetLabel: string;
 }
 
 const InterviewControlBar = memo(function InterviewControlBar({
   playbackSpeed,
   onSpeedChange,
   onPresetChange,
+  presetOptions,
   disabled,
+  presetLabel,
 }: InterviewControlBarProps) {
   return (
     <motion.div
@@ -409,9 +547,9 @@ const InterviewControlBar = memo(function InterviewControlBar({
       className="bg-surface-elevated/95 border-border flex w-full items-center gap-2 rounded-lg border px-2 py-2 shadow-lg backdrop-blur-sm md:w-auto md:gap-4 md:px-4"
     >
       {/* Preset Selector */}
-      <ControlSection label="Terrain">
+      <ControlSection label={presetLabel}>
         <div className="flex gap-1">
-          {PRESET_OPTIONS.map((option) => {
+          {presetOptions.map((option) => {
             const interactionProps = disabled
               ? {}
               : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };

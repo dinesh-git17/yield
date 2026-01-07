@@ -26,6 +26,9 @@ export {
   useSorting,
   useTree,
 } from "../context";
+// Interview components
+export type { AreaOverlayProps } from "./AreaOverlay";
+export { AreaOverlay } from "./AreaOverlay";
 export type { CanvasProps } from "./Canvas";
 export { Canvas } from "./Canvas";
 export type { CodePanelProps } from "./CodePanel";
@@ -48,7 +51,6 @@ export { PatternStage } from "./PatternStage";
 // Pathfinding components
 export type { GridNodeProps, GridProps, NodeState } from "./pathfinding";
 export { Grid, GridNode } from "./pathfinding";
-// Interview components
 export type { RainWaterBarProps } from "./RainWaterBar";
 export { RainWaterBar } from "./RainWaterBar";
 export type { SidebarProps } from "./Sidebar";

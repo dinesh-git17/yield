@@ -199,7 +199,7 @@ export function getStepInsight(stepType: InterviewStep["type"]): string {
 export const DEFAULT_RAIN_WATER_HEIGHTS = [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1];
 
 /**
- * Preset terrain configurations for variety.
+ * Preset terrain configurations for Rain Water problem.
  */
 export const RAIN_WATER_PRESETS: Record<string, number[]> = {
   classic: [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1],
@@ -209,6 +209,39 @@ export const RAIN_WATER_PRESETS: Record<string, number[]> = {
   pool: [5, 2, 1, 2, 1, 2, 5],
   random: [], // Will be generated dynamically
 };
+
+/**
+ * Preset histogram configurations for Largest Rectangle problem.
+ * Each preset demonstrates different algorithm behaviors.
+ */
+export const HISTOGRAM_PRESETS: Record<string, number[]> = {
+  /** Classic example - mixed heights with clear optimal rectangle */
+  classic: [2, 1, 5, 6, 2, 3],
+  /** Ascending - no pops until the end (demonstrates stack cleanup) */
+  ascending: [1, 2, 3, 4, 5, 6, 7, 8],
+  /** Descending - pops at every step (worst case for comparisons) */
+  descending: [8, 7, 6, 5, 4, 3, 2, 1],
+  /** Pyramid - mixed pops (demonstrates both early and late pops) */
+  pyramid: [1, 3, 5, 7, 5, 3, 1],
+  /** Uniform - all same height (single large rectangle) */
+  uniform: [4, 4, 4, 4, 4, 4],
+  /** Random - dynamically generated */
+  random: [],
+};
+
+/**
+ * Get presets based on problem type.
+ */
+export function getPresetsForProblem(problem: InterviewProblemType): Record<string, number[]> {
+  switch (problem) {
+    case "trapping-rain-water":
+      return RAIN_WATER_PRESETS;
+    case "largest-rectangle-histogram":
+      return HISTOGRAM_PRESETS;
+    default:
+      return RAIN_WATER_PRESETS;
+  }
+}
 
 /**
  * Configuration constants for Interview Mode.
