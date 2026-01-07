@@ -5,6 +5,7 @@ import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfindi
 import { getGraphArticle } from "@/features/learning/content/graphs";
 import { getInterviewArticle } from "@/features/learning/content/interview";
 import { getPathfindingArticle } from "@/features/learning/content/pathfinding";
+import { getPatternArticle, type PatternSlug } from "@/features/learning/content/patterns";
 import { getSortingArticle } from "@/features/learning/content/sorting";
 import { getTreeArticle } from "@/features/learning/content/trees";
 import type {
@@ -24,13 +25,14 @@ export const size = {
 export const contentType = "image/png";
 
 /** Modes that have learn page content */
-type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph" | "interview";
+type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "sliding-window";
 const VALID_MODES: readonly LearnableMode[] = [
   "sorting",
   "pathfinding",
   "tree",
   "graph",
   "interview",
+  "sliding-window",
 ];
 const VALID_SORTING_ALGORITHMS = [
   "bubble",
@@ -54,6 +56,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
 const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
 const VALID_INTERVIEW_PROBLEMS = ["trapping-rain-water"] as const;
+const VALID_PATTERN_SLUGS = ["longest-substring"] as const;
 
 function isValidMode(mode: string): mode is LearnableMode {
   return VALID_MODES.includes(mode as LearnableMode);
@@ -77,6 +80,10 @@ function isValidGraphAlgorithm(algorithm: string): algorithm is GraphAlgorithmTy
 
 function isValidInterviewProblem(problem: string): problem is InterviewProblemType {
   return VALID_INTERVIEW_PROBLEMS.includes(problem as InterviewProblemType);
+}
+
+function isValidPatternSlug(slug: string): slug is PatternSlug {
+  return VALID_PATTERN_SLUGS.includes(slug as PatternSlug);
 }
 
 interface AlgorithmInfo {
@@ -133,6 +140,15 @@ function getAlgorithmInfo(mode: string, algorithm: string): AlgorithmInfo | null
       tagline: article.tagline,
       complexity: article.timeComplexity.complexity,
       modeLabel: "Interview Problem",
+    };
+  }
+  if (mode === "sliding-window" && isValidPatternSlug(algorithm)) {
+    const article = getPatternArticle(algorithm);
+    return {
+      title: article.title,
+      tagline: article.tagline,
+      complexity: article.timeComplexity.complexity,
+      modeLabel: "Sliding Window Pattern",
     };
   }
   return null;

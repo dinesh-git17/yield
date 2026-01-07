@@ -34,6 +34,7 @@ export const metadata: Metadata = {
       "Master algorithms by seeing them move, not memorizing steps. Interactive learning for sorting, pathfinding, trees, and graphs.",
     url: "/learn",
     type: "website",
+    images: ["/og-image.jpg"],
   },
   twitter: {
     card: "summary_large_image",
