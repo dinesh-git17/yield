@@ -3,6 +3,7 @@
  * Keep in sync with store.ts type definitions.
  */
 
+import type { PatternSlug } from "@/features/learning/content/patterns";
 import type {
   GraphAlgorithmType,
   InterviewProblemType,
@@ -11,6 +12,11 @@ import type {
   TreeDataStructureType,
   VisualizerMode,
 } from "./store";
+
+/**
+ * Learn page mode type (includes sliding-window which maps to patterns in the visualizer).
+ */
+export type LearnPageMode = VisualizerMode | "sliding-window";
 
 /**
  * All valid visualizer modes for sitemap generation.
@@ -66,10 +72,15 @@ export const VALID_GRAPH_ALGORITHMS: GraphAlgorithmType[] = ["prim", "kruskal", 
 export const VALID_INTERVIEW_PROBLEMS: InterviewProblemType[] = ["trapping-rain-water"];
 
 /**
+ * All valid pattern problem slugs for learn pages.
+ */
+export const VALID_PATTERN_SLUGS: PatternSlug[] = ["longest-substring"];
+
+/**
  * Generates all learn page routes for sitemap generation.
  */
-export function generateLearnRoutes(): Array<{ mode: VisualizerMode; slug: string }> {
-  const routes: Array<{ mode: VisualizerMode; slug: string }> = [];
+export function generateLearnRoutes(): Array<{ mode: LearnPageMode; slug: string }> {
+  const routes: Array<{ mode: LearnPageMode; slug: string }> = [];
 
   for (const algorithm of VALID_SORTING_ALGORITHMS) {
     routes.push({ mode: "sorting", slug: algorithm });
@@ -89,6 +100,10 @@ export function generateLearnRoutes(): Array<{ mode: VisualizerMode; slug: strin
 
   for (const problem of VALID_INTERVIEW_PROBLEMS) {
     routes.push({ mode: "interview", slug: problem });
+  }
+
+  for (const slug of VALID_PATTERN_SLUGS) {
+    routes.push({ mode: "sliding-window", slug });
   }
 
   return routes;

@@ -6,6 +6,7 @@ import {
   Compass,
   GraduationCap,
   HardDrive,
+  Layers,
   Lightbulb,
   Network,
   Route,
@@ -25,6 +26,12 @@ import {
   getPathfindingArticle,
   type PathfindingArticle,
 } from "@/features/learning/content/pathfinding";
+import {
+  getPatternArticle,
+  isValidPatternSlug,
+  type PatternArticle,
+  type PatternSlug,
+} from "@/features/learning/content/patterns";
 import { getSortingArticle, type SortingArticle } from "@/features/learning/content/sorting";
 import { getTreeArticle, type TreeArticle } from "@/features/learning/content/trees";
 import { generateBreadcrumbJsonLd, generateTechArticleJsonLd } from "@/lib/json-ld";
@@ -45,13 +52,14 @@ interface LearnPageProps {
 }
 
 /** Modes that have learn page content */
-type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph" | "interview";
+type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "sliding-window";
 const VALID_MODES: readonly LearnableMode[] = [
   "sorting",
   "pathfinding",
   "tree",
   "graph",
   "interview",
+  "sliding-window",
 ];
 const VALID_SORTING_ALGORITHMS = [
   "bubble",
@@ -75,6 +83,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
 const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
 const VALID_INTERVIEW_PROBLEMS = ["trapping-rain-water"] as const;
+const VALID_PATTERN_SLUGS = ["longest-substring"] as const;
 
 function isValidMode(mode: string): mode is LearnableMode {
   return VALID_MODES.includes(mode as LearnableMode);
@@ -108,7 +117,8 @@ type ArticleContent =
   | { mode: "pathfinding"; article: PathfindingArticle; algorithm: PathfindingAlgorithmType }
   | { mode: "tree"; article: TreeArticle; structure: TreeDataStructureType }
   | { mode: "graph"; article: GraphArticle; algorithm: GraphAlgorithmType }
-  | { mode: "interview"; article: InterviewArticle; problem: InterviewProblemType };
+  | { mode: "interview"; article: InterviewArticle; problem: InterviewProblemType }
+  | { mode: "sliding-window"; article: PatternArticle; slug: PatternSlug };
 
 /**
  * Factory function to get the appropriate article based on mode and algorithm/structure.
@@ -149,6 +159,13 @@ function getArticle(mode: string, algorithm: string): ArticleContent | null {
       problem: algorithm,
     };
   }
+  if (mode === "sliding-window" && isValidPatternSlug(algorithm)) {
+    return {
+      mode: "sliding-window",
+      article: getPatternArticle(algorithm),
+      slug: algorithm,
+    };
+  }
   return null;
 }
 
@@ -184,8 +201,13 @@ export default async function LearnPage({ params }: LearnPageProps) {
   }
 
   // For modes without built-in complexity info, external metadata is required
-  // Tree and Interview modes have complexity info in the article itself
-  if (content.mode !== "tree" && content.mode !== "interview" && !metadata) {
+  // Tree, Interview, and Sliding-Window modes have complexity info in the article itself
+  if (
+    content.mode !== "tree" &&
+    content.mode !== "interview" &&
+    content.mode !== "sliding-window" &&
+    !metadata
+  ) {
     notFound();
   }
 
@@ -213,6 +235,10 @@ export default async function LearnPage({ params }: LearnPageProps) {
       label: "Interview Problem",
       icon: <GraduationCap className="h-5 w-5" />,
     },
+    "sliding-window": {
+      label: "Pattern Problem",
+      icon: <Layers className="h-5 w-5" />,
+    },
   };
 
   const config = modeConfig[content.mode];
@@ -225,7 +251,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
         ? content.article.timeComplexity.complexity
         : content.mode === "interview"
           ? content.article.timeComplexity.complexity
-          : (metadata?.complexity ?? "O(n)");
+          : content.mode === "sliding-window"
+            ? content.article.timeComplexity.complexity
+            : (metadata?.complexity ?? "O(n)");
 
   // Generate JSON-LD structured data
   const techArticleJsonLd = generateTechArticleJsonLd({
@@ -341,6 +369,39 @@ export default async function LearnPage({ params }: LearnPageProps) {
                   variant="good"
                 />
               </>
+            ) : content.mode === "sliding-window" ? (
+              <>
+                <ComplexityBadge
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Time"
+                  value={content.article.timeComplexity.complexity}
+                  variant={getComplexityVariant(content.article.timeComplexity.complexity)}
+                />
+                <ComplexityBadge
+                  icon={<HardDrive className="h-4 w-4" />}
+                  label="Space"
+                  value={content.article.spaceComplexity.complexity}
+                  variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
+                />
+                <ComplexityBadge
+                  icon={<GraduationCap className="h-4 w-4" />}
+                  label="Difficulty"
+                  value={content.article.difficulty}
+                  variant={
+                    content.article.difficulty === "Hard"
+                      ? "fair"
+                      : content.article.difficulty === "Medium"
+                        ? "good"
+                        : "excellent"
+                  }
+                />
+                <ComplexityBadge
+                  icon={<Layers className="h-4 w-4" />}
+                  label="Pattern"
+                  value={content.article.pattern}
+                  variant="good"
+                />
+              </>
             ) : (
               <>
                 <ComplexityBadge
@@ -374,17 +435,24 @@ export default async function LearnPage({ params }: LearnPageProps) {
           <Prose content={article.history} />
         </Section>
 
-        {/* Problem Definition Section - Interview only */}
-        {content.mode === "interview" && (
+        {/* Problem Definition Section - Interview and Patterns */}
+        {(content.mode === "interview" || content.mode === "sliding-window") && (
           <Section title="Problem Definition" icon={<Target className="h-5 w-5" />}>
             <Prose content={content.article.problemDefinition} />
           </Section>
         )}
 
-        {/* Core Idea Section - Interview only */}
-        {content.mode === "interview" && (
+        {/* Core Idea Section - Interview and Patterns */}
+        {(content.mode === "interview" || content.mode === "sliding-window") && (
           <Section title="Core Idea" icon={<Zap className="h-5 w-5" />}>
             <Prose content={content.article.coreIdea} />
+          </Section>
+        )}
+
+        {/* Window Rule Section - Patterns only */}
+        {content.mode === "sliding-window" && (
+          <Section title="The Rule of the Window" icon={<Layers className="h-5 w-5" />}>
+            <Prose content={content.article.windowRule} />
           </Section>
         )}
 
@@ -530,10 +598,33 @@ export default async function LearnPage({ params }: LearnPageProps) {
               />
             </div>
           )}
+          {content.mode === "sliding-window" && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <ComplexityCard
+                title="Time Complexity"
+                complexity={content.article.timeComplexity.complexity}
+                explanation={content.article.timeComplexity.explanation}
+                variant="good"
+              />
+              <ComplexityCard
+                title="Space Complexity"
+                complexity={content.article.spaceComplexity.complexity}
+                explanation={content.article.spaceComplexity.explanation}
+                variant="neutral"
+              />
+            </div>
+          )}
         </Section>
 
-        {/* Approaches Section - Interview only */}
-        {content.mode === "interview" && (
+        {/* Why the Max Matters Section - Patterns only */}
+        {content.mode === "sliding-window" && (
+          <Section title="Why the max() Matters" icon={<Lightbulb className="h-5 w-5" />}>
+            <Prose content={content.article.whyMaxMatters} />
+          </Section>
+        )}
+
+        {/* Approaches Section - Interview and Patterns */}
+        {(content.mode === "interview" || content.mode === "sliding-window") && (
           <Section title="Approaches" icon={<Code2 className="h-5 w-5" />}>
             <div className="space-y-4">
               {content.article.approaches.map((approach) => (
@@ -690,8 +781,8 @@ export default async function LearnPage({ params }: LearnPageProps) {
           </div>
         )}
 
-        {/* Common Pitfalls Section - Interview only */}
-        {content.mode === "interview" && (
+        {/* Common Pitfalls Section - Interview and Patterns */}
+        {(content.mode === "interview" || content.mode === "sliding-window") && (
           <Section title="Common Interview Pitfalls" icon={<AlertTriangle className="h-5 w-5" />}>
             <ul className="space-y-3">
               {content.article.pitfalls.map((pitfall, index) => (
@@ -708,8 +799,8 @@ export default async function LearnPage({ params }: LearnPageProps) {
           </Section>
         )}
 
-        {/* Interview Q&A Section - Interview only */}
-        {content.mode === "interview" && (
+        {/* Interview Q&A Section - Interview and Patterns */}
+        {(content.mode === "interview" || content.mode === "sliding-window") && (
           <Section
             title="Interview Questions & Answers"
             icon={<GraduationCap className="h-5 w-5" />}
@@ -732,7 +823,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
         {/* Related Algorithms Section */}
         <RelatedAlgorithms
           relatedAlgorithms={article.relatedAlgorithms}
-          currentMode={content.mode}
+          currentMode={content.mode === "sliding-window" ? "patterns" : content.mode}
         />
 
         {/* Try It Yourself Demos (Sorting only) */}
@@ -743,7 +834,11 @@ export default async function LearnPage({ params }: LearnPageProps) {
         {/* Back to Visualizer CTA */}
         <div className="pt-8 text-center">
           <a
-            href={`/?mode=${mode}&algorithm=${algorithm}`}
+            href={
+              content.mode === "sliding-window"
+                ? "/?mode=sliding-window"
+                : `/?mode=${mode}&algorithm=${algorithm}`
+            }
             className={cn(
               "inline-flex items-center gap-2 rounded-xl px-6 py-3",
               "bg-accent text-white font-medium",
@@ -1148,6 +1243,7 @@ export async function generateMetadata({ params }: LearnPageProps) {
       tree: "Data Structures",
       graph: "Graph Algorithms",
       interview: "Interview Prep",
+      "sliding-window": "Patterns",
     } as const;
     const modeLabel = modeLabels[content.mode];
     const title = `${content.article.title} | ${modeLabel} | Learn`;
@@ -1215,11 +1311,17 @@ export function generateStaticParams() {
     algorithm: problem,
   }));
 
+  const patternParams = VALID_PATTERN_SLUGS.map((slug) => ({
+    mode: "sliding-window",
+    algorithm: slug,
+  }));
+
   return [
     ...sortingParams,
     ...pathfindingParams,
     ...treeParams,
     ...graphParams,
     ...interviewParams,
+    ...patternParams,
   ];
 }

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { PATTERN_TYPE_TO_SLUG } from "@/features/learning/content/patterns";
 import { useSponsorship } from "@/features/sponsorship";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
@@ -753,7 +754,7 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               {/* Learn */}
               <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
                 <Link
-                  href={`/learn/patterns/${patternProblem}`}
+                  href={`/learn/sliding-window/${PATTERN_TYPE_TO_SLUG[patternProblem]}`}
                   className={cn(
                     "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
                     "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
