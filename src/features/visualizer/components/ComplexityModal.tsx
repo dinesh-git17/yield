@@ -7,6 +7,7 @@ import { getAlgorithmMetadata, getTreeAlgorithmMetadata } from "@/features/algor
 import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getInterviewProblemMetadata } from "@/features/algorithms/interview";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
+import { getPatternProblemMetadata } from "@/features/algorithms/patterns";
 import { buttonInteraction } from "@/lib/motion";
 import type { TreeDataStructureType } from "@/lib/store";
 import { useYieldStore } from "@/lib/store";
@@ -56,6 +57,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
   const interviewProblem = useYieldStore((state) => state.interviewProblem);
+  const patternProblem = useYieldStore((state) => state.patternProblem);
 
   const { label, description, complexity, spaceComplexity, hint, extras } = useMemo(() => {
     if (mode === "sorting") {
@@ -111,6 +113,20 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
         },
       };
     }
+    if (mode === "patterns") {
+      const meta = getPatternProblemMetadata(patternProblem);
+      return {
+        label: meta.label,
+        description: meta.description,
+        complexity: meta.complexity,
+        spaceComplexity: meta.spaceComplexity,
+        hint: getPatternComparisonHint(patternProblem),
+        extras: {
+          difficulty: meta.difficulty,
+          pattern: meta.pattern,
+        },
+      };
+    }
     const meta = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
     return {
       label: meta.label,
@@ -131,6 +147,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
     treeDataStructure,
     graphAlgorithm,
     interviewProblem,
+    patternProblem,
   ]);
 
   // Close on escape key
@@ -413,6 +430,15 @@ function getTimeDescription(
     }
     return "Execution time depends on graph density.";
   }
+  if (mode === "patterns" || mode === "interview") {
+    if (complexity === "O(n)") {
+      return "Linear time—each element is processed at most a constant number of times.";
+    }
+    if (complexity === "O(n²)") {
+      return "Quadratic time—nested iteration over all pairs. The naive approach to optimize.";
+    }
+    return "Execution time depends on input size and pattern complexity.";
+  }
   if (complexity === "O(n²)") {
     return "Performance degrades quickly as input size grows. Suitable for small datasets.";
   }
@@ -449,6 +475,18 @@ function getSpaceDescription(
       return "Memory usage scales with graph size (vertices + edges).";
     }
     return "Memory usage depends on graph density.";
+  }
+  if (mode === "patterns" || mode === "interview") {
+    if (complexity === "O(1)") {
+      return "Constant space—only a few pointers or variables needed.";
+    }
+    if (complexity.includes("min(m, n)") || complexity.includes("min(n")) {
+      return "Hash map stores at most the size of the character set or input length.";
+    }
+    if (complexity === "O(n)") {
+      return "Auxiliary storage proportional to input size (stack, hash map, or result).";
+    }
+    return "Memory usage depends on algorithm approach.";
   }
   if (complexity === "O(1)") {
     return "Constant memory. Sorts in-place without extra allocation.";
@@ -583,6 +621,15 @@ function getInterviewComparisonHint(problem: string): string {
       return "Classic 'Hard' problem. The Two Pointers approach achieves O(n) time and O(1) space—optimal for this problem. Compare to the naive O(n²) or stack-based O(n) space solutions.";
     default:
       return "Interview problems test problem-solving skills and algorithm design.";
+  }
+}
+
+function getPatternComparisonHint(problem: string): string {
+  switch (problem) {
+    case "longest-substring-norepeat":
+      return "Classic Sliding Window problem. The key insight: left pointer never moves backward—each character is visited at most twice, giving O(n) time. Compare to the naive O(n²) approach that recomputes each substring.";
+    default:
+      return "Pattern problems teach reusable techniques that unlock entire families of similar problems.";
   }
 }
 
