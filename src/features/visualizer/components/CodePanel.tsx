@@ -11,13 +11,17 @@ import {
 } from "@/features/algorithms";
 import { GRAPH_STEP_LABELS, getGraphAlgorithmMetadata } from "@/features/algorithms/graph";
 import {
+  getInterviewProblemMetadata,
+  INTERVIEW_STEP_LABELS,
+} from "@/features/algorithms/interview";
+import {
   getPathfindingAlgorithmMetadata,
   PATHFINDING_STEP_LABELS,
 } from "@/features/algorithms/pathfinding";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { useGraph, usePathfinding, useSorting, useTree } from "../context";
+import { useGraph, useInterview, usePathfinding, useSorting, useTree } from "../context";
 
 export interface CodePanelProps {
   className?: string;
@@ -33,12 +37,14 @@ export function CodePanel({ className }: CodePanelProps) {
   const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
+  const interviewProblem = useYieldStore((state) => state.interviewProblem);
 
   // Get context values based on mode
   const sortingContext = useSorting();
   const pathfindingContext = usePathfinding();
   const treeContext = useTree();
   const graphContext = useGraph();
+  const interviewContext = useInterview();
 
   const [isCopied, setIsCopied] = useState(false);
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -81,6 +87,18 @@ export function CodePanel({ className }: CodePanelProps) {
         highlightedLine: lineIndex,
       };
     }
+    if (mode === "interview") {
+      const metadata = getInterviewProblemMetadata(interviewProblem);
+      const stepType = interviewContext.currentStepType;
+      const lineIndex = stepType ? (metadata.lineMapping[stepType] ?? null) : null;
+      return {
+        status: interviewContext.status,
+        codeLines: metadata.code,
+        stepLabel: stepType ? INTERVIEW_STEP_LABELS[stepType] : null,
+        algorithmKey: interviewProblem,
+        highlightedLine: lineIndex,
+      };
+    }
     // Pathfinding mode
     const metadata = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
     const stepType = pathfindingContext.currentStepType;
@@ -99,6 +117,7 @@ export function CodePanel({ className }: CodePanelProps) {
     treeAlgorithm,
     treeDataStructure,
     graphAlgorithm,
+    interviewProblem,
     sortingContext.currentStepType,
     sortingContext.status,
     pathfindingContext.currentStepType,
@@ -107,6 +126,8 @@ export function CodePanel({ className }: CodePanelProps) {
     treeContext.status,
     graphContext.currentStepType,
     graphContext.status,
+    interviewContext.currentStepType,
+    interviewContext.status,
   ]);
 
   const displayLine = highlightedLine !== null ? highlightedLine + 1 : null;
@@ -148,9 +169,12 @@ export function CodePanel({ className }: CodePanelProps) {
       <div className="flex-1 overflow-auto">
         <pre className="font-mono text-[13px] leading-7 py-6 pr-2">
           <code className="relative block">
-            {/* Single persistent highlight that animates position (sorting, tree, and graph modes) */}
+            {/* Single persistent highlight that animates position (sorting, tree, graph, and interview modes) */}
             <AnimatePresence>
-              {(mode === "sorting" || mode === "tree" || mode === "graph") &&
+              {(mode === "sorting" ||
+                mode === "tree" ||
+                mode === "graph" ||
+                mode === "interview") &&
                 highlightedLine !== null && (
                   <motion.div
                     className="bg-accent-muted pointer-events-none absolute left-0 right-0 z-0"
@@ -170,7 +194,10 @@ export function CodePanel({ className }: CodePanelProps) {
                 line={line}
                 lineNumber={lineNumber}
                 isHighlighted={
-                  (mode === "sorting" || mode === "tree" || mode === "graph") &&
+                  (mode === "sorting" ||
+                    mode === "tree" ||
+                    mode === "graph" ||
+                    mode === "interview") &&
                   lineNumber === highlightedLine
                 }
               />
@@ -210,6 +237,16 @@ export function CodePanel({ className }: CodePanelProps) {
             </>
           )}
           {mode === "graph" && (
+            <>
+              {status === "idle" && "Ready to visualize"}
+              {status === "complete" && "Algorithm complete"}
+              {(status === "playing" || status === "paused") &&
+                displayLine &&
+                stepLabel &&
+                `Line ${displayLine}: ${stepLabel}`}
+            </>
+          )}
+          {mode === "interview" && (
             <>
               {status === "idle" && "Ready to visualize"}
               {status === "complete" && "Algorithm complete"}

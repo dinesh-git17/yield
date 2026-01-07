@@ -22,6 +22,7 @@ import { useSponsorship } from "@/features/sponsorship";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
   type GraphAlgorithmType,
+  type InterviewProblemType,
   type PathfindingAlgorithmType,
   type SortingAlgorithmType,
   type TreeDataStructureType,
@@ -85,6 +86,12 @@ const GRAPH_ALGORITHMS: {
   { id: "kahn", label: "Topological Sort", enabled: true },
 ];
 
+const INTERVIEW_PROBLEMS: {
+  id: InterviewProblemType;
+  label: string;
+  enabled: boolean;
+}[] = [{ id: "trapping-rain-water", label: "Trapping Rain Water", enabled: true }];
+
 export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
@@ -101,6 +108,8 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
   const setTreeDataStructure = useYieldStore((state) => state.setTreeDataStructure);
   const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
   const setGraphAlgorithm = useYieldStore((state) => state.setGraphAlgorithm);
+  const interviewProblem = useYieldStore((state) => state.interviewProblem);
+  const setInterviewProblem = useYieldStore((state) => state.setInterviewProblem);
 
   const handleModeSelect = useCallback(
     (newMode: VisualizerMode) => {
@@ -135,6 +144,13 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
       setGraphAlgorithm(algo);
     },
     [setGraphAlgorithm]
+  );
+
+  const handleInterviewProblemSelect = useCallback(
+    (problem: InterviewProblemType) => {
+      setInterviewProblem(problem);
+    },
+    [setInterviewProblem]
   );
 
   const openComplexityModal = useCallback(() => {
@@ -227,7 +243,6 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               id="cat-interview"
               label="Interview"
               isActive={mode === "interview"}
-              disabled={true}
               hoveredItem={hoveredItem}
               onHover={setHoveredItem}
               onClick={() => handleModeSelect("interview")}
@@ -573,6 +588,54 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
                   <span className="text-sm font-medium">Learn</span>
                 </Link>
               </motion.div>
+            </div>
+          </>
+        )}
+
+        {/* Interview Problems List */}
+        {mode === "interview" && (
+          <>
+            <div className="mb-2">
+              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
+                Problems
+              </span>
+            </div>
+
+            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+              {INTERVIEW_PROBLEMS.map((problem) => (
+                <SidebarItem
+                  key={problem.id}
+                  id={`interview-${problem.id}`}
+                  label={problem.label}
+                  isActive={interviewProblem === problem.id}
+                  disabled={!problem.enabled}
+                  hoveredItem={hoveredItem}
+                  onHover={setHoveredItem}
+                  onClick={() => problem.enabled && handleInterviewProblemSelect(problem.id)}
+                />
+              ))}
+            </SidebarGroup>
+
+            <div className="border-border-subtle my-4 border-t" />
+
+            {/* CTA Group: Complexity */}
+            <div className="space-y-2">
+              {/* Complexity */}
+              <motion.button
+                type="button"
+                onClick={openComplexityModal}
+                whileHover={buttonInteraction.hover}
+                whileTap={buttonInteraction.tap}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                  "border border-white/10 bg-white/5 backdrop-blur-sm",
+                  "text-primary hover:bg-white/10 transition-colors",
+                  "dark:border-white/5 dark:bg-black/20"
+                )}
+              >
+                <BadgeHelp className="h-4 w-4 text-sky-400" />
+                <span className="text-sm font-medium">Complexity</span>
+              </motion.button>
             </div>
           </>
         )}

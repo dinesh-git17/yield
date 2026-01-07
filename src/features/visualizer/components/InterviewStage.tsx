@@ -2,7 +2,7 @@
 
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { AnimatePresence, motion } from "framer-motion";
-import { Droplets, Lightbulb, Pause, Play, RotateCcw, StepForward } from "lucide-react";
+import { Check, Droplets, Lightbulb, Pause, Play, RotateCcw, StepForward } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   getInterviewProblemMetadata,
@@ -187,20 +187,42 @@ function InterviewStageContent({ className }: { className?: string }) {
 
       {/* Visualization Area */}
       <div className="bg-dot-pattern relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        {/* Insight Banner */}
+        {/* Insight Banner / Completion Summary */}
         <AnimatePresence mode="wait">
-          {insight && (
+          {isComplete ? (
             <motion.div
-              key={currentStepType}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="bg-surface-elevated/90 border-border mx-4 mt-4 flex items-start gap-3 rounded-lg border p-3 shadow-sm backdrop-blur-sm md:mx-6"
+              key="completion-summary"
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
+              className="mx-4 mt-4 flex items-center gap-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 shadow-lg backdrop-blur-sm md:mx-6"
             >
-              <Lightbulb className="text-accent mt-0.5 h-4 w-4 shrink-0" />
-              <p className="text-primary text-sm leading-relaxed">{insight}</p>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
+                <Check className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-primary text-sm font-semibold">Algorithm Complete!</span>
+                <span className="text-muted text-xs">
+                  Trapped <span className="font-medium text-sky-400">{totalWater} units</span> of
+                  water in {currentStepIndex} steps
+                </span>
+              </div>
             </motion.div>
+          ) : (
+            insight && (
+              <motion.div
+                key={currentStepType}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="bg-surface-elevated/90 border-border mx-4 mt-4 flex items-start gap-3 rounded-lg border p-3 shadow-sm backdrop-blur-sm md:mx-6"
+              >
+                <Lightbulb className="text-accent mt-0.5 h-4 w-4 shrink-0" />
+                <p className="text-primary text-sm leading-relaxed">{insight}</p>
+              </motion.div>
+            )
           )}
         </AnimatePresence>
 

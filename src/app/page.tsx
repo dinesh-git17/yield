@@ -4,6 +4,7 @@ import {
   Canvas,
   CodePanel,
   GraphProvider,
+  InterviewProvider,
   MainLayout,
   PathfindingProvider,
   Sidebar,
@@ -24,11 +25,13 @@ export default function Home() {
       <PathfindingProvider>
         <TreeProvider>
           <GraphProvider>
-            {/* Sync URL params to store (enables deep linking) */}
-            <Suspense fallback={null}>
-              <UrlStateSync />
-            </Suspense>
-            <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+            <InterviewProvider>
+              {/* Sync URL params to store (enables deep linking) */}
+              <Suspense fallback={null}>
+                <UrlStateSync />
+              </Suspense>
+              <MainLayout sidebar={<Sidebar />} canvas={<Canvas />} codePanel={<CodePanel />} />
+            </InterviewProvider>
           </GraphProvider>
         </TreeProvider>
       </PathfindingProvider>
