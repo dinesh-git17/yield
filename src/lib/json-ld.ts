@@ -16,6 +16,8 @@ const MODE_LABELS: Record<VisualizerMode, string> = {
   pathfinding: "Pathfinding Algorithms",
   tree: "Data Structures",
   graph: "Graph Algorithms",
+  interview: "Interview Problems",
+  patterns: "Algorithm Patterns",
 };
 
 /**

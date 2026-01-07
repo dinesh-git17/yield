@@ -5,12 +5,14 @@ import { getAlgorithmMetadata } from "@/features/algorithms";
 import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
 import { getGraphArticle } from "@/features/learning/content/graphs";
+import { getInterviewArticle } from "@/features/learning/content/interview";
 import { getPathfindingArticle } from "@/features/learning/content/pathfinding";
 import type { RelatedAlgorithm } from "@/features/learning/content/sorting";
 import { getSortingArticle } from "@/features/learning/content/sorting";
 import { getTreeArticle } from "@/features/learning/content/trees";
 import type {
   GraphAlgorithmType,
+  InterviewProblemType,
   PathfindingAlgorithmType,
   SortingAlgorithmType,
   TreeDataStructureType,
@@ -38,6 +40,8 @@ function getAlgorithmTitle(algorithm: string, mode: VisualizerMode): string {
       return getTreeArticle(algorithm as TreeDataStructureType)?.title ?? algorithm;
     case "graph":
       return getGraphArticle(algorithm as GraphAlgorithmType)?.title ?? algorithm;
+    case "interview":
+      return getInterviewArticle(algorithm as InterviewProblemType)?.title ?? algorithm;
     default:
       return algorithm;
   }
@@ -71,6 +75,11 @@ function getComplexityBadge(
     case "graph": {
       const meta = getGraphAlgorithmMetadata(algorithm as GraphAlgorithmType);
       complexity = meta?.complexity;
+      break;
+    }
+    case "interview": {
+      const article = getInterviewArticle(algorithm as InterviewProblemType);
+      complexity = article?.timeComplexity?.complexity;
       break;
     }
   }
@@ -115,6 +124,8 @@ const MODE_LABELS: Record<VisualizerMode, string> = {
   pathfinding: "Pathfinding",
   tree: "Trees",
   graph: "Graphs",
+  interview: "Interview",
+  patterns: "Patterns",
 };
 
 /**

@@ -1,13 +1,27 @@
 import { create } from "zustand";
+import {
+  DEFAULT_RAIN_WATER_HEIGHTS,
+  INTERVIEW_CONFIG,
+  type InterviewProblemType,
+} from "@/features/algorithms/interview";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mode & Algorithm Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Re-export InterviewProblemType for convenience
+export type { InterviewProblemType } from "@/features/algorithms/interview";
+
 /**
- * The four visualization domains supported by Yield.
+ * The six visualization domains supported by Yield.
  */
-export type VisualizerMode = "sorting" | "pathfinding" | "tree" | "graph";
+export type VisualizerMode =
+  | "sorting"
+  | "pathfinding"
+  | "tree"
+  | "graph"
+  | "interview"
+  | "patterns";
 
 /**
  * Supported sorting algorithms.
@@ -395,6 +409,46 @@ export function getAdjacencyList(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Interview State Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * State for interview problem visualization.
+ * Tracks terrain, water levels, and pointer positions.
+ */
+export interface InterviewState {
+  /** The terrain heights array */
+  heights: number[];
+  /** Water level at each index (computed during visualization) */
+  waterLevels: number[];
+  /** Current left pointer position (-1 if not active) */
+  left: number;
+  /** Current right pointer position (-1 if not active) */
+  right: number;
+  /** Maximum height seen from the left so far */
+  maxLeft: number;
+  /** Maximum height seen from the right so far */
+  maxRight: number;
+  /** Running total of trapped water */
+  totalWater: number;
+}
+
+/**
+ * Creates a default interview state with given heights.
+ */
+export function createDefaultInterviewState(heights: number[]): InterviewState {
+  return {
+    heights: [...heights],
+    waterLevels: new Array(heights.length).fill(0) as number[],
+    left: -1,
+    right: -1,
+    maxLeft: 0,
+    maxRight: 0,
+    totalWater: 0,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Store Interface
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -430,6 +484,10 @@ export interface YieldStore {
   // Graph state (preserved when switching modes)
   graphAlgorithm: GraphAlgorithmType;
   graphState: GraphState;
+
+  // Interview state (preserved when switching modes)
+  interviewProblem: InterviewProblemType;
+  interviewState: InterviewState;
 
   // Global actions
   setMode: (mode: VisualizerMode) => void;
@@ -534,6 +592,24 @@ export interface YieldStore {
    * Sets the entire graph state (useful for loading presets).
    */
   setGraphState: (state: GraphState) => void;
+
+  // Interview actions
+  /**
+   * Sets the current interview problem.
+   */
+  setInterviewProblem: (problem: InterviewProblemType) => void;
+  /**
+   * Sets the terrain heights for the current problem.
+   */
+  setInterviewHeights: (heights: number[]) => void;
+  /**
+   * Updates the interview state (called by the controller during visualization).
+   */
+  updateInterviewState: (state: Partial<InterviewState>) => void;
+  /**
+   * Resets the interview state to initial values based on current heights.
+   */
+  resetInterviewState: () => void;
 }
 
 /**
@@ -1571,6 +1647,10 @@ export const useYieldStore = create<YieldStore>((set) => ({
   graphAlgorithm: GRAPH_CONFIG.ALGORITHM_DEFAULT,
   graphState: createEmptyGraphState(),
 
+  // Interview initial state
+  interviewProblem: INTERVIEW_CONFIG.DEFAULT_PROBLEM,
+  interviewState: createDefaultInterviewState(DEFAULT_RAIN_WATER_HEIGHTS),
+
   // Global actions
   setMode: (mode) => set({ mode }),
 
@@ -2278,6 +2358,27 @@ export const useYieldStore = create<YieldStore>((set) => ({
     }),
 
   setGraphState: (newGraphState) => set({ graphState: newGraphState }),
+
+  // Interview actions
+  setInterviewProblem: (problem) => set({ interviewProblem: problem }),
+
+  setInterviewHeights: (heights) =>
+    set({
+      interviewState: createDefaultInterviewState(heights),
+    }),
+
+  updateInterviewState: (partialState) =>
+    set((state) => ({
+      interviewState: {
+        ...state.interviewState,
+        ...partialState,
+      },
+    })),
+
+  resetInterviewState: () =>
+    set((state) => ({
+      interviewState: createDefaultInterviewState(state.interviewState.heights),
+    })),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────

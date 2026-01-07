@@ -1,10 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CircleX, Clock, HardDrive, Network, Route, TreeDeciduous } from "lucide-react";
+import { CircleX, Clock, Code2, HardDrive, Network, Route, TreeDeciduous } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo } from "react";
 import { getAlgorithmMetadata, getTreeAlgorithmMetadata } from "@/features/algorithms";
 import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
+import { getInterviewProblemMetadata } from "@/features/algorithms/interview";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
 import { buttonInteraction } from "@/lib/motion";
 import type { TreeDataStructureType } from "@/lib/store";
@@ -54,6 +55,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
   const treeAlgorithm = useYieldStore((state) => state.treeAlgorithm);
   const treeDataStructure = useYieldStore((state) => state.treeDataStructure);
   const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
+  const interviewProblem = useYieldStore((state) => state.interviewProblem);
 
   const { label, description, complexity, spaceComplexity, hint, extras } = useMemo(() => {
     if (mode === "sorting") {
@@ -95,6 +97,20 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
         },
       };
     }
+    if (mode === "interview") {
+      const meta = getInterviewProblemMetadata(interviewProblem);
+      return {
+        label: meta.label,
+        description: meta.description,
+        complexity: meta.complexity,
+        spaceComplexity: meta.spaceComplexity,
+        hint: getInterviewComparisonHint(interviewProblem),
+        extras: {
+          difficulty: meta.difficulty,
+          pattern: meta.pattern,
+        },
+      };
+    }
     const meta = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
     return {
       label: meta.label,
@@ -114,6 +130,7 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
     treeAlgorithm,
     treeDataStructure,
     graphAlgorithm,
+    interviewProblem,
   ]);
 
   // Close on escape key
@@ -242,6 +259,23 @@ function ComplexityModalComponent({ isOpen, onClose }: ComplexityModalProps) {
                       </span>
                       <span className="text-muted text-xs">{extras.visualPattern}</span>
                     </>
+                  ) : "difficulty" in extras ? (
+                    <>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+                          extras.difficulty === "Hard"
+                            ? "bg-rose-500/20 text-rose-400"
+                            : extras.difficulty === "Medium"
+                              ? "bg-amber-500/20 text-amber-400"
+                              : "bg-emerald-500/20 text-emerald-400"
+                        )}
+                      >
+                        <Code2 className="h-3 w-3" />
+                        {extras.difficulty}
+                      </span>
+                      <span className="text-muted text-xs">{extras.pattern}</span>
+                    </>
                   ) : (
                     <>
                       <span
@@ -350,7 +384,7 @@ function getComplexityVariant(complexity: string): ComplexityCardProps["variant"
 
 function getTimeDescription(
   complexity: string,
-  mode: "sorting" | "pathfinding" | "tree" | "graph"
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns"
 ): string {
   if (mode === "pathfinding") {
     if (complexity.includes("V + E")) {
@@ -390,7 +424,7 @@ function getTimeDescription(
 
 function getSpaceDescription(
   complexity: string,
-  mode: "sorting" | "pathfinding" | "tree" | "graph"
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "patterns"
 ): string {
   if (mode === "pathfinding") {
     if (complexity === "O(V)") {
@@ -540,6 +574,15 @@ function getGraphComparisonHint(algorithm: string): string {
       return "Kahn's algorithm detects cycles and produces topological order. Essential for dependency resolution and build systems.";
     default:
       return "Compare different graph algorithms to understand their trade-offs.";
+  }
+}
+
+function getInterviewComparisonHint(problem: string): string {
+  switch (problem) {
+    case "trapping-rain-water":
+      return "Classic 'Hard' problem. The Two Pointers approach achieves O(n) time and O(1) space—optimal for this problem. Compare to the naive O(n²) or stack-based O(n) space solutions.";
+    default:
+      return "Interview problems test problem-solving skills and algorithm design.";
   }
 }
 

@@ -11,6 +11,13 @@ export {
   useGraph,
 } from "./GraphContext";
 export {
+  type InterviewContextValue,
+  InterviewProvider,
+  type InterviewProviderProps,
+  type InterviewStepType,
+  useInterview,
+} from "./InterviewContext";
+export {
   type PathfindingContextValue,
   PathfindingProvider,
   type PathfindingProviderProps,

@@ -149,6 +149,16 @@ const DOMAIN_CARDS: DomainCardProps[] = [
       "Essential for networks, scheduling, and system design. Master minimum spanning trees and topological sorting.",
     startingPoint: { name: "Kahn's Algorithm", slug: "kahn" },
   },
+  {
+    href: "/learn/interview",
+    icon: <GraduationCap className="h-5 w-5" />,
+    title: "Interview",
+    algorithmCount: 1,
+    tagline: "Master classic coding problems.",
+    description:
+      "Prepare for technical interviews with visual explanations of common problems, multiple approaches, and interview strategies.",
+    startingPoint: { name: "Trapping Rain Water", slug: "trapping-rain-water" },
+  },
 ];
 
 /* ---------------------------------------------------------------------------
@@ -513,9 +523,9 @@ export default function LearnHubPage() {
             "grid grid-cols-2 gap-6 sm:grid-cols-4"
           )}
         >
-          <StatCard icon={<BookOpen className="h-5 w-5" />} value="22" label="Algorithms" />
-          <StatCard icon={<Layers className="h-5 w-5" />} value="4" label="Domains" />
-          <StatCard icon={<Code2 className="h-5 w-5" />} value="22" label="Code Examples" />
+          <StatCard icon={<BookOpen className="h-5 w-5" />} value="23" label="Algorithms" />
+          <StatCard icon={<Layers className="h-5 w-5" />} value="5" label="Domains" />
+          <StatCard icon={<Code2 className="h-5 w-5" />} value="23" label="Code Examples" />
           <StatCard icon={<Sparkles className="h-5 w-5" />} value="40+" label="Interactive Demos" />
         </div>
         <p className="text-muted text-sm">Everything designed to build intuition, not overwhelm.</p>

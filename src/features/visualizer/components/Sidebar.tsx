@@ -22,6 +22,7 @@ import { useSponsorship } from "@/features/sponsorship";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
   type GraphAlgorithmType,
+  type InterviewProblemType,
   type PathfindingAlgorithmType,
   type SortingAlgorithmType,
   type TreeDataStructureType,
@@ -85,6 +86,12 @@ const GRAPH_ALGORITHMS: {
   { id: "kahn", label: "Topological Sort", enabled: true },
 ];
 
+const INTERVIEW_PROBLEMS: {
+  id: InterviewProblemType;
+  label: string;
+  enabled: boolean;
+}[] = [{ id: "trapping-rain-water", label: "Trapping Rain Water", enabled: true }];
+
 export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
@@ -101,6 +108,8 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
   const setTreeDataStructure = useYieldStore((state) => state.setTreeDataStructure);
   const graphAlgorithm = useYieldStore((state) => state.graphAlgorithm);
   const setGraphAlgorithm = useYieldStore((state) => state.setGraphAlgorithm);
+  const interviewProblem = useYieldStore((state) => state.interviewProblem);
+  const setInterviewProblem = useYieldStore((state) => state.setInterviewProblem);
 
   const handleModeSelect = useCallback(
     (newMode: VisualizerMode) => {
@@ -135,6 +144,13 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
       setGraphAlgorithm(algo);
     },
     [setGraphAlgorithm]
+  );
+
+  const handleInterviewProblemSelect = useCallback(
+    (problem: InterviewProblemType) => {
+      setInterviewProblem(problem);
+    },
+    [setInterviewProblem]
   );
 
   const openComplexityModal = useCallback(() => {
@@ -222,6 +238,24 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               onHover={setHoveredItem}
               onClick={() => handleModeSelect("graph")}
               infoLink="/learn/graph"
+            />
+            <SidebarItem
+              id="cat-interview"
+              label="Interview"
+              isActive={mode === "interview"}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => handleModeSelect("interview")}
+              infoLink="/learn/interview"
+            />
+            <SidebarItem
+              id="cat-patterns"
+              label="Patterns"
+              isActive={mode === "patterns"}
+              disabled={true}
+              hoveredItem={hoveredItem}
+              onHover={setHoveredItem}
+              onClick={() => handleModeSelect("patterns")}
             />
           </SidebarGroup>
         </div>
@@ -544,6 +578,86 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
                 <Link
                   href={`/learn/graph/${graphAlgorithm}`}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-sky-500/20 transition-colors",
+                    "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4 text-sky-400" />
+                  <span className="text-sm font-medium">Learn</span>
+                </Link>
+              </motion.div>
+            </div>
+          </>
+        )}
+
+        {/* Interview Problems List */}
+        {mode === "interview" && (
+          <>
+            <div className="mb-2">
+              <span className="text-muted px-2 text-xs font-medium uppercase tracking-wider">
+                Problems
+              </span>
+            </div>
+
+            <SidebarGroup hoveredItem={hoveredItem} onHover={setHoveredItem}>
+              {INTERVIEW_PROBLEMS.map((problem) => (
+                <SidebarItem
+                  key={problem.id}
+                  id={`interview-${problem.id}`}
+                  label={problem.label}
+                  isActive={interviewProblem === problem.id}
+                  disabled={!problem.enabled}
+                  hoveredItem={hoveredItem}
+                  onHover={setHoveredItem}
+                  onClick={() => problem.enabled && handleInterviewProblemSelect(problem.id)}
+                />
+              ))}
+            </SidebarGroup>
+
+            <div className="border-border-subtle my-4 border-t" />
+
+            {/* CTA Group: Theory, Complexity, Learn */}
+            <div className="space-y-2">
+              {/* Theory */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href="/learn"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-amber-500/20 bg-amber-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-amber-500/20 transition-colors",
+                    "dark:border-amber-500/10 dark:bg-amber-500/5"
+                  )}
+                >
+                  <GraduationCap className="h-4 w-4 text-amber-400" />
+                  <span className="text-sm font-medium">Theory</span>
+                </Link>
+              </motion.div>
+
+              {/* Complexity */}
+              <motion.button
+                type="button"
+                onClick={openComplexityModal}
+                whileHover={buttonInteraction.hover}
+                whileTap={buttonInteraction.tap}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                  "border border-white/10 bg-white/5 backdrop-blur-sm",
+                  "text-primary hover:bg-white/10 transition-colors",
+                  "dark:border-white/5 dark:bg-black/20"
+                )}
+              >
+                <BadgeHelp className="h-4 w-4 text-cyan-400" />
+                <span className="text-sm font-medium">Complexity</span>
+              </motion.button>
+
+              {/* Learn */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href={`/learn/interview/${interviewProblem}`}
                   className={cn(
                     "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
                     "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
