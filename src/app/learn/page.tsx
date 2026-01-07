@@ -150,6 +150,16 @@ const DOMAIN_CARDS: DomainCardProps[] = [
     startingPoint: { name: "Kahn's Algorithm", slug: "kahn" },
   },
   {
+    href: "/learn/patterns",
+    icon: <Layers className="h-5 w-5" />,
+    title: "Patterns",
+    algorithmCount: 6,
+    tagline: "Mental templates for problem families.",
+    description:
+      "Learn the reusable strategies that unlock hundreds of problems. Sliding Window, Two Pointers, Prefix Sums, and more.",
+    startingPoint: { name: "Sliding Window", slug: "longest-substring" },
+  },
+  {
     href: "/learn/interview",
     icon: <GraduationCap className="h-5 w-5" />,
     title: "Interview",
@@ -260,12 +270,13 @@ const LEARNING_PATHS: LearningPathProps[] = [
     description:
       "Focus on algorithms and patterns that appear most often in coding interviews and system design discussions.",
     steps: [
+      { label: "Patterns", href: "/learn/patterns" },
       { label: "Quick Sort", href: "/learn/sorting/quick" },
-      { label: "Merge Sort", href: "/learn/sorting/merge" },
       { label: "BST", href: "/learn/tree/bst" },
       { label: "A*", href: "/learn/pathfinding/astar" },
     ],
-    highlight: "These concepts appear repeatedly in coding interviews and system discussions.",
+    highlight:
+      "Patterns unlock entire problem families. These concepts appear repeatedly in interviews.",
   },
   {
     icon: <Eye className="h-5 w-5" />,
@@ -319,6 +330,14 @@ const FEATURED_ALGORITHMS = [
     tagline: "The Edge Collector",
     reason:
       "An elegant Union-Find implementation for finding minimum spanning trees. Works well on sparse graphs where edges are the focus.",
+  },
+  {
+    mode: "patterns",
+    algorithm: "sliding-window",
+    title: "Sliding Window",
+    tagline: "The Range Optimizer",
+    reason:
+      "The most versatile pattern for subarray and substring problems. Master the expand-shrink dance and you unlock dozens of interview problems.",
   },
 ];
 
@@ -523,8 +542,8 @@ export default function LearnHubPage() {
             "grid grid-cols-2 gap-6 sm:grid-cols-4"
           )}
         >
-          <StatCard icon={<BookOpen className="h-5 w-5" />} value="23" label="Algorithms" />
-          <StatCard icon={<Layers className="h-5 w-5" />} value="5" label="Domains" />
+          <StatCard icon={<BookOpen className="h-5 w-5" />} value="29" label="Algorithms" />
+          <StatCard icon={<Layers className="h-5 w-5" />} value="6" label="Domains" />
           <StatCard icon={<Code2 className="h-5 w-5" />} value="23" label="Code Examples" />
           <StatCard icon={<Sparkles className="h-5 w-5" />} value="40+" label="Interactive Demos" />
         </div>
