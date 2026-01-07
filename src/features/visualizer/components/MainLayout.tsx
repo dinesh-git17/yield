@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { TourOverlay } from "@/features/onboarding";
+import { SponsorshipProvider, SupportBanner, SupportModal } from "@/features/sponsorship";
 import {
   buttonInteraction,
   panelVariants,
@@ -51,7 +52,7 @@ export function MainLayout({ sidebar, canvas, codePanel }: MainLayoutProps) {
   const openMobileDrawer = useCallback(() => setMobileDrawerOpen(true), []);
 
   return (
-    <>
+    <SponsorshipProvider>
       <LayoutGroup>
         <motion.div
           variants={staggerContainerVariants}
@@ -189,7 +190,11 @@ export function MainLayout({ sidebar, canvas, codePanel }: MainLayoutProps) {
 
       {/* Onboarding Tour Overlay */}
       <TourOverlay />
-    </>
+
+      {/* Sponsorship - Modal and Banner */}
+      <SupportModal />
+      <SupportBanner />
+    </SponsorshipProvider>
   );
 }
 

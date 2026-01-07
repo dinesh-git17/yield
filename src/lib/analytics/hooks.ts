@@ -211,3 +211,50 @@ export function trackGraphOperation(algorithm: string, nodeCount: number, edgeCo
     },
   });
 }
+
+// =============================================================================
+// Sponsorship Tracking
+// =============================================================================
+
+/**
+ * Track support modal open events.
+ */
+export function trackSupportModalOpen(source: "sidebar" | "banner") {
+  analytics.trackEvent({
+    name: ANALYTICS_EVENTS.SUPPORT_MODAL_OPEN,
+    payload: { source },
+  });
+}
+
+/**
+ * Track sponsor link click events.
+ */
+export function trackSupportLinkClick(
+  platform: "kofi" | "bmc" | "github",
+  source: "sidebar" | "banner"
+) {
+  analytics.trackEvent({
+    name: ANALYTICS_EVENTS.SUPPORT_LINK_CLICK,
+    payload: { platform, source },
+  });
+}
+
+/**
+ * Track support banner impression.
+ */
+export function trackSupportBannerImpression(completionCount: number) {
+  analytics.trackEvent({
+    name: ANALYTICS_EVENTS.SUPPORT_BANNER_IMPRESSION,
+    payload: { completion_count: completionCount },
+  });
+}
+
+/**
+ * Track support banner dismissal.
+ */
+export function trackSupportBannerDismiss(completionCount: number) {
+  analytics.trackEvent({
+    name: ANALYTICS_EVENTS.SUPPORT_BANNER_DISMISS,
+    payload: { completion_count: completionCount },
+  });
+}

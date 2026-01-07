@@ -130,6 +130,20 @@ export interface ConsentInteractionPayload {
   marketing_enabled: boolean;
 }
 
+/** Sponsorship support events */
+export interface SupportModalPayload {
+  source: "sidebar" | "banner";
+}
+
+export interface SupportLinkClickPayload {
+  platform: "kofi" | "bmc" | "github";
+  source: "sidebar" | "banner";
+}
+
+export interface SupportBannerPayload {
+  completion_count: number;
+}
+
 // =============================================================================
 // Event Name Constants
 // =============================================================================
@@ -169,6 +183,12 @@ export const ANALYTICS_EVENTS = {
 
   // Consent
   CONSENT_INTERACTION: "consent_interaction",
+
+  // Sponsorship
+  SUPPORT_MODAL_OPEN: "support_modal_open",
+  SUPPORT_LINK_CLICK: "support_link_click",
+  SUPPORT_BANNER_IMPRESSION: "support_banner_impression",
+  SUPPORT_BANNER_DISMISS: "support_banner_dismiss",
 } as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];
@@ -197,7 +217,11 @@ export type AnalyticsEvent =
   | { name: typeof ANALYTICS_EVENTS.CODE_PANEL; payload: CodePanelPayload }
   | { name: typeof ANALYTICS_EVENTS.COMPLEXITY_MODAL; payload: ComplexityModalPayload }
   | { name: typeof ANALYTICS_EVENTS.PAGE_VIEW; payload: PageViewPayload }
-  | { name: typeof ANALYTICS_EVENTS.CONSENT_INTERACTION; payload: ConsentInteractionPayload };
+  | { name: typeof ANALYTICS_EVENTS.CONSENT_INTERACTION; payload: ConsentInteractionPayload }
+  | { name: typeof ANALYTICS_EVENTS.SUPPORT_MODAL_OPEN; payload: SupportModalPayload }
+  | { name: typeof ANALYTICS_EVENTS.SUPPORT_LINK_CLICK; payload: SupportLinkClickPayload }
+  | { name: typeof ANALYTICS_EVENTS.SUPPORT_BANNER_IMPRESSION; payload: SupportBannerPayload }
+  | { name: typeof ANALYTICS_EVENTS.SUPPORT_BANNER_DISMISS; payload: SupportBannerPayload };
 
 // =============================================================================
 // Provider Interface (Vendor Abstraction)

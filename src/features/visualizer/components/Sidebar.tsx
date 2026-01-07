@@ -9,6 +9,7 @@ import {
   ChevronsLeft,
   FileText,
   GraduationCap,
+  HeartHandshake,
   HelpCircle,
   Info,
   Mail,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { useSponsorship } from "@/features/sponsorship";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
   type GraphAlgorithmType,
@@ -87,6 +89,8 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isComplexityOpen, setIsComplexityOpen] = useState(false);
 
+  const { openModal: openSupportModal } = useSponsorship();
+
   const mode = useYieldStore((state) => state.mode);
   const setMode = useYieldStore((state) => state.setMode);
   const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
@@ -140,6 +144,10 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
   const closeComplexityModal = useCallback(() => {
     setIsComplexityOpen(false);
   }, []);
+
+  const handleSupportClick = useCallback(() => {
+    openSupportModal("sidebar");
+  }, [openSupportModal]);
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
@@ -553,11 +561,32 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-border-subtle flex items-center justify-between border-t px-4 py-3">
-        <p className="text-muted/60 text-[11px] font-medium tracking-wide">
-          © {new Date().getFullYear()} Yield
-        </p>
-        <FooterMenu />
+      <div className="border-border-subtle border-t px-4 py-3">
+        {/* Support Button */}
+        <motion.button
+          type="button"
+          onClick={handleSupportClick}
+          whileHover={buttonInteraction.hover}
+          whileTap={buttonInteraction.tap}
+          className={cn(
+            "mb-3 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2",
+            "border border-rose-500/20 bg-rose-500/10 backdrop-blur-sm",
+            "text-primary hover:bg-rose-500/20 transition-colors",
+            "dark:border-rose-500/10 dark:bg-rose-500/5"
+          )}
+          title="Help keep Yield free"
+        >
+          <HeartHandshake className="h-4 w-4 text-rose-400" />
+          <span className="text-sm font-medium">Support Yield</span>
+        </motion.button>
+
+        {/* Copyright & Links */}
+        <div className="flex items-center justify-between">
+          <p className="text-muted/60 text-[11px] font-medium tracking-wide">
+            © {new Date().getFullYear()} Yield
+          </p>
+          <FooterMenu />
+        </div>
       </div>
 
       {/* Complexity Modal */}
