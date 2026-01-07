@@ -21,6 +21,26 @@ export {
   useSortingController,
   useTreeController,
 } from "./hooks";
+export {
+  computeTrappedWater,
+  createInitialRainWaterState,
+  DEFAULT_RAIN_WATER_HEIGHTS,
+  generateRandomHeights,
+  getInterviewProblemMetadata,
+  getStepInsight,
+  INTERVIEW_CONFIG,
+  INTERVIEW_INSIGHTS,
+  INTERVIEW_METADATA,
+  INTERVIEW_STEP_LABELS,
+  type InterviewContext,
+  type InterviewGenerator,
+  type InterviewProblemMetadata,
+  type InterviewProblemType,
+  type InterviewStep,
+  RAIN_WATER_PRESETS,
+  type RainWaterState,
+  trappingRainWater,
+} from "./interview";
 export { bubbleSort, type SortStep } from "./sorting";
 export {
   bstDelete,
