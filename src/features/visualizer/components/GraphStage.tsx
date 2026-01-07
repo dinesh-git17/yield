@@ -14,8 +14,9 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { getSetColor } from "@/features/algorithms/graph";
+import { useSponsorship } from "@/features/sponsorship";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import {
   GRAPH_CONFIG,
@@ -272,6 +273,18 @@ export function GraphStage({ className }: GraphStageProps) {
   const isPlaying = controller.status === "playing";
   const isComplete = controller.status === "complete";
   const isIdle = controller.status === "idle";
+
+  // Sponsorship engagement tracking
+  const { incrementCompletion } = useSponsorship();
+  const hasTrackedCompletion = useRef(false);
+  useEffect(() => {
+    if (isComplete && !hasTrackedCompletion.current) {
+      hasTrackedCompletion.current = true;
+      incrementCompletion();
+    } else if (isIdle) {
+      hasTrackedCompletion.current = false;
+    }
+  }, [isComplete, isIdle, incrementCompletion]);
 
   /**
    * Converts mouse event coordinates to percentage-based canvas coordinates.

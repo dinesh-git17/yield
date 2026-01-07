@@ -10,11 +10,12 @@ import {
   SkipForward,
   Trash2,
 } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useMazeGenerator } from "@/features/algorithms/hooks";
 import type { MazeAlgorithmType } from "@/features/algorithms/maze";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding";
 import { GenerateDropdown, PathfindingControlBar } from "@/features/controls";
+import { useSponsorship } from "@/features/sponsorship";
 import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { type PathfindingAlgorithmType, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
   const clearWalls = useYieldStore((state) => state.clearWalls);
   const resetNodeState = useYieldStore((state) => state.resetNodeState);
   const isGeneratingMaze = useYieldStore((state) => state.isGeneratingMaze);
+  const { incrementCompletion } = useSponsorship();
 
   // Use the pathfinding controller from context
   const controller = usePathfinding();
@@ -44,6 +46,17 @@ export function PathfindingStage({ className }: PathfindingStageProps) {
 
   // Get algorithm metadata
   const metadata = getPathfindingAlgorithmMetadata(pathfindingAlgorithm);
+
+  // Track visualization completions for engagement
+  const hasTrackedCompletion = useRef(false);
+  useEffect(() => {
+    if (controller.status === "complete" && !hasTrackedCompletion.current) {
+      hasTrackedCompletion.current = true;
+      incrementCompletion();
+    } else if (controller.status === "idle") {
+      hasTrackedCompletion.current = false;
+    }
+  }, [controller.status, incrementCompletion]);
 
   const handleClearWalls = useCallback(() => {
     controller.reset();

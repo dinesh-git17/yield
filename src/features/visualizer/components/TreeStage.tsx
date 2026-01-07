@@ -15,10 +15,11 @@ import {
   SkipForward,
   Trash2,
 } from "lucide-react";
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RotationInfo, TraversalOutput, TreeNodeState } from "@/features/algorithms";
 import { generateBalancedInsertionOrder } from "@/features/algorithms/tree";
 import { TreeControlBar } from "@/features/controls";
+import { useSponsorship } from "@/features/sponsorship";
 import { buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { type TreeAlgorithmType, type TreeNode, type TreeState, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -156,6 +157,18 @@ export function TreeStage({ className }: TreeStageProps) {
   const isPlaying = controller.status === "playing";
   const isComplete = controller.status === "complete";
   const isIdle = controller.status === "idle";
+
+  // Sponsorship engagement tracking
+  const { incrementCompletion } = useSponsorship();
+  const hasTrackedCompletion = useRef(false);
+  useEffect(() => {
+    if (isComplete && !hasTrackedCompletion.current) {
+      hasTrackedCompletion.current = true;
+      incrementCompletion();
+    } else if (isIdle) {
+      hasTrackedCompletion.current = false;
+    }
+  }, [isComplete, isIdle, incrementCompletion]);
 
   // State for traversal dropdown - null means no traversal selected yet
   const [selectedTraversal, setSelectedTraversal] = useState<TreeAlgorithmType | null>(null);

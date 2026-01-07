@@ -2,8 +2,10 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Pause, Play, RotateCcw, StepForward } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { getAlgorithmMetadata } from "@/features/algorithms";
 import { ControlBar } from "@/features/controls";
+import { useSponsorship } from "@/features/sponsorship";
 import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -23,8 +25,20 @@ export function SortingStage({ className }: SortingStageProps) {
     useSorting();
   const sortingAlgorithm = useYieldStore((state) => state.sortingAlgorithm);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
+  const { incrementCompletion } = useSponsorship();
 
   const algorithmInfo = getAlgorithmMetadata(sortingAlgorithm);
+
+  // Track visualization completions for engagement
+  const hasTrackedCompletion = useRef(false);
+  useEffect(() => {
+    if (status === "complete" && !hasTrackedCompletion.current) {
+      hasTrackedCompletion.current = true;
+      incrementCompletion();
+    } else if (status === "idle") {
+      hasTrackedCompletion.current = false;
+    }
+  }, [status, incrementCompletion]);
 
   if (!isReady) {
     return (
