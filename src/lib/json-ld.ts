@@ -9,15 +9,22 @@ import type { VisualizerMode } from "./store";
 const BASE_URL = env.baseUrl;
 
 /**
+ * Extended mode type that includes learn page modes.
+ * "sliding-window" is the URL mode that maps to "patterns" visualizer mode.
+ */
+type LearnMode = VisualizerMode | "sliding-window";
+
+/**
  * Mode labels for human-readable breadcrumbs.
  */
-const MODE_LABELS: Record<VisualizerMode, string> = {
+const MODE_LABELS: Record<LearnMode, string> = {
   sorting: "Sorting Algorithms",
   pathfinding: "Pathfinding Algorithms",
   tree: "Data Structures",
   graph: "Graph Algorithms",
   interview: "Interview Problems",
   patterns: "Algorithm Patterns",
+  "sliding-window": "Algorithm Patterns",
 };
 
 /**
@@ -40,7 +47,7 @@ function getProfiencyLevel(complexity: string): string {
 interface TechArticleParams {
   title: string;
   description: string;
-  mode: VisualizerMode;
+  mode: LearnMode;
   slug: string;
   complexity: string;
   datePublished?: string;
@@ -95,7 +102,7 @@ export function generateTechArticleJsonLd({
 }
 
 interface BreadcrumbParams {
-  mode: VisualizerMode;
+  mode: LearnMode;
   algorithmTitle: string;
   slug: string;
 }

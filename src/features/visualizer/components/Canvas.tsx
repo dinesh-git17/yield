@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { GraphStage } from "./GraphStage";
 import { InterviewStage } from "./InterviewStage";
 import { PathfindingStage } from "./PathfindingStage";
+import { PatternStage } from "./PatternStage";
 import { SortingStage } from "./SortingStage";
 import { TreeStage } from "./TreeStage";
 
@@ -115,6 +116,19 @@ export function Canvas({ className }: CanvasProps) {
             className="h-full"
           >
             <InterviewStage className="h-full" />
+          </motion.div>
+        );
+      case "patterns":
+        return (
+          <motion.div
+            key="patterns-stage"
+            variants={stageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="h-full"
+          >
+            <PatternStage className="h-full" />
           </motion.div>
         );
     }

@@ -25,6 +25,13 @@ export {
   usePathfinding,
 } from "./PathfindingContext";
 export {
+  type PatternContextValue,
+  PatternProvider,
+  type PatternProviderProps,
+  type PatternStepType,
+  usePattern,
+} from "./PatternContext";
+export {
   type SortingContextValue,
   SortingProvider,
   type SortingProviderProps,

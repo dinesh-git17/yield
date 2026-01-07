@@ -20,6 +20,15 @@ export {
   usePathfindingController,
 } from "./usePathfindingController";
 export {
+  type CharacterBoxData,
+  type CharacterBoxState,
+  type PatternControllerActions,
+  type PatternControllerState,
+  type PatternPlaybackStatus,
+  type UsePatternControllerReturn,
+  usePatternController,
+} from "./usePatternController";
+export {
   type BarData,
   type PlaybackStatus,
   type SortingControllerActions,

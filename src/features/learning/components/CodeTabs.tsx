@@ -9,6 +9,7 @@ import { SiCplusplus, SiJavascript } from "react-icons/si";
 import { getGraphImplementation } from "@/features/learning/code/graphs";
 import { getInterviewImplementation } from "@/features/learning/code/interview";
 import { getPathfindingImplementation } from "@/features/learning/code/pathfinding";
+import { getPatternImplementation } from "@/features/learning/code/patterns";
 import {
   getSortingImplementation,
   LANGUAGE_INFO,
@@ -21,6 +22,7 @@ import type {
   GraphAlgorithmType,
   InterviewProblemType,
   PathfindingAlgorithmType,
+  PatternProblemType,
   SortingAlgorithmType,
   TreeDataStructureType,
 } from "@/lib/store";
@@ -59,18 +61,23 @@ const LanguageIcon = memo(function LanguageIcon({ language, className }: Languag
 
 export interface CodeTabsProps {
   /** The visualization mode */
-  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview";
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "sliding-window";
   /** The algorithm or data structure to display code for */
   algorithm: string;
   /** Optional additional class names */
   className?: string;
 }
 
+/** Maps URL slugs to internal pattern problem types */
+const PATTERN_SLUG_TO_TYPE: Record<string, PatternProblemType> = {
+  "longest-substring": "longest-substring-norepeat",
+};
+
 /**
  * Get code implementation based on mode and algorithm/structure.
  */
 function getImplementation(
-  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview",
+  mode: "sorting" | "pathfinding" | "tree" | "graph" | "interview" | "sliding-window",
   algorithm: string,
   language: Language
 ): string {
@@ -85,6 +92,10 @@ function getImplementation(
   }
   if (mode === "interview") {
     return getInterviewImplementation(algorithm as InterviewProblemType, language);
+  }
+  if (mode === "sliding-window") {
+    const problemType = PATTERN_SLUG_TO_TYPE[algorithm] ?? (algorithm as PatternProblemType);
+    return getPatternImplementation(problemType, language);
   }
   return getPathfindingImplementation(algorithm as PathfindingAlgorithmType, language);
 }
