@@ -147,9 +147,6 @@ export default withSentryConfig(nextConfig, {
   // Requires SENTRY_AUTH_TOKEN environment variable
   widenClientFileUpload: true,
 
-  // Automatically tree-shake Sentry logger statements
-  disableLogger: true,
-
   // Configure source maps upload
   sourcemaps: {
     deleteSourcemapsAfterUpload: true,
@@ -158,8 +155,15 @@ export default withSentryConfig(nextConfig, {
   // Tunnel Sentry events to avoid ad blockers (optional)
   // tunnelRoute: "/monitoring",
 
-  // Enable React component annotations for better error context
-  reactComponentAnnotation: {
-    enabled: true,
+  // Webpack-specific Sentry options
+  webpack: {
+    // Automatically tree-shake Sentry logger statements
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    // Enable React component annotations for better error context
+    reactComponentAnnotation: {
+      enabled: true,
+    },
   },
 });
