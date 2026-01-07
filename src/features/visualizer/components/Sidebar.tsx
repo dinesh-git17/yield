@@ -246,6 +246,7 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
               hoveredItem={hoveredItem}
               onHover={setHoveredItem}
               onClick={() => handleModeSelect("interview")}
+              infoLink="/learn/interview"
             />
             <SidebarItem
               id="cat-patterns"
@@ -618,8 +619,24 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
 
             <div className="border-border-subtle my-4 border-t" />
 
-            {/* CTA Group: Complexity */}
+            {/* CTA Group: Theory, Complexity, Learn */}
             <div className="space-y-2">
+              {/* Theory */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href="/learn"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-amber-500/20 bg-amber-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-amber-500/20 transition-colors",
+                    "dark:border-amber-500/10 dark:bg-amber-500/5"
+                  )}
+                >
+                  <GraduationCap className="h-4 w-4 text-amber-400" />
+                  <span className="text-sm font-medium">Theory</span>
+                </Link>
+              </motion.div>
+
               {/* Complexity */}
               <motion.button
                 type="button"
@@ -633,9 +650,25 @@ export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
                   "dark:border-white/5 dark:bg-black/20"
                 )}
               >
-                <BadgeHelp className="h-4 w-4 text-sky-400" />
+                <BadgeHelp className="h-4 w-4 text-cyan-400" />
                 <span className="text-sm font-medium">Complexity</span>
               </motion.button>
+
+              {/* Learn */}
+              <motion.div whileHover={buttonInteraction.hover} whileTap={buttonInteraction.tap}>
+                <Link
+                  href={`/learn/interview/${interviewProblem}`}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5",
+                    "border border-sky-500/20 bg-sky-500/10 backdrop-blur-sm",
+                    "text-primary hover:bg-sky-500/20 transition-colors",
+                    "dark:border-sky-500/10 dark:bg-sky-500/5"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4 text-sky-400" />
+                  <span className="text-sm font-medium">Learn</span>
+                </Link>
+              </motion.div>
             </div>
           </>
         )}

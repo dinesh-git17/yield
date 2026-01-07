@@ -3,11 +3,13 @@ import { getAlgorithmMetadata } from "@/features/algorithms";
 import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
 import { getGraphArticle } from "@/features/learning/content/graphs";
+import { getInterviewArticle } from "@/features/learning/content/interview";
 import { getPathfindingArticle } from "@/features/learning/content/pathfinding";
 import { getSortingArticle } from "@/features/learning/content/sorting";
 import { getTreeArticle } from "@/features/learning/content/trees";
 import type {
   GraphAlgorithmType,
+  InterviewProblemType,
   PathfindingAlgorithmType,
   SortingAlgorithmType,
   TreeDataStructureType,
@@ -22,8 +24,14 @@ export const size = {
 export const contentType = "image/png";
 
 /** Modes that have learn page content */
-type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph";
-const VALID_MODES: readonly LearnableMode[] = ["sorting", "pathfinding", "tree", "graph"];
+type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph" | "interview";
+const VALID_MODES: readonly LearnableMode[] = [
+  "sorting",
+  "pathfinding",
+  "tree",
+  "graph",
+  "interview",
+];
 const VALID_SORTING_ALGORITHMS = [
   "bubble",
   "selection",
@@ -45,6 +53,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
 ] as const;
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
 const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
+const VALID_INTERVIEW_PROBLEMS = ["trapping-rain-water"] as const;
 
 function isValidMode(mode: string): mode is LearnableMode {
   return VALID_MODES.includes(mode as LearnableMode);
@@ -64,6 +73,10 @@ function isValidTreeStructure(structure: string): structure is TreeDataStructure
 
 function isValidGraphAlgorithm(algorithm: string): algorithm is GraphAlgorithmType {
   return VALID_GRAPH_ALGORITHMS.includes(algorithm as GraphAlgorithmType);
+}
+
+function isValidInterviewProblem(problem: string): problem is InterviewProblemType {
+  return VALID_INTERVIEW_PROBLEMS.includes(problem as InterviewProblemType);
 }
 
 interface AlgorithmInfo {
@@ -111,6 +124,15 @@ function getAlgorithmInfo(mode: string, algorithm: string): AlgorithmInfo | null
       tagline: article.tagline,
       complexity: metadata?.complexity ?? "O(E log V)",
       modeLabel: "Graph Algorithm",
+    };
+  }
+  if (mode === "interview" && isValidInterviewProblem(algorithm)) {
+    const article = getInterviewArticle(algorithm);
+    return {
+      title: article.title,
+      tagline: article.tagline,
+      complexity: article.timeComplexity.complexity,
+      modeLabel: "Interview Problem",
     };
   }
   return null;

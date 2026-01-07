@@ -12,6 +12,7 @@ import {
   Target,
   TreeDeciduous,
   XCircle,
+  Zap,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getAlgorithmMetadata } from "@/features/algorithms";
@@ -19,6 +20,7 @@ import { getGraphAlgorithmMetadata } from "@/features/algorithms/graph/config";
 import { getPathfindingAlgorithmMetadata } from "@/features/algorithms/pathfinding/config";
 import { CodeTabs, RelatedAlgorithms, TryItDemos } from "@/features/learning/components";
 import { type GraphArticle, getGraphArticle } from "@/features/learning/content/graphs";
+import { getInterviewArticle, type InterviewArticle } from "@/features/learning/content/interview";
 import {
   getPathfindingArticle,
   type PathfindingArticle,
@@ -28,6 +30,7 @@ import { getTreeArticle, type TreeArticle } from "@/features/learning/content/tr
 import { generateBreadcrumbJsonLd, generateTechArticleJsonLd } from "@/lib/json-ld";
 import type {
   GraphAlgorithmType,
+  InterviewProblemType,
   PathfindingAlgorithmType,
   SortingAlgorithmType,
   TreeDataStructureType,
@@ -42,8 +45,14 @@ interface LearnPageProps {
 }
 
 /** Modes that have learn page content */
-type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph";
-const VALID_MODES: readonly LearnableMode[] = ["sorting", "pathfinding", "tree", "graph"];
+type LearnableMode = "sorting" | "pathfinding" | "tree" | "graph" | "interview";
+const VALID_MODES: readonly LearnableMode[] = [
+  "sorting",
+  "pathfinding",
+  "tree",
+  "graph",
+  "interview",
+];
 const VALID_SORTING_ALGORITHMS = [
   "bubble",
   "selection",
@@ -65,6 +74,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
 ] as const;
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
 const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
+const VALID_INTERVIEW_PROBLEMS = ["trapping-rain-water"] as const;
 
 function isValidMode(mode: string): mode is LearnableMode {
   return VALID_MODES.includes(mode as LearnableMode);
@@ -86,6 +96,10 @@ function isValidGraphAlgorithm(algorithm: string): algorithm is GraphAlgorithmTy
   return VALID_GRAPH_ALGORITHMS.includes(algorithm as GraphAlgorithmType);
 }
 
+function isValidInterviewProblem(problem: string): problem is InterviewProblemType {
+  return VALID_INTERVIEW_PROBLEMS.includes(problem as InterviewProblemType);
+}
+
 /**
  * Unified article type for polymorphic page rendering.
  */
@@ -93,7 +107,8 @@ type ArticleContent =
   | { mode: "sorting"; article: SortingArticle; algorithm: SortingAlgorithmType }
   | { mode: "pathfinding"; article: PathfindingArticle; algorithm: PathfindingAlgorithmType }
   | { mode: "tree"; article: TreeArticle; structure: TreeDataStructureType }
-  | { mode: "graph"; article: GraphArticle; algorithm: GraphAlgorithmType };
+  | { mode: "graph"; article: GraphArticle; algorithm: GraphAlgorithmType }
+  | { mode: "interview"; article: InterviewArticle; problem: InterviewProblemType };
 
 /**
  * Factory function to get the appropriate article based on mode and algorithm/structure.
@@ -125,6 +140,13 @@ function getArticle(mode: string, algorithm: string): ArticleContent | null {
       mode: "graph",
       article: getGraphArticle(algorithm),
       algorithm,
+    };
+  }
+  if (mode === "interview" && isValidInterviewProblem(algorithm)) {
+    return {
+      mode: "interview",
+      article: getInterviewArticle(algorithm),
+      problem: algorithm,
     };
   }
   return null;
@@ -161,8 +183,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
     notFound();
   }
 
-  // For non-tree modes, metadata is required
-  if (content.mode !== "tree" && !metadata) {
+  // For modes without built-in complexity info, external metadata is required
+  // Tree and Interview modes have complexity info in the article itself
+  if (content.mode !== "tree" && content.mode !== "interview" && !metadata) {
     notFound();
   }
 
@@ -186,6 +209,10 @@ export default async function LearnPage({ params }: LearnPageProps) {
       label: "Graph Algorithm",
       icon: <Network className="h-5 w-5" />,
     },
+    interview: {
+      label: "Interview Problem",
+      icon: <GraduationCap className="h-5 w-5" />,
+    },
   };
 
   const config = modeConfig[content.mode];
@@ -196,7 +223,9 @@ export default async function LearnPage({ params }: LearnPageProps) {
       ? content.article.searchComplexity.complexity
       : content.mode === "graph"
         ? content.article.timeComplexity.complexity
-        : (metadata?.complexity ?? "O(n)");
+        : content.mode === "interview"
+          ? content.article.timeComplexity.complexity
+          : (metadata?.complexity ?? "O(n)");
 
   // Generate JSON-LD structured data
   const techArticleJsonLd = generateTechArticleJsonLd({
@@ -279,6 +308,39 @@ export default async function LearnPage({ params }: LearnPageProps) {
                   variant="good"
                 />
               </>
+            ) : content.mode === "interview" ? (
+              <>
+                <ComplexityBadge
+                  icon={<Clock className="h-4 w-4" />}
+                  label="Time"
+                  value={content.article.timeComplexity.complexity}
+                  variant={getComplexityVariant(content.article.timeComplexity.complexity)}
+                />
+                <ComplexityBadge
+                  icon={<HardDrive className="h-4 w-4" />}
+                  label="Space"
+                  value={content.article.spaceComplexity.complexity}
+                  variant={getComplexityVariant(content.article.spaceComplexity.complexity)}
+                />
+                <ComplexityBadge
+                  icon={<GraduationCap className="h-4 w-4" />}
+                  label="Difficulty"
+                  value={content.article.difficulty}
+                  variant={
+                    content.article.difficulty === "Hard"
+                      ? "fair"
+                      : content.article.difficulty === "Medium"
+                        ? "good"
+                        : "excellent"
+                  }
+                />
+                <ComplexityBadge
+                  icon={<Zap className="h-4 w-4" />}
+                  label="Pattern"
+                  value={content.article.pattern}
+                  variant="good"
+                />
+              </>
             ) : (
               <>
                 <ComplexityBadge
@@ -311,6 +373,20 @@ export default async function LearnPage({ params }: LearnPageProps) {
         <Section title="History" icon={<Lightbulb className="h-5 w-5" />}>
           <Prose content={article.history} />
         </Section>
+
+        {/* Problem Definition Section - Interview only */}
+        {content.mode === "interview" && (
+          <Section title="Problem Definition" icon={<Target className="h-5 w-5" />}>
+            <Prose content={content.article.problemDefinition} />
+          </Section>
+        )}
+
+        {/* Core Idea Section - Interview only */}
+        {content.mode === "interview" && (
+          <Section title="Core Idea" icon={<Zap className="h-5 w-5" />}>
+            <Prose content={content.article.coreIdea} />
+          </Section>
+        )}
 
         {/* Core Property Section - Trees only */}
         {content.mode === "tree" && (
@@ -438,7 +514,74 @@ export default async function LearnPage({ params }: LearnPageProps) {
               />
             </div>
           )}
+          {content.mode === "interview" && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <ComplexityCard
+                title="Time Complexity"
+                complexity={content.article.timeComplexity.complexity}
+                explanation={content.article.timeComplexity.explanation}
+                variant="good"
+              />
+              <ComplexityCard
+                title="Space Complexity"
+                complexity={content.article.spaceComplexity.complexity}
+                explanation={content.article.spaceComplexity.explanation}
+                variant={content.article.spaceComplexity.complexity === "O(1)" ? "good" : "neutral"}
+              />
+            </div>
+          )}
         </Section>
+
+        {/* Approaches Section - Interview only */}
+        {content.mode === "interview" && (
+          <Section title="Approaches" icon={<Code2 className="h-5 w-5" />}>
+            <div className="space-y-4">
+              {content.article.approaches.map((approach) => (
+                <div
+                  key={approach.name}
+                  className={cn(
+                    "rounded-xl border p-4",
+                    approach.isOptimal
+                      ? "border-emerald-500/30 bg-emerald-500/10"
+                      : "border-border bg-surface"
+                  )}
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h4
+                      className={cn(
+                        "font-semibold",
+                        approach.isOptimal ? "text-emerald-500" : "text-primary"
+                      )}
+                    >
+                      {approach.name}
+                      {approach.isOptimal && (
+                        <span className="ml-2 rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-500">
+                          Optimal
+                        </span>
+                      )}
+                    </h4>
+                    <div className="flex gap-2 text-xs text-muted">
+                      <span className="rounded bg-surface-elevated px-2 py-1">
+                        Time: {approach.timeComplexity}
+                      </span>
+                      <span className="rounded bg-surface-elevated px-2 py-1">
+                        Space: {approach.spaceComplexity}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-sm text-primary/80">{approach.description}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Why It Works Section - Interview only */}
+        {content.mode === "interview" && (
+          <Section title="Why It Works" icon={<Lightbulb className="h-5 w-5" />}>
+            <Prose content={content.article.whyItWorks} />
+          </Section>
+        )}
 
         {/* Code Walkthrough Section */}
         <Section title="Code Walkthrough" icon={<Code2 className="h-5 w-5" />}>
@@ -545,6 +688,45 @@ export default async function LearnPage({ params }: LearnPageProps) {
               {parseTextWithMath(content.article.interviewTip)}
             </p>
           </div>
+        )}
+
+        {/* Common Pitfalls Section - Interview only */}
+        {content.mode === "interview" && (
+          <Section title="Common Interview Pitfalls" icon={<AlertTriangle className="h-5 w-5" />}>
+            <ul className="space-y-3">
+              {content.article.pitfalls.map((pitfall, index) => (
+                <li
+                  // biome-ignore lint/suspicious/noArrayIndexKey: Static content never reorders
+                  key={index}
+                  className="flex items-start gap-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-4"
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+                  <span className="text-primary/80 text-sm">{pitfall}</span>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
+
+        {/* Interview Q&A Section - Interview only */}
+        {content.mode === "interview" && (
+          <Section
+            title="Interview Questions & Answers"
+            icon={<GraduationCap className="h-5 w-5" />}
+          >
+            <div className="space-y-4">
+              {content.article.interviewQA.map((qa, index) => (
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: Static content never reorders
+                  key={index}
+                  className="rounded-xl border border-border bg-surface p-4"
+                >
+                  <h4 className="text-accent font-medium">{qa.question}</h4>
+                  <p className="mt-2 text-sm text-primary/80">{qa.answer}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
         )}
 
         {/* Related Algorithms Section */}
@@ -965,6 +1147,7 @@ export async function generateMetadata({ params }: LearnPageProps) {
       pathfinding: "Pathfinding",
       tree: "Data Structures",
       graph: "Graph Algorithms",
+      interview: "Interview Prep",
     } as const;
     const modeLabel = modeLabels[content.mode];
     const title = `${content.article.title} | ${modeLabel} | Learn`;
@@ -1027,5 +1210,16 @@ export function generateStaticParams() {
     algorithm,
   }));
 
-  return [...sortingParams, ...pathfindingParams, ...treeParams, ...graphParams];
+  const interviewParams = VALID_INTERVIEW_PROBLEMS.map((problem) => ({
+    mode: "interview",
+    algorithm: problem,
+  }));
+
+  return [
+    ...sortingParams,
+    ...pathfindingParams,
+    ...treeParams,
+    ...graphParams,
+    ...interviewParams,
+  ];
 }

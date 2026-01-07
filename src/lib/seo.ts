@@ -5,6 +5,7 @@
 
 import type {
   GraphAlgorithmType,
+  InterviewProblemType,
   PathfindingAlgorithmType,
   SortingAlgorithmType,
   TreeDataStructureType,
@@ -14,7 +15,13 @@ import type {
 /**
  * All valid visualizer modes for sitemap generation.
  */
-export const VALID_MODES: VisualizerMode[] = ["sorting", "pathfinding", "tree", "graph"];
+export const VALID_MODES: VisualizerMode[] = [
+  "sorting",
+  "pathfinding",
+  "tree",
+  "graph",
+  "interview",
+];
 
 /**
  * All valid sorting algorithms.
@@ -54,6 +61,11 @@ export const VALID_TREE_STRUCTURES: TreeDataStructureType[] = ["bst", "avl", "ma
 export const VALID_GRAPH_ALGORITHMS: GraphAlgorithmType[] = ["prim", "kruskal", "kahn"];
 
 /**
+ * All valid interview problems.
+ */
+export const VALID_INTERVIEW_PROBLEMS: InterviewProblemType[] = ["trapping-rain-water"];
+
+/**
  * Generates all learn page routes for sitemap generation.
  */
 export function generateLearnRoutes(): Array<{ mode: VisualizerMode; slug: string }> {
@@ -73,6 +85,10 @@ export function generateLearnRoutes(): Array<{ mode: VisualizerMode; slug: strin
 
   for (const algorithm of VALID_GRAPH_ALGORITHMS) {
     routes.push({ mode: "graph", slug: algorithm });
+  }
+
+  for (const problem of VALID_INTERVIEW_PROBLEMS) {
+    routes.push({ mode: "interview", slug: problem });
   }
 
   return routes;
