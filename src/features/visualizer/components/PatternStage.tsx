@@ -198,7 +198,7 @@ function PatternStageContent({ className }: { className?: string }) {
         />
 
         {/* Main Visualization */}
-        <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pb-24 md:gap-12 md:px-6">
+        <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pb-24 pt-48 md:gap-12 md:px-6 md:pt-52">
           {/* Window Array */}
           <WindowArray
             characters={characters}
@@ -394,7 +394,7 @@ const InsightBanner = memo(function InsightBanner({
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-cyan-300">Linear Time: O(n)</span>
             <p className="text-muted text-xs leading-relaxed">
-              Each character was visited at most twice — once when the right pointer expanded, and
+              Each character was visited at most twice: once when the right pointer expanded, and
               once when the left pointer contracted. This is the power of the sliding window!
             </p>
           </div>

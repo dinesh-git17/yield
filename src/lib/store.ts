@@ -1739,7 +1739,12 @@ export const useYieldStore = create<YieldStore>((set) => ({
   patternState: createDefaultPatternState(DEFAULT_SLIDING_WINDOW_INPUT),
 
   // Global actions
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) =>
+    set({
+      mode,
+      // Set slower default speed for patterns mode (algorithm moves fast)
+      playbackSpeed: mode === "patterns" ? 0.5 : SPEED_CONFIG.DEFAULT,
+    }),
 
   setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
 
