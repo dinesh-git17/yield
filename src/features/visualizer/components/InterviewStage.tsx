@@ -240,41 +240,47 @@ function InterviewStageContent({ className }: { className?: string }) {
         />
 
         {/* Bar Visualization */}
-        <div className="flex flex-1 items-end justify-center px-4 pb-20 md:px-6 md:pb-24">
-          <div className="border-border/50 relative flex h-full max-h-[280px] w-full max-w-3xl items-end justify-center gap-1 border-b pb-2 md:max-h-[320px] md:gap-2">
-            {/* Area Overlay for Histogram */}
-            {isHistogramProblem && (
-              <>
-                <AreaOverlay
-                  rectangle={calculatingRectangle}
-                  isMaxRectangle={false}
-                  barCount={bars.length}
-                  maxHeight={INTERVIEW_CONFIG.MAX_HEIGHT}
-                />
-                {/* Show max rectangle persistently after it's found */}
-                {maxRectangle && !calculatingRectangle && (
+        <div className="flex flex-1 flex-col items-center justify-end px-4 pb-28 md:px-6 md:pb-32">
+          <div className="border-border/50 flex h-full max-h-[280px] w-full max-w-3xl items-end justify-center border-b pb-2 md:max-h-[320px]">
+            {/* Inner wrapper for bars - overlay is relative to this */}
+            <div className="relative flex h-full items-end gap-1 md:gap-2">
+              {/* Area Overlay for Histogram */}
+              {isHistogramProblem && (
+                <>
                   <AreaOverlay
-                    rectangle={maxRectangle}
-                    isMaxRectangle={true}
+                    rectangle={calculatingRectangle}
+                    isMaxRectangle={false}
                     barCount={bars.length}
                     maxHeight={INTERVIEW_CONFIG.MAX_HEIGHT}
                   />
-                )}
-              </>
-            )}
+                  {/* Show max rectangle persistently after it's found */}
+                  {maxRectangle && !calculatingRectangle && (
+                    <AreaOverlay
+                      rectangle={maxRectangle}
+                      isMaxRectangle={true}
+                      barCount={bars.length}
+                      maxHeight={INTERVIEW_CONFIG.MAX_HEIGHT}
+                    />
+                  )}
+                </>
+              )}
 
-            {bars.map((bar) => (
-              <RainWaterBar
-                key={bar.id}
-                height={bar.height}
-                index={bar.index}
-                waterLevel={bar.waterLevel}
-                state={bar.state}
-                maxHeight={INTERVIEW_CONFIG.MAX_HEIGHT}
-                speed={speed}
-              />
-            ))}
+              {bars.map((bar) => (
+                <RainWaterBar
+                  key={bar.id}
+                  height={bar.height}
+                  index={bar.index}
+                  waterLevel={bar.waterLevel}
+                  state={bar.state}
+                  maxHeight={INTERVIEW_CONFIG.MAX_HEIGHT}
+                  speed={speed}
+                />
+              ))}
+            </div>
           </div>
+
+          {/* Inline Legend */}
+          {isHistogramProblem ? <HistogramLegend /> : <RainWaterLegend />}
         </div>
 
         {/* Floating Control Bar */}
@@ -320,9 +326,6 @@ function InterviewStageContent({ className }: { className?: string }) {
             Step: {currentStepIndex} {isComplete && "(Complete)"}
           </span>
         </div>
-
-        {/* Problem-Specific Legend */}
-        {isHistogramProblem ? <HistogramLegend /> : <RainWaterLegend />}
       </div>
     </div>
   );
@@ -333,7 +336,7 @@ function InterviewStageContent({ className }: { className?: string }) {
  */
 function RainWaterLegend() {
   return (
-    <div className="absolute bottom-4 left-4 hidden flex-col gap-1 md:bottom-6 md:flex">
+    <div className="mt-3 hidden w-full max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-1 md:flex">
       <div className="flex items-center gap-2">
         <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: "#f59e0b" }} />
         <span className="text-muted text-xs">Left Pointer</span>
@@ -358,7 +361,7 @@ function RainWaterLegend() {
  */
 function HistogramLegend() {
   return (
-    <div className="absolute bottom-4 left-4 hidden flex-col gap-1 md:bottom-6 md:flex">
+    <div className="mt-3 hidden w-full max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-1 md:flex">
       <div className="flex items-center gap-2">
         <span
           className="h-3 w-3 rounded-sm border-2"
@@ -379,14 +382,14 @@ function HistogramLegend() {
           className="h-3 w-3 rounded-sm"
           style={{ backgroundColor: "rgba(139, 92, 246, 0.5)" }}
         />
-        <span className="text-muted text-xs">Rectangle Area</span>
+        <span className="text-muted text-xs">Calculating</span>
       </div>
       <div className="flex items-center gap-2">
         <span
           className="h-3 w-3 rounded-sm"
           style={{ backgroundColor: "rgba(16, 185, 129, 0.5)" }}
         />
-        <span className="text-muted text-xs">Max Rectangle</span>
+        <span className="text-muted text-xs">Max Area</span>
       </div>
     </div>
   );

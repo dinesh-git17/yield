@@ -94,7 +94,7 @@ const INTERVIEW_PROBLEMS: {
   enabled: boolean;
 }[] = [
   { id: "trapping-rain-water", label: "Trapping Rain Water", enabled: true },
-  { id: "largest-rectangle-histogram", label: "Largest Rectangle", enabled: false },
+  { id: "largest-rectangle-histogram", label: "Largest Rectangle", enabled: true },
 ];
 
 const PATTERN_PROBLEMS: {

@@ -329,12 +329,25 @@ export function useInterviewController(
     if (result.done) {
       setStatus("complete");
       setInsight(getStepInsight("complete"));
-      // Mark all bars as complete
+
+      // Clear temporary calculation state so max rectangle overlay shows
+      setCalculatingRectangle(null);
+
+      // For histogram problems, only highlight bars within the max rectangle
+      // For rain water problems, mark all bars as complete
+      const currentMaxRect = maxRectangle;
       setBars((prevBars) =>
-        prevBars.map((bar) => ({
-          ...bar,
-          state: "complete" as const,
-        }))
+        prevBars.map((bar) => {
+          // If we have a max rectangle (histogram problem), only highlight those bars
+          if (currentMaxRect) {
+            if (bar.index >= currentMaxRect.left && bar.index < currentMaxRect.right) {
+              return { ...bar, state: "max-rectangle" as const };
+            }
+            return { ...bar, state: "idle" as const };
+          }
+          // Rain water problem: mark all as complete
+          return { ...bar, state: "complete" as const };
+        })
       );
       return false;
     }

@@ -233,7 +233,7 @@ function RainWaterBarComponent({
   return (
     <div
       className="relative flex h-full flex-1 flex-col items-center justify-end"
-      style={{ minWidth: "20px", maxWidth: "48px" }}
+      style={{ minWidth: "32px", maxWidth: "64px" }}
     >
       {/* Indicator Label Above Bar (L/R for pointers, i for current, H for popped) */}
       <AnimatePresence mode="wait">
