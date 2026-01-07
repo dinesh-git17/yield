@@ -76,13 +76,23 @@ function InterviewProviderLoading({ children }: { children: React.ReactNode }) {
       currentStepIndex: 0,
       currentStepType: null,
       currentStep: null,
+      speed: 400,
+      insight: "",
+
+      // Rain Water state
       totalWater: 0,
       maxLeft: 0,
       maxRight: 0,
       leftPointer: -1,
       rightPointer: -1,
-      speed: 400,
-      insight: "",
+
+      // Histogram state
+      stack: [],
+      histogramIndex: -1,
+      maxArea: 0,
+      calculatingRectangle: null,
+      maxRectangle: null,
+
       isReady: false,
       play: () => {},
       pause: () => {},
