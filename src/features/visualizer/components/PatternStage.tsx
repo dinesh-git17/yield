@@ -4,13 +4,13 @@ import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
+  BadgeCheck,
   ChevronRight,
   Clock,
   Lightbulb,
   Pause,
   Play,
   RotateCcw,
-  Sparkles,
   StepForward,
   Trophy,
   Zap,
@@ -334,7 +334,7 @@ const STEP_BANNER_CONFIG: Record<
     labelClass: "text-violet-300",
   },
   complete: {
-    icon: <Sparkles className="h-4 w-4" />,
+    icon: <BadgeCheck className="h-4 w-4" />,
     bgClass: "bg-emerald-500/10",
     borderClass: "border-emerald-500/30",
     iconBgClass: "bg-emerald-500/20",
@@ -370,7 +370,7 @@ const InsightBanner = memo(function InsightBanner({
         {/* Success header */}
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
-            <Sparkles className="h-5 w-5 text-emerald-400" />
+            <BadgeCheck className="h-5 w-5 text-emerald-400" />
           </div>
           <div className="flex flex-col">
             <span className="text-primary text-base font-semibold">Algorithm Complete!</span>
