@@ -2,11 +2,22 @@
 
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronRight, Pause, Play, RotateCcw, StepForward, Trophy } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronRight,
+  Clock,
+  Lightbulb,
+  Pause,
+  Play,
+  RotateCcw,
+  Sparkles,
+  StepForward,
+  Trophy,
+  Zap,
+} from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   getPatternProblemMetadata,
-  PATTERN_INSIGHTS,
   PATTERN_STEP_LABELS,
   SLIDING_WINDOW_PRESETS,
 } from "@/features/algorithms/patterns/config";
@@ -58,6 +69,7 @@ function PatternStageContent({ className }: { className?: string }) {
     bestSubstring,
     currentSubstring,
     speed,
+    dynamicInsight,
     duplicateChar,
     play,
     pause,
@@ -176,9 +188,10 @@ function PatternStageContent({ className }: { className?: string }) {
 
       {/* Visualization Area */}
       <div className="bg-dot-pattern relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        {/* Algorithm Steps Panel - Persistent on canvas */}
-        <AlgorithmStepsPanel
+        {/* Insight Banner - Dynamic educational banner */}
+        <InsightBanner
           currentStepType={currentStepType}
+          dynamicInsight={dynamicInsight}
           isComplete={isComplete}
           globalMax={globalMax}
           bestSubstring={bestSubstring}
@@ -267,108 +280,190 @@ function DifficultyBadge({ difficulty }: DifficultyBadgeProps) {
 }
 
 /**
- * The ordered sequence of step types in the algorithm.
- * This defines the visual flow shown to users.
+ * Maps step types to their visual styling configuration.
  */
-const ALGORITHM_STEP_SEQUENCE: PatternStep["type"][] = [
-  "init",
-  "expand",
-  "found-duplicate",
-  "shrink",
-  "update-max",
-  "complete",
-];
+const STEP_BANNER_CONFIG: Record<
+  PatternStep["type"],
+  {
+    icon: React.ReactNode;
+    bgClass: string;
+    borderClass: string;
+    iconBgClass: string;
+    iconTextClass: string;
+    labelClass: string;
+  }
+> = {
+  init: {
+    icon: <Lightbulb className="h-4 w-4" />,
+    bgClass: "bg-sky-500/10",
+    borderClass: "border-sky-500/30",
+    iconBgClass: "bg-sky-500/20",
+    iconTextClass: "text-sky-400",
+    labelClass: "text-sky-300",
+  },
+  expand: {
+    icon: <ChevronRight className="h-4 w-4" />,
+    bgClass: "bg-emerald-500/10",
+    borderClass: "border-emerald-500/30",
+    iconBgClass: "bg-emerald-500/20",
+    iconTextClass: "text-emerald-400",
+    labelClass: "text-emerald-300",
+  },
+  "found-duplicate": {
+    icon: <AlertTriangle className="h-4 w-4" />,
+    bgClass: "bg-rose-500/10",
+    borderClass: "border-rose-500/30",
+    iconBgClass: "bg-rose-500/20",
+    iconTextClass: "text-rose-400",
+    labelClass: "text-rose-300",
+  },
+  shrink: {
+    icon: <ChevronRight className="h-4 w-4 rotate-180" />,
+    bgClass: "bg-amber-500/10",
+    borderClass: "border-amber-500/30",
+    iconBgClass: "bg-amber-500/20",
+    iconTextClass: "text-amber-400",
+    labelClass: "text-amber-300",
+  },
+  "update-max": {
+    icon: <Trophy className="h-4 w-4" />,
+    bgClass: "bg-violet-500/10",
+    borderClass: "border-violet-500/30",
+    iconBgClass: "bg-violet-500/20",
+    iconTextClass: "text-violet-400",
+    labelClass: "text-violet-300",
+  },
+  complete: {
+    icon: <Sparkles className="h-4 w-4" />,
+    bgClass: "bg-emerald-500/10",
+    borderClass: "border-emerald-500/30",
+    iconBgClass: "bg-emerald-500/20",
+    iconTextClass: "text-emerald-400",
+    labelClass: "text-emerald-300",
+  },
+};
 
-interface AlgorithmStepsPanelProps {
+interface InsightBannerProps {
   currentStepType: PatternStep["type"] | null;
+  dynamicInsight: string;
   isComplete: boolean;
   globalMax: number;
   bestSubstring: string;
 }
 
-const AlgorithmStepsPanel = memo(function AlgorithmStepsPanel({
+const InsightBanner = memo(function InsightBanner({
   currentStepType,
+  dynamicInsight,
   isComplete,
   globalMax,
   bestSubstring,
-}: AlgorithmStepsPanelProps) {
-  // Show completion summary when done
+}: InsightBannerProps) {
+  // Show completion summary with Linear Time highlight when done
   if (isComplete) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: -10, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
-        className="absolute top-4 left-4 z-10 flex max-w-xs items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 shadow-lg backdrop-blur-sm"
+        className="absolute top-4 left-4 right-4 z-10 flex flex-col gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 shadow-lg backdrop-blur-sm md:right-auto md:max-w-md"
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
-          <Check className="h-4 w-4 text-emerald-400" />
+        {/* Success header */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
+            <Sparkles className="h-5 w-5 text-emerald-400" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-primary text-base font-semibold">Algorithm Complete!</span>
+            <span className="text-muted text-sm">
+              Max length: <span className="font-bold text-emerald-400">{globalMax}</span>
+              {bestSubstring && (
+                <>
+                  {" · "}
+                  <span className="font-mono text-violet-400">"{bestSubstring}"</span>
+                </>
+              )}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col">
-          <span className="text-primary text-sm font-semibold">Complete!</span>
-          <span className="text-muted text-xs">
-            Max length: <span className="font-medium text-emerald-400">{globalMax}</span>
-            {bestSubstring && (
-              <>
-                {" · "}
-                <span className="font-mono text-violet-400">"{bestSubstring}"</span>
-              </>
-            )}
-          </span>
+
+        {/* Linear Time Insight - Key Educational Takeaway */}
+        <div className="flex items-start gap-2 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/20">
+            <Zap className="h-3.5 w-3.5 text-cyan-400" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-cyan-300">Linear Time: O(n)</span>
+            <p className="text-muted text-xs leading-relaxed">
+              Each character was visited at most twice — once when the right pointer expanded, and
+              once when the left pointer contracted. This is the power of the sliding window!
+            </p>
+          </div>
         </div>
       </motion.div>
     );
   }
 
-  return (
-    <div className="absolute top-4 left-4 z-10 flex max-w-sm flex-col gap-1">
-      {ALGORITHM_STEP_SEQUENCE.map((stepType) => {
-        const isActive = currentStepType === stepType;
-        const label = PATTERN_STEP_LABELS[stepType];
+  // Idle state - show hint
+  if (!currentStepType) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="absolute top-4 left-4 z-10 flex max-w-sm items-center gap-3 rounded-lg border border-zinc-500/20 bg-zinc-500/5 p-3 backdrop-blur-sm"
+      >
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-500/10">
+          <Clock className="h-4 w-4 text-zinc-400" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-muted text-sm">Ready to visualize</span>
+          <span className="text-muted/60 text-xs">Press Play or Step to begin</span>
+        </div>
+      </motion.div>
+    );
+  }
 
-        return (
-          <motion.div
-            key={stepType}
-            animate={{
-              opacity: isActive ? 1 : 0.4,
-              x: isActive ? 0 : -4,
-            }}
-            transition={{ duration: 0.2 }}
-            className="flex items-start gap-2"
+  const config = STEP_BANNER_CONFIG[currentStepType];
+  const label = PATTERN_STEP_LABELS[currentStepType];
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={currentStepType}
+        initial={{ opacity: 0, y: -10, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+        transition={{ duration: 0.2, type: "spring", stiffness: 400, damping: 30 }}
+        className={cn(
+          "absolute top-4 left-4 right-4 z-10 flex flex-col gap-2 rounded-xl border p-3 shadow-lg backdrop-blur-sm md:right-auto md:max-w-md",
+          config.bgClass,
+          config.borderClass
+        )}
+      >
+        {/* Header with step type */}
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+              config.iconBgClass
+            )}
           >
-            <ChevronRight
-              className={cn(
-                "mt-0.5 h-3.5 w-3.5 shrink-0 transition-colors",
-                isActive ? "text-accent" : "text-transparent"
-              )}
-            />
-            <div className="flex flex-col">
-              <span
-                className={cn(
-                  "text-xs font-medium transition-colors",
-                  isActive ? "text-primary" : "text-muted"
-                )}
-              >
-                {label}
-              </span>
-              <AnimatePresence mode="wait">
-                {isActive && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="text-muted mt-0.5 text-[11px] leading-relaxed"
-                  >
-                    {PATTERN_INSIGHTS[stepType]}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
+            <span className={config.iconTextClass}>{config.icon}</span>
+          </div>
+          <span className={cn("text-sm font-semibold", config.labelClass)}>{label}</span>
+        </div>
+
+        {/* Dynamic insight message */}
+        {dynamicInsight && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="text-primary/90 pl-11 text-sm leading-relaxed"
+          >
+            {dynamicInsight}
+          </motion.p>
+        )}
+      </motion.div>
+    </AnimatePresence>
   );
 });
 

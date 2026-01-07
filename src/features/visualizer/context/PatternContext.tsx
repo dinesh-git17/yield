@@ -75,6 +75,7 @@ function PatternProviderLoading({ children }: { children: React.ReactNode }) {
       currentSubstring: "",
       speed: 500,
       insight: "",
+      dynamicInsight: "",
       stepLabel: "",
       duplicateChar: null,
       isReady: false,

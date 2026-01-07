@@ -4,6 +4,7 @@
 export type { PatternProblemMetadata } from "./config";
 export {
   DEFAULT_SLIDING_WINDOW_INPUT,
+  getDynamicPatternInsight,
   getPatternProblemMetadata,
   getPatternStepInsight,
   getPatternStepLabel,

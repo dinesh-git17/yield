@@ -147,3 +147,41 @@ export const PATTERNS_CONFIG = {
   /** Default problem when entering patterns mode */
   DEFAULT_PROBLEM: "longest-substring-norepeat" as PatternProblemType,
 } as const;
+
+/**
+ * Generates dynamic insight messages based on the current step and its data.
+ * These provide context-aware explanations that include specific values.
+ */
+export function getDynamicPatternInsight(step: PatternStep | null): string {
+  if (!step) return "";
+
+  switch (step.type) {
+    case "init":
+      return "Starting with an empty window. The left and right pointers both begin at position 0.";
+
+    case "expand":
+      if (step.causesDuplicate) {
+        return `Adding '${step.char}' to window — but this creates a duplicate! Window is now invalid.`;
+      }
+      return `Expanding window to include '${step.char}'. The window remains valid with all unique characters.`;
+
+    case "found-duplicate":
+      return `Duplicate '${step.char}' detected (count: ${step.frequency})! We must shrink the window from the left until the duplicate is removed.`;
+
+    case "shrink": {
+      const statusText = step.windowValid
+        ? "Window is now valid again."
+        : "Still invalid — continuing to shrink.";
+      return `Removing '${step.char}' from window by moving left pointer. ${statusText}`;
+    }
+
+    case "update-max":
+      return `New best found! Window "${step.substring}" has length ${step.maxLength}, beating the previous maximum.`;
+
+    case "complete":
+      return `Algorithm complete! The longest substring without repeating characters is "${step.bestSubstring}" with length ${step.maxLength}. Total time: O(n) — each character was visited at most twice.`;
+
+    default:
+      return "";
+  }
+}

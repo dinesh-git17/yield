@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getPatternStepInsight, getPatternStepLabel } from "@/features/algorithms/patterns/config";
+import {
+  getDynamicPatternInsight,
+  getPatternStepInsight,
+  getPatternStepLabel,
+} from "@/features/algorithms/patterns/config";
 import { slidingWindow } from "@/features/algorithms/patterns/slidingWindow";
 import type {
   PatternProblemType,
@@ -61,8 +65,10 @@ export interface PatternControllerState {
   currentSubstring: string;
   /** Playback speed in ms */
   speed: number;
-  /** Human-readable insight for current step */
+  /** Human-readable insight for current step (static) */
   insight: string;
+  /** Dynamic context-aware insight with specific values */
+  dynamicInsight: string;
   /** Human-readable label for current step */
   stepLabel: string;
   /** The duplicate character (if any) */
@@ -125,6 +131,7 @@ export function usePatternController(
   const [globalMax, setGlobalMax] = useState(0);
   const [bestSubstring, setBestSubstring] = useState("");
   const [insight, setInsight] = useState("");
+  const [dynamicInsight, setDynamicInsight] = useState("");
   const [stepLabel, setStepLabel] = useState("");
   const [duplicateChar, setDuplicateChar] = useState<string | null>(null);
 
@@ -213,6 +220,9 @@ export function usePatternController(
     if (result.done) {
       setStatus("complete");
       setInsight(getPatternStepInsight("complete"));
+      // Generate completion message with Linear Time highlight
+      const completeInsight = `Algorithm complete! The longest substring without repeating characters is "${bestSubstring}" with length ${bestSubstring.length}. Total time: O(n) — each character was visited at most twice.`;
+      setDynamicInsight(completeInsight);
       setStepLabel(getPatternStepLabel("complete"));
       // Mark best substring characters
       const input = inputRef.current;
@@ -226,6 +236,7 @@ export function usePatternController(
     setCurrentStepType(step.type);
     setCurrentStep(step);
     setInsight(getPatternStepInsight(step.type));
+    setDynamicInsight(getDynamicPatternInsight(step));
     setStepLabel(getPatternStepLabel(step.type));
 
     let newWindowStart = window.start;
@@ -349,6 +360,7 @@ export function usePatternController(
     setGlobalMax(0);
     setBestSubstring("");
     setInsight("");
+    setDynamicInsight("");
     setStepLabel("");
     setDuplicateChar(null);
     setCharacters(createCharactersFromInput(initialInput));
@@ -367,6 +379,7 @@ export function usePatternController(
       setGlobalMax(0);
       setBestSubstring("");
       setInsight("");
+      setDynamicInsight("");
       setStepLabel("");
       setDuplicateChar(null);
       inputRef.current = newInput;
@@ -394,6 +407,7 @@ export function usePatternController(
     currentSubstring,
     speed,
     insight,
+    dynamicInsight,
     stepLabel,
     duplicateChar,
     play,
