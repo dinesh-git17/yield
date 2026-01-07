@@ -112,7 +112,12 @@ export const TourOverlay = memo(function TourOverlay() {
       return;
     }
 
+    let isScrolling = false;
+
     const updateRect = () => {
+      // Don't update while programmatic scroll is in progress
+      if (isScrolling) return;
+
       const element = document.querySelector(`[data-tour-id="${step.targetId}"]`);
       if (element) {
         const rect = element.getBoundingClientRect();
@@ -155,16 +160,34 @@ export const TourOverlay = memo(function TourOverlay() {
       }
     };
 
-    updateRect();
+    // Scroll target into view first, then measure after scroll completes
+    let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+    const scrollAndMeasure = () => {
+      const element = document.querySelector(`[data-tour-id="${step.targetId}"]`);
+      if (element) {
+        isScrolling = true;
+        element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        // Wait for smooth scroll to complete before measuring
+        scrollTimer = setTimeout(() => {
+          isScrolling = false;
+          updateRect();
+        }, 350);
+      } else {
+        updateRect();
+      }
+    };
+
+    scrollAndMeasure();
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect, true);
 
-    const timer = setTimeout(updateRect, 300);
+    const timer = setTimeout(updateRect, 500);
 
     return () => {
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect, true);
       clearTimeout(timer);
+      if (scrollTimer) clearTimeout(scrollTimer);
     };
   }, [isActive, step]);
 
