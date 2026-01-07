@@ -2,18 +2,21 @@
 
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Droplets, Lightbulb, Pause, Play, RotateCcw, StepForward } from "lucide-react";
+import { Check, ChevronRight, Droplets, Pause, Play, RotateCcw, StepForward } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   getInterviewProblemMetadata,
   INTERVIEW_CONFIG,
+  INTERVIEW_INSIGHTS,
+  INTERVIEW_STEP_LABELS,
   RAIN_WATER_PRESETS,
 } from "@/features/algorithms/interview/config";
+import type { InterviewStep } from "@/features/algorithms/interview/types";
 import { useSponsorship } from "@/features/sponsorship";
 import { badgeVariants, buttonInteraction, SPRING_PRESETS } from "@/lib/motion";
 import { type PlaybackSpeedMultiplier, useYieldStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { InterviewProvider, useInterview } from "../context";
+import { useInterview } from "../context";
 import { RainWaterBar } from "./RainWaterBar";
 
 export interface InterviewStageProps {
@@ -23,13 +26,10 @@ export interface InterviewStageProps {
 /**
  * Interview visualization stage.
  * Renders the rain water problem visualization with educational UI.
+ * Note: Expects to be rendered within an InterviewProvider (provided at page level).
  */
 export function InterviewStage({ className }: InterviewStageProps) {
-  return (
-    <InterviewProvider>
-      <InterviewStageContent className={className ?? ""} />
-    </InterviewProvider>
-  );
+  return <InterviewStageContent className={className ?? ""} />;
 }
 
 const SPEED_OPTIONS: { value: PlaybackSpeedMultiplier; label: string }[] = [
@@ -53,9 +53,6 @@ function InterviewStageContent({ className }: { className?: string }) {
     currentStepIndex,
     currentStepType,
     totalWater,
-    maxLeft,
-    maxRight,
-    insight,
     speed,
     play,
     pause,
@@ -187,48 +184,17 @@ function InterviewStageContent({ className }: { className?: string }) {
 
       {/* Visualization Area */}
       <div className="bg-dot-pattern relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        {/* Insight Banner / Completion Summary */}
-        <AnimatePresence mode="wait">
-          {isComplete ? (
-            <motion.div
-              key="completion-summary"
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
-              className="mx-4 mt-4 flex items-center gap-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 shadow-lg backdrop-blur-sm md:mx-6"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
-                <Check className="h-5 w-5 text-emerald-400" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-primary text-sm font-semibold">Algorithm Complete!</span>
-                <span className="text-muted text-xs">
-                  Trapped <span className="font-medium text-sky-400">{totalWater} units</span> of
-                  water in {currentStepIndex} steps
-                </span>
-              </div>
-            </motion.div>
-          ) : (
-            insight && (
-              <motion.div
-                key={currentStepType}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="bg-surface-elevated/90 border-border mx-4 mt-4 flex items-start gap-3 rounded-lg border p-3 shadow-sm backdrop-blur-sm md:mx-6"
-              >
-                <Lightbulb className="text-accent mt-0.5 h-4 w-4 shrink-0" />
-                <p className="text-primary text-sm leading-relaxed">{insight}</p>
-              </motion.div>
-            )
-          )}
-        </AnimatePresence>
+        {/* Algorithm Steps Panel - Persistent on canvas */}
+        <AlgorithmStepsPanel
+          currentStepType={currentStepType}
+          isComplete={isComplete}
+          totalWater={totalWater}
+          stepCount={currentStepIndex}
+        />
 
         {/* Bar Visualization */}
-        <div className="flex flex-1 items-end justify-center p-4 pb-24 md:p-6 md:pb-32">
-          <div className="border-border/50 flex h-full max-h-[360px] w-full max-w-3xl items-end justify-center gap-1 border-b pb-2 md:max-h-[420px] md:gap-2">
+        <div className="flex flex-1 items-center justify-center px-4 pb-20 md:px-6 md:pb-24">
+          <div className="border-border/50 flex h-full max-h-[280px] w-full max-w-3xl items-end justify-center gap-1 border-b pb-2 md:max-h-[320px] md:gap-2">
             {bars.map((bar) => (
               <RainWaterBar
                 key={bar.id}
@@ -284,18 +250,6 @@ function InterviewStageContent({ className }: { className?: string }) {
             <span className="text-muted text-xs">Trapped Water</span>
           </div>
         </div>
-
-        {/* Max Values Display */}
-        {(maxLeft > 0 || maxRight > 0) && (
-          <div className="absolute top-4 left-4 flex flex-col gap-1">
-            <span className="text-muted text-xs">
-              Max Left: <span className="text-amber-500 font-medium">{maxLeft}</span>
-            </span>
-            <span className="text-muted text-xs">
-              Max Right: <span className="text-rose-500 font-medium">{maxRight}</span>
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -330,6 +284,109 @@ function DifficultyBadge({ difficulty }: DifficultyBadgeProps) {
     </motion.span>
   );
 }
+
+/**
+ * The ordered sequence of step types in the algorithm.
+ * This defines the visual flow shown to users.
+ */
+const ALGORITHM_STEP_SEQUENCE: InterviewStep["type"][] = [
+  "init",
+  "compare",
+  "move-left",
+  "update-max-left",
+  "move-right",
+  "update-max-right",
+  "fill-water",
+  "complete",
+];
+
+interface AlgorithmStepsPanelProps {
+  currentStepType: InterviewStep["type"] | null;
+  isComplete: boolean;
+  totalWater: number;
+  stepCount: number;
+}
+
+const AlgorithmStepsPanel = memo(function AlgorithmStepsPanel({
+  currentStepType,
+  isComplete,
+  totalWater,
+  stepCount,
+}: AlgorithmStepsPanelProps) {
+  // Show completion summary when done
+  if (isComplete) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
+        className="absolute top-4 left-4 z-10 flex max-w-xs items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 shadow-lg backdrop-blur-sm"
+      >
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
+          <Check className="h-4 w-4 text-emerald-400" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-primary text-sm font-semibold">Complete!</span>
+          <span className="text-muted text-xs">
+            <span className="font-medium text-sky-400">{totalWater} units</span> in {stepCount}{" "}
+            steps
+          </span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="absolute top-4 left-4 z-10 flex max-w-sm flex-col gap-1">
+      {ALGORITHM_STEP_SEQUENCE.map((stepType) => {
+        const isActive = currentStepType === stepType;
+        const label = INTERVIEW_STEP_LABELS[stepType];
+
+        return (
+          <motion.div
+            key={stepType}
+            animate={{
+              opacity: isActive ? 1 : 0.4,
+              x: isActive ? 0 : -4,
+            }}
+            transition={{ duration: 0.2 }}
+            className="flex items-start gap-2"
+          >
+            <ChevronRight
+              className={cn(
+                "mt-0.5 h-3.5 w-3.5 shrink-0 transition-colors",
+                isActive ? "text-accent" : "text-transparent"
+              )}
+            />
+            <div className="flex flex-col">
+              <span
+                className={cn(
+                  "text-xs font-medium transition-colors",
+                  isActive ? "text-primary" : "text-muted"
+                )}
+              >
+                {label}
+              </span>
+              <AnimatePresence mode="wait">
+                {isActive && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-muted mt-0.5 text-[11px] leading-relaxed"
+                  >
+                    {INTERVIEW_INSIGHTS[stepType]}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+});
 
 interface InterviewControlBarProps {
   playbackSpeed: PlaybackSpeedMultiplier;

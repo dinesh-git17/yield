@@ -123,7 +123,7 @@ function RainWaterBarComponent({
 
   return (
     <div
-      className="relative flex flex-1 flex-col items-center justify-end"
+      className="relative flex h-full flex-1 flex-col items-center justify-end"
       style={{ minWidth: "20px", maxWidth: "48px" }}
     >
       {/* Pointer Label Above Bar */}
