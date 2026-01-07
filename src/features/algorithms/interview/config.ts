@@ -4,6 +4,7 @@ import type { InterviewProblemType, InterviewStep } from "./types";
  * Step type labels for display in the UI.
  */
 export const INTERVIEW_STEP_LABELS: Record<InterviewStep["type"], string> = {
+  // Trapping Rain Water steps
   init: "Initializing pointers",
   compare: "Comparing max heights",
   "move-left": "Moving left pointer",
@@ -12,6 +13,11 @@ export const INTERVIEW_STEP_LABELS: Record<InterviewStep["type"], string> = {
   "update-max-right": "Updating right maximum",
   "fill-water": "Trapping water",
   complete: "Algorithm complete",
+  // Largest Rectangle in Histogram steps
+  "stack-push": "Pushing to stack",
+  "stack-pop": "Popping from stack",
+  "calculate-area": "Calculating area",
+  "update-max-area": "New maximum area",
 };
 
 /**
@@ -19,6 +25,7 @@ export const INTERVIEW_STEP_LABELS: Record<InterviewStep["type"], string> = {
  * These are shown to help users understand the "why" behind each step.
  */
 export const INTERVIEW_INSIGHTS: Record<InterviewStep["type"], string> = {
+  // Trapping Rain Water insights
   init: "We start with two pointers at the extremes and track the maximum height seen from each side.",
   compare:
     "We process the side with the smaller maximum because water level there is bounded by that smaller max.",
@@ -31,6 +38,15 @@ export const INTERVIEW_INSIGHTS: Record<InterviewStep["type"], string> = {
   "fill-water":
     "This bar is shorter than the max on its bounded side, so water fills up to that max level.",
   complete: "Both pointers have met. All trapped water has been calculated!",
+  // Largest Rectangle in Histogram insights
+  "stack-push":
+    "This bar is taller than the stack top, so we push it. It might be the left boundary of a future rectangle.",
+  "stack-pop":
+    "Current bar is shorter than stack top. The popped bar can no longer extend right, so we calculate its rectangle.",
+  "calculate-area":
+    "Rectangle width spans from the new stack top (left bound) to current position (right bound).",
+  "update-max-area":
+    "This rectangle is larger than any we've seen. It becomes our new candidate answer.",
 };
 
 /**
@@ -114,6 +130,48 @@ export const INTERVIEW_METADATA: Record<InterviewProblemType, InterviewProblemMe
       "update-max-right": 26,
       "fill-water": 17,
       complete: 34,
+    },
+  },
+  "largest-rectangle-histogram": {
+    label: "Largest Rectangle in Histogram",
+    difficulty: "Hard",
+    complexity: "O(n)",
+    spaceComplexity: "O(n)",
+    description:
+      "Given an array of bar heights, find the area of the largest rectangle that can be formed in the histogram.",
+    pattern: "Monotonic Stack",
+    code: [
+      "function largestRectangleArea(heights: number[]): number {",
+      "  const stack: number[] = [];",
+      "  let maxArea = 0;",
+      "",
+      "  for (let i = 0; i <= heights.length; i++) {",
+      "    // Use 0 as sentinel for final cleanup",
+      "    const h = i === heights.length ? 0 : heights[i];",
+      "",
+      "    while (stack.length > 0 && h < heights[stack[stack.length - 1]]) {",
+      "      // Pop and calculate area",
+      "      const height = heights[stack.pop()!];",
+      "      const width = stack.length === 0 ? i : i - stack[stack.length - 1] - 1;",
+      "      const area = height * width;",
+      "",
+      "      if (area > maxArea) {",
+      "        maxArea = area;",
+      "      }",
+      "    }",
+      "",
+      "    stack.push(i);",
+      "  }",
+      "",
+      "  return maxArea;",
+      "}",
+    ],
+    lineMapping: {
+      "stack-push": 19,
+      "stack-pop": 10,
+      "calculate-area": 12,
+      "update-max-area": 15,
+      complete: 22,
     },
   },
 };

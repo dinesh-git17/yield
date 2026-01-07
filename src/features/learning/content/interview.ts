@@ -294,6 +294,202 @@ Same logic mirrored on the right. This prevents overthinking, avoids backtrackin
       },
     ],
   },
+
+  "largest-rectangle-histogram": {
+    title: "Largest Rectangle in Histogram",
+    tagline: "The Skyline Maximizer",
+    difficulty: "Hard",
+    pattern: "Monotonic Stack",
+
+    history: `This problem is a gateway to understanding the **Monotonic Stack** pattern—one of the most elegant techniques in competitive programming. It appears in interviews because it tests whether you can:
+
+- see past the obvious O(n²) brute force
+- recognize when a stack provides the perfect "memory" structure
+- handle boundary conditions cleanly (the dreaded off-by-one errors)
+
+Think of each bar as a building. You want to find the largest rectangular billboard you could paint on the skyline. Every bar can potentially be the **height** of some rectangle—but how wide can it extend?`,
+
+    problemDefinition: `You're given an array of non-negative integers where each value represents a bar height. Each bar has width 1.
+
+Return the area of the largest rectangle that can be formed in the histogram.
+
+**Key insight:**
+For each bar of height $h$, find how far **left** and **right** it can extend while remaining the shortest bar. That span defines the maximum rectangle using that bar's height.`,
+
+    coreIdea: `For bar at index $i$ with height $h$:
+
+$$area[i] = h \\times (rightBound[i] - leftBound[i] - 1)$$
+
+Where:
+- $leftBound[i]$ = index of first shorter bar to the left (or -1)
+- $rightBound[i]$ = index of first shorter bar to the right (or n)
+
+The trick is computing these bounds in O(n) total using a **monotonic stack**.`,
+
+    mechanics: `The Monotonic Stack approach maintains a stack of indices in **increasing height order**. When we encounter a shorter bar, we know the current bar is the right boundary for all taller bars in the stack.
+
+**The Algorithm Step-by-Step:**
+
+1. **Initialize**: Empty stack, iterate through bars (plus one "virtual" bar of height 0 at the end).
+2. **For each bar**: While the current bar is shorter than the stack top:
+   - Pop the stack top (this bar can no longer extend right)
+   - Calculate width: from the new stack top (left bound) to current position (right bound)
+   - Compute area and update max
+3. **Push**: Add current index to stack (it might be the left boundary for future bars).
+4. **Cleanup**: The virtual bar at the end forces all remaining stack items to be processed.
+
+**Why Monotonic?**
+We maintain increasing heights because:
+- Taller bars can extend through shorter bars
+- But shorter bars "cut off" all taller bars behind them
+- The stack naturally tracks potential left boundaries`,
+
+    approaches: [
+      {
+        name: "Brute Force",
+        description:
+          "For each bar, expand left and right to find how far it can extend. Compute area for each.",
+        timeComplexity: "O(n²)",
+        spaceComplexity: "O(1)",
+      },
+      {
+        name: "Divide and Conquer",
+        description:
+          "Recursively find the minimum bar, compute area, then solve left and right subproblems.",
+        timeComplexity: "O(n log n)",
+        spaceComplexity: "O(log n)",
+      },
+      {
+        name: "Monotonic Stack",
+        description:
+          "Maintain a stack of indices with increasing heights. Pop and calculate when a shorter bar appears.",
+        timeComplexity: "O(n)",
+        spaceComplexity: "O(n)",
+        isOptimal: true,
+      },
+    ],
+
+    whyItWorks: `The stack maintains the invariant: **indices are in increasing height order**.
+
+When we see a bar shorter than the stack top:
+- The popped bar can't extend further right (current bar is shorter)
+- The popped bar's left bound is the new stack top (or -1 if empty)
+- We can compute its maximum rectangle area immediately
+
+**Key insight:** Each bar is pushed once and popped once → O(n) operations total.
+
+The "virtual" zero-height bar at the end ensures all bars get processed, even if the histogram is strictly increasing.`,
+
+    timeComplexity: {
+      complexity: "O(n)",
+      explanation:
+        "Each bar is pushed to the stack exactly once and popped exactly once. All operations inside the while loop are O(1).",
+    },
+    spaceComplexity: {
+      complexity: "O(n)",
+      explanation:
+        "In the worst case (strictly increasing heights), all n indices are stored in the stack simultaneously.",
+    },
+
+    useCases: [
+      "Skyline problems in computational geometry",
+      "Maximum rectangular area in binary matrices (2D extension)",
+      "Memory allocation and contiguous block finding",
+      "Image processing for region detection",
+      "Stock analysis for sustained performance windows",
+    ],
+
+    keyInsights: [
+      "A bar's rectangle is bounded by the **first shorter bar** on each side.",
+      "Monotonic stacks excel at 'next smaller/greater element' problems.",
+      "The sentinel (virtual bar of height 0) simplifies edge case handling.",
+      "Each element is processed exactly twice (push + pop), giving O(n) time.",
+      "This pattern appears in many problems: daily temperatures, stock span, next greater element.",
+    ],
+
+    pitfalls: [
+      "Forgetting the sentinel bar at the end (leaves items in stack unprocessed).",
+      "Off-by-one in width calculation: width = right - left - 1, not right - left.",
+      "Confusing the stack contents (stores indices, not heights).",
+      "Not handling empty stack case when computing left boundary.",
+      "Trying to process the stack after the loop instead of using a sentinel.",
+    ],
+
+    interviewQA: [
+      {
+        question: "Why use a stack instead of two arrays for left/right bounds?",
+        answer:
+          "The stack computes both bounds on-the-fly in one pass. When we pop, we know both bounds immediately: left is the new stack top, right is the current index.",
+      },
+      {
+        question: "What does 'monotonic' mean in this context?",
+        answer:
+          "The stack maintains elements in strictly increasing height order. Whenever a smaller element arrives, we pop until the invariant is restored.",
+      },
+      {
+        question: "Why add a zero-height bar at the end?",
+        answer:
+          "It acts as a sentinel that's shorter than everything, forcing all remaining stack elements to be popped and processed. Without it, you'd need a separate cleanup loop.",
+      },
+      {
+        question: "How does this relate to Trapping Rain Water?",
+        answer:
+          "Both can use monotonic stacks! In Trapping Rain Water, the stack finds valleys to fill. Here, it finds how far each bar extends. Same tool, different application.",
+      },
+      {
+        question: "Can this be solved with Two Pointers?",
+        answer:
+          "Not directly. Two Pointers works for Trapping Rain Water because we only need running max boundaries. Here, we need to know exact left/right bounds for each bar—stack is the right tool.",
+      },
+    ],
+
+    whenToUse:
+      "Use Monotonic Stack when you need to find the 'next smaller' or 'next greater' element for each position. It's perfect for problems involving spans, ranges, or boundaries where each element's extent depends on neighboring values.",
+
+    whenNotToUse:
+      "Don't use this when simple iteration or two pointers suffice. If you don't need to track 'extent' or 'next smaller/greater', a stack adds unnecessary complexity. Also avoid for 2D problems without first understanding the 1D case thoroughly.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "trapping-rain-water",
+        mode: "interview",
+        relationship: "uses monotonic stack for valley detection",
+      },
+      {
+        algorithm: "quick-sort",
+        mode: "sorting",
+        relationship: "divide and conquer alternative approach",
+      },
+      {
+        algorithm: "merge-sort",
+        mode: "sorting",
+        relationship: "divide and conquer complexity analysis",
+      },
+    ],
+
+    demos: [
+      {
+        label: "Classic",
+        description: "The LeetCode example with a clear maximum rectangle",
+        heights: [2, 1, 5, 6, 2, 3],
+      },
+      {
+        label: "Ascending",
+        description: "Strictly increasing heights - stack fills before cleanup",
+        heights: [1, 2, 3, 4, 5, 6],
+      },
+      {
+        label: "Descending",
+        description: "Strictly decreasing heights - pops happen every step",
+        heights: [6, 5, 4, 3, 2, 1],
+      },
+      {
+        label: "Pyramid",
+        description: "Mountain shape testing both expansion and contraction",
+        heights: [1, 3, 5, 7, 5, 3, 1],
+      },
+    ],
+  },
 };
 
 /**

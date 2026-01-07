@@ -2,7 +2,7 @@
  * Interview problem types supported by Yield.
  * Start with "trapping-rain-water" and expand as needed.
  */
-export type InterviewProblemType = "trapping-rain-water";
+export type InterviewProblemType = "trapping-rain-water" | "largest-rectangle-histogram";
 
 /**
  * Represents a single step in an interview problem algorithm execution.
@@ -85,6 +85,58 @@ export type InterviewStep =
       type: "complete";
       /** Final total water trapped */
       totalWater: number;
+    }
+  // Largest Rectangle in Histogram step types (Monotonic Stack pattern)
+  | {
+      type: "stack-push";
+      /** Index of the bar being pushed onto the stack */
+      index: number;
+      /** Height of the bar being pushed */
+      height: number;
+      /** Stack state after this push (array of indices) */
+      stack: number[];
+    }
+  | {
+      type: "stack-pop";
+      /** Index of the bar being popped from the stack */
+      poppedIndex: number;
+      /** Height of the popped bar (determines rectangle height) */
+      poppedHeight: number;
+      /** Current iterator position that triggered the pop */
+      currentIndex: number;
+      /** Stack state after this pop (array of indices) */
+      stack: number[];
+    }
+  | {
+      type: "calculate-area";
+      /** Index of the bar whose height determines the rectangle */
+      poppedIndex: number;
+      /** Height of the rectangle */
+      height: number;
+      /** Left boundary of the rectangle (exclusive, -1 if none) */
+      leftBound: number;
+      /** Right boundary of the rectangle (exclusive) */
+      rightBound: number;
+      /** Calculated width of the rectangle */
+      width: number;
+      /** Calculated area (height × width) */
+      area: number;
+    }
+  | {
+      type: "update-max-area";
+      /** Previous maximum area */
+      previousMax: number;
+      /** New maximum area */
+      newMax: number;
+      /** Details of the rectangle that set the new max */
+      rectangle: {
+        /** Left boundary index (inclusive) */
+        left: number;
+        /** Right boundary index (exclusive) */
+        right: number;
+        /** Height of the rectangle */
+        height: number;
+      };
     };
 
 /**
@@ -119,6 +171,42 @@ export function createInitialRainWaterState(heights: number[]): RainWaterState {
     maxLeft: 0,
     maxRight: 0,
     totalWater: 0,
+  };
+}
+
+/**
+ * State tracked during Largest Rectangle in Histogram visualization.
+ */
+export interface LargestRectangleState {
+  /** The histogram bar heights */
+  heights: number[];
+  /** Current monotonic stack (array of bar indices) */
+  stack: number[];
+  /** Current iterator position (-1 before start, n during cleanup) */
+  currentIndex: number;
+  /** Maximum area found so far */
+  maxArea: number;
+  /** Details of the rectangle with maximum area (for final highlight) */
+  maxRectangle: {
+    /** Left boundary index (inclusive) */
+    left: number;
+    /** Right boundary index (exclusive) */
+    right: number;
+    /** Height of the rectangle */
+    height: number;
+  } | null;
+}
+
+/**
+ * Creates an initial largest rectangle state from a heights array.
+ */
+export function createInitialLargestRectangleState(heights: number[]): LargestRectangleState {
+  return {
+    heights: [...heights],
+    stack: [],
+    currentIndex: -1,
+    maxArea: 0,
+    maxRectangle: null,
   };
 }
 

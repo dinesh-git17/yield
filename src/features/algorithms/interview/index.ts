@@ -21,6 +21,7 @@ export type {
   InterviewGenerator,
   InterviewProblemType,
   InterviewStep,
+  LargestRectangleState,
   RainWaterState,
 } from "./types";
-export { createInitialRainWaterState } from "./types";
+export { createInitialLargestRectangleState, createInitialRainWaterState } from "./types";

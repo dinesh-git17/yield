@@ -229,6 +229,156 @@ const TRAPPING_RAIN_WATER_RUST = `fn trap(height: Vec<i32>) -> i32 {
 }`;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Largest Rectangle in Histogram - Monotonic Stack (Optimal)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const LARGEST_RECTANGLE_PYTHON = `def largestRectangleArea(heights: list[int]) -> int:
+    """Find largest rectangle area using monotonic stack."""
+    stack: list[int] = []
+    max_area = 0
+
+    for i in range(len(heights) + 1):
+        # Use 0 as sentinel for final cleanup
+        h = heights[i] if i < len(heights) else 0
+
+        while stack and h < heights[stack[-1]]:
+            # Pop and calculate area
+            height = heights[stack.pop()]
+            width = i if not stack else i - stack[-1] - 1
+            area = height * width
+            max_area = max(max_area, area)
+
+        stack.append(i)
+
+    return max_area`;
+
+const LARGEST_RECTANGLE_CPP = `int largestRectangleArea(std::vector<int>& heights) {
+    std::stack<int> stack;
+    int maxArea = 0;
+
+    for (int i = 0; i <= heights.size(); i++) {
+        // Use 0 as sentinel for final cleanup
+        int h = (i == heights.size()) ? 0 : heights[i];
+
+        while (!stack.empty() && h < heights[stack.top()]) {
+            // Pop and calculate area
+            int height = heights[stack.top()];
+            stack.pop();
+            int width = stack.empty() ? i : i - stack.top() - 1;
+            int area = height * width;
+            maxArea = std::max(maxArea, area);
+        }
+
+        stack.push(i);
+    }
+
+    return maxArea;
+}`;
+
+const LARGEST_RECTANGLE_JAVA = `public int largestRectangleArea(int[] heights) {
+    Deque<Integer> stack = new ArrayDeque<>();
+    int maxArea = 0;
+
+    for (int i = 0; i <= heights.length; i++) {
+        // Use 0 as sentinel for final cleanup
+        int h = (i == heights.length) ? 0 : heights[i];
+
+        while (!stack.isEmpty() && h < heights[stack.peek()]) {
+            // Pop and calculate area
+            int height = heights[stack.pop()];
+            int width = stack.isEmpty() ? i : i - stack.peek() - 1;
+            int area = height * width;
+            maxArea = Math.max(maxArea, area);
+        }
+
+        stack.push(i);
+    }
+
+    return maxArea;
+}`;
+
+const LARGEST_RECTANGLE_JS = `function largestRectangleArea(heights) {
+  const stack = [];
+  let maxArea = 0;
+
+  for (let i = 0; i <= heights.length; i++) {
+    // Use 0 as sentinel for final cleanup
+    const h = i === heights.length ? 0 : heights[i];
+
+    while (stack.length > 0 && h < heights[stack[stack.length - 1]]) {
+      // Pop and calculate area
+      const height = heights[stack.pop()];
+      const width = stack.length === 0 ? i : i - stack[stack.length - 1] - 1;
+      const area = height * width;
+      maxArea = Math.max(maxArea, area);
+    }
+
+    stack.push(i);
+  }
+
+  return maxArea;
+}`;
+
+const LARGEST_RECTANGLE_GO = `func largestRectangleArea(heights []int) int {
+    stack := []int{}
+    maxArea := 0
+
+    for i := 0; i <= len(heights); i++ {
+        // Use 0 as sentinel for final cleanup
+        h := 0
+        if i < len(heights) {
+            h = heights[i]
+        }
+
+        for len(stack) > 0 && h < heights[stack[len(stack)-1]] {
+            // Pop and calculate area
+            height := heights[stack[len(stack)-1]]
+            stack = stack[:len(stack)-1]
+
+            width := i
+            if len(stack) > 0 {
+                width = i - stack[len(stack)-1] - 1
+            }
+
+            area := height * width
+            if area > maxArea {
+                maxArea = area
+            }
+        }
+
+        stack = append(stack, i)
+    }
+
+    return maxArea
+}`;
+
+const LARGEST_RECTANGLE_RUST = `fn largest_rectangle_area(heights: Vec<i32>) -> i32 {
+    let mut stack: Vec<usize> = Vec::new();
+    let mut max_area = 0i32;
+
+    for i in 0..=heights.len() {
+        // Use 0 as sentinel for final cleanup
+        let h = if i == heights.len() { 0 } else { heights[i] };
+
+        while !stack.is_empty() && h < heights[*stack.last().unwrap()] {
+            // Pop and calculate area
+            let height = heights[stack.pop().unwrap()];
+            let width = if stack.is_empty() {
+                i as i32
+            } else {
+                (i - stack.last().unwrap() - 1) as i32
+            };
+            let area = height * width;
+            max_area = max_area.max(area);
+        }
+
+        stack.push(i);
+    }
+
+    max_area
+}`;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Implementation Registry
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -243,6 +393,14 @@ const INTERVIEW_IMPLEMENTATIONS: Record<InterviewProblemType, Record<Language, s
     javascript: TRAPPING_RAIN_WATER_JS,
     go: TRAPPING_RAIN_WATER_GO,
     rust: TRAPPING_RAIN_WATER_RUST,
+  },
+  "largest-rectangle-histogram": {
+    python: LARGEST_RECTANGLE_PYTHON,
+    cpp: LARGEST_RECTANGLE_CPP,
+    java: LARGEST_RECTANGLE_JAVA,
+    javascript: LARGEST_RECTANGLE_JS,
+    go: LARGEST_RECTANGLE_GO,
+    rust: LARGEST_RECTANGLE_RUST,
   },
 };
 

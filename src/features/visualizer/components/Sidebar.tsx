@@ -92,7 +92,10 @@ const INTERVIEW_PROBLEMS: {
   id: InterviewProblemType;
   label: string;
   enabled: boolean;
-}[] = [{ id: "trapping-rain-water", label: "Trapping Rain Water", enabled: true }];
+}[] = [
+  { id: "trapping-rain-water", label: "Trapping Rain Water", enabled: true },
+  { id: "largest-rectangle-histogram", label: "Largest Rectangle", enabled: false },
+];
 
 const PATTERN_PROBLEMS: {
   id: PatternProblemType;
