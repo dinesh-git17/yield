@@ -498,30 +498,74 @@ function WindowInfo({ currentSubstring, globalMax, bestSubstring, windowStatus }
         {/* Divider */}
         <div className="bg-border h-px" />
 
-        {/* Best Found */}
+        {/* Best Found - High Score Indicator */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-1.5">
             <Trophy className="h-3.5 w-3.5 text-amber-400" />
             <span className="text-muted text-sm">Best:</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm text-violet-400">
-              {bestSubstring ? `"${bestSubstring}"` : "—"}
-            </span>
-            <motion.span
-              key={globalMax}
-              initial={{ scale: 1.3 }}
-              animate={{ scale: 1 }}
-              className="rounded bg-violet-500/20 px-1.5 py-0.5 text-xs font-bold text-violet-300"
-            >
-              {globalMax}
-            </motion.span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={bestSubstring}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="font-mono text-sm text-violet-400"
+              >
+                {bestSubstring ? `"${bestSubstring}"` : "—"}
+              </motion.span>
+            </AnimatePresence>
+            <HighScoreBadge value={globalMax} />
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+interface HighScoreBadgeProps {
+  value: number;
+}
+
+/**
+ * High Score Badge with pop animation.
+ * Shows the maximum window length found with a celebratory animation on updates.
+ */
+const HighScoreBadge = memo(function HighScoreBadge({ value }: HighScoreBadgeProps) {
+  return (
+    <motion.div key={value} className="relative">
+      {/* Background glow pulse on update */}
+      <motion.div
+        className="absolute inset-0 rounded bg-violet-500/40"
+        initial={{ scale: 1.8, opacity: 0.8 }}
+        animate={{ scale: 1, opacity: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      />
+      {/* Ring pulse animation */}
+      <motion.div
+        className="absolute inset-0 rounded border-2 border-violet-400"
+        initial={{ scale: 1, opacity: 0.8 }}
+        animate={{ scale: 1.5, opacity: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      />
+      {/* Main badge with pop */}
+      <motion.span
+        className="relative z-10 inline-flex items-center justify-center rounded bg-violet-500/30 px-2 py-0.5 text-sm font-bold text-violet-200 shadow-lg shadow-violet-500/20"
+        initial={{ scale: 1.5, y: -8 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{
+          type: "spring",
+          stiffness: 500,
+          damping: 20,
+        }}
+      >
+        {value}
+      </motion.span>
+    </motion.div>
+  );
+});
 
 interface PatternControlBarProps {
   playbackSpeed: PlaybackSpeedMultiplier;
