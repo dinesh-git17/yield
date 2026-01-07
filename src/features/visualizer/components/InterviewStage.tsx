@@ -193,7 +193,7 @@ function InterviewStageContent({ className }: { className?: string }) {
         />
 
         {/* Bar Visualization */}
-        <div className="flex flex-1 items-center justify-center px-4 pb-20 md:px-6 md:pb-24">
+        <div className="flex flex-1 items-end justify-center px-4 pb-20 md:px-6 md:pb-24">
           <div className="border-border/50 flex h-full max-h-[280px] w-full max-w-3xl items-end justify-center gap-1 border-b pb-2 md:max-h-[320px] md:gap-2">
             {bars.map((bar) => (
               <RainWaterBar
@@ -233,7 +233,7 @@ function InterviewStageContent({ className }: { className?: string }) {
         </div>
 
         {/* Pointer Legend */}
-        <div className="absolute bottom-20 left-4 hidden flex-col gap-1 md:bottom-24 md:flex">
+        <div className="absolute bottom-4 left-4 hidden flex-col gap-1 md:bottom-6 md:flex">
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: "#f59e0b" }} />
             <span className="text-muted text-xs">Left Pointer</span>
