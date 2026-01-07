@@ -82,7 +82,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
 ] as const;
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
 const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
-const VALID_INTERVIEW_PROBLEMS = ["trapping-rain-water"] as const;
+const VALID_INTERVIEW_PROBLEMS = ["trapping-rain-water", "largest-rectangle-histogram"] as const;
 const VALID_PATTERN_SLUGS = ["longest-substring"] as const;
 
 function isValidMode(mode: string): mode is LearnableMode {

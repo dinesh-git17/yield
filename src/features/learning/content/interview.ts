@@ -294,6 +294,210 @@ Same logic mirrored on the right. This prevents overthinking, avoids backtrackin
       },
     ],
   },
+
+  "largest-rectangle-histogram": {
+    title: "Largest Rectangle in Histogram",
+    tagline: "The Skyline Maximizer",
+    difficulty: "Hard",
+    pattern: "Monotonic Stack",
+
+    history: `This problem is a rite of passage for anyone learning algorithm patterns. Interviewers love it because it quietly tests a lot of things at once:
+
+- Can you see past the obvious O(n²) brute force?
+- Do you recognize when a stack is the right tool for the job?
+- Can you survive off-by-one errors without panicking?
+
+Picture each bar as a building in a skyline. Your goal is to place the biggest possible rectangular billboard across those buildings. Every bar can be the height of a rectangle, but the real question is how wide it can stretch before something shorter ruins the party.`,
+
+    problemDefinition: `You are given an array of non-negative integers. Each value represents the height of a histogram bar. Every bar has a width of exactly 1.
+
+Your task is simple to state and painful to brute force:
+
+**Return the area of the largest rectangle that can be formed.**`,
+
+    coreIdea: `For every bar with height $h$, imagine it being the shortest bar in a rectangle.
+
+Now ask two questions:
+- How far can it extend to the left?
+- How far can it extend to the right?
+
+Once you know that span, the area becomes straightforward.
+
+For a bar at index $i$ with height $h$:
+
+$$area[i] = h \\times (rightBound[i] - leftBound[i] - 1)$$
+
+Where:
+- $leftBound[i]$ is the index of the first shorter bar to the left, or $-1$ if none exists
+- $rightBound[i]$ is the index of the first shorter bar to the right, or $n$ if none exists
+
+The challenge is computing these bounds efficiently without scanning left and right for every bar.`,
+
+    mechanics: `The monotonic stack keeps bar indices in increasing height order. Think of it as a memory structure that remembers where each bar started being valid. Whenever we encounter a bar that is shorter than the stack top, we have found a right boundary. That means it is time to calculate areas.
+
+**The Algorithm Step-by-Step:**
+
+1. Initialize an empty stack.
+2. Iterate through all bars.
+3. Add one extra virtual bar of height 0 at the end to force cleanup.
+4. For each bar:
+   - While the current bar is shorter than the bar at the top of the stack:
+     - Pop the stack.
+     - Compute the rectangle area using the popped bar as height.
+     - Update the maximum area.
+   - Push the current index onto the stack.
+5. Return the maximum area found.
+
+The virtual zero-height bar is the unsung hero here. It ensures no bar is left behind unprocessed.
+
+**Why the Stack Must Be Monotonic:**
+
+The stack always keeps indices of bars in increasing height order because:
+- Taller bars can extend through shorter ones.
+- Shorter bars immediately block all taller bars behind them.
+- This ordering lets us compute left and right boundaries the moment a bar is popped.
+
+Each bar is pushed once and popped once. No repeats. No chaos.`,
+
+    approaches: [
+      {
+        name: "Brute Force",
+        description: "Expand left and right for every bar. Easy to write, painful to optimize.",
+        timeComplexity: "O(n²)",
+        spaceComplexity: "O(1)",
+      },
+      {
+        name: "Divide and Conquer",
+        description:
+          "Recursively split by the smallest bar. Elegant but slower and harder to implement.",
+        timeComplexity: "O(n log n)",
+        spaceComplexity: "O(log n)",
+      },
+      {
+        name: "Monotonic Stack",
+        description: "One pass, clean boundaries, interview approved.",
+        timeComplexity: "O(n)",
+        spaceComplexity: "O(n)",
+        isOptimal: true,
+      },
+    ],
+
+    whyItWorks: `When a bar is popped from the stack:
+
+- The current index is its right boundary.
+- The new stack top is its left boundary.
+- The maximum rectangle for that bar can be computed immediately.
+
+No guessing. No revisiting.`,
+
+    timeComplexity: {
+      complexity: "O(n)",
+      explanation: "Every bar enters and leaves the stack exactly one time.",
+    },
+    spaceComplexity: {
+      complexity: "O(n)",
+      explanation: "In the worst case, all bars are increasing and sit in the stack together.",
+    },
+
+    useCases: [
+      "Skyline and geometry problems",
+      "Maximum rectangle in binary matrices",
+      "Memory allocation analysis",
+      "Image region detection",
+      "Stock performance windows",
+    ],
+
+    keyInsights: [
+      "Every bar can define a rectangle.",
+      "The first shorter bar on each side limits how far it can stretch.",
+      "Monotonic stacks are perfect for next smaller or next greater element problems.",
+      "The sentinel bar simplifies edge cases and saves you from cleanup logic.",
+      "If you understand this problem, a whole family of stack problems suddenly becomes much easier.",
+    ],
+
+    pitfalls: [
+      "Forgetting the sentinel bar at the end.",
+      "Off-by-one errors in width calculation.",
+      "Storing heights instead of indices.",
+      "Not handling the empty stack case.",
+      "Adding a cleanup loop instead of using a sentinel.",
+    ],
+
+    interviewQA: [
+      {
+        question: "Why use a stack instead of two arrays for left/right bounds?",
+        answer:
+          "The stack computes both bounds on-the-fly in one pass. When we pop, we know both bounds immediately: left is the new stack top, right is the current index.",
+      },
+      {
+        question: "What does 'monotonic' mean in this context?",
+        answer:
+          "The stack maintains elements in strictly increasing height order. Whenever a smaller element arrives, we pop until the invariant is restored.",
+      },
+      {
+        question: "Why add a zero-height bar at the end?",
+        answer:
+          "It acts as a sentinel that's shorter than everything, forcing all remaining stack elements to be popped and processed. Without it, you'd need a separate cleanup loop.",
+      },
+      {
+        question: "How does this relate to Trapping Rain Water?",
+        answer:
+          "Both can use monotonic stacks! In Trapping Rain Water, the stack finds valleys to fill. Here, it finds how far each bar extends. Same tool, different application.",
+      },
+      {
+        question: "Can this be solved with Two Pointers?",
+        answer:
+          "Not directly. Two Pointers works for Trapping Rain Water because we only need running max boundaries. Here, we need to know exact left/right bounds for each bar—stack is the right tool.",
+      },
+    ],
+
+    whenToUse:
+      "Use a monotonic stack when you need to find spans, ranges, or boundaries. It shines when each element depends on its nearest smaller or greater neighbor. You want linear time with predictable behavior.",
+
+    whenNotToUse:
+      "If two pointers or simple iteration solves the problem cleanly, do not force a stack. Stacks are powerful, but unnecessary stacks are how bugs are born.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "trapping-rain-water",
+        mode: "interview",
+        relationship: "uses monotonic stack for valley detection",
+      },
+      {
+        algorithm: "quick-sort",
+        mode: "sorting",
+        relationship: "divide and conquer alternative approach",
+      },
+      {
+        algorithm: "merge-sort",
+        mode: "sorting",
+        relationship: "divide and conquer complexity analysis",
+      },
+    ],
+
+    demos: [
+      {
+        label: "Classic",
+        description: "The LeetCode example with a clear maximum rectangle",
+        heights: [2, 1, 5, 6, 2, 3],
+      },
+      {
+        label: "Ascending",
+        description: "Strictly increasing heights - stack fills before cleanup",
+        heights: [1, 2, 3, 4, 5, 6],
+      },
+      {
+        label: "Descending",
+        description: "Strictly decreasing heights - pops happen every step",
+        heights: [6, 5, 4, 3, 2, 1],
+      },
+      {
+        label: "Pyramid",
+        description: "Mountain shape testing both expansion and contraction",
+        heights: [1, 3, 5, 7, 5, 3, 1],
+      },
+    ],
+  },
 };
 
 /**

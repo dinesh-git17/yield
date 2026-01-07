@@ -1,9 +1,12 @@
 export {
+  type InterviewBarData,
+  type InterviewBarState,
   type InterviewControllerActions,
   type InterviewControllerState,
   type InterviewPlaybackStatus,
   type RainWaterBarData,
   type RainWaterBarState,
+  type RectangleHighlight,
   type UseInterviewControllerReturn,
   useInterviewController,
 } from "./useInterviewController";

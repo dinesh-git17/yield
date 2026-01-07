@@ -2,53 +2,108 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getStepInsight } from "@/features/algorithms/interview/config";
+import { largestRectangleHistogram } from "@/features/algorithms/interview/largestRectangleHistogram";
 import { trappingRainWater } from "@/features/algorithms/interview/trappingRainWater";
 import type { InterviewStep } from "@/features/algorithms/interview/types";
 import type { InterviewProblemType } from "@/lib/store";
 
 /**
- * Visual states for a rain water bar during algorithm execution.
+ * Visual states for a bar during algorithm execution.
+ *
+ * Shared states:
  * - idle: Default state, not currently being operated on
+ * - complete: Algorithm has finished
+ *
+ * Rain Water (Two Pointers) states:
  * - left-pointer: Current left pointer position
  * - right-pointer: Current right pointer position
  * - left-max: The index that holds the max-left value
  * - right-max: The index that holds the max-right value
  * - filling: Currently having water filled
- * - complete: Algorithm has finished
+ *
+ * Largest Rectangle (Monotonic Stack) states:
+ * - in-stack: Bar is currently on the monotonic stack
+ * - current: Current iterator position
+ * - popped: Bar that was just popped from the stack
+ * - calculating-area: Bars within the rectangle being calculated
+ * - max-rectangle: Bars within the current maximum rectangle
  */
-export type RainWaterBarState =
+export type InterviewBarState =
   | "idle"
+  | "complete"
+  // Rain Water states
   | "left-pointer"
   | "right-pointer"
   | "left-max"
   | "right-max"
   | "filling"
-  | "complete";
+  // Histogram states
+  | "in-stack"
+  | "current"
+  | "popped"
+  | "calculating-area"
+  | "max-rectangle";
+
+/**
+ * @deprecated Use InterviewBarState instead. Kept for backwards compatibility.
+ */
+export type RainWaterBarState = InterviewBarState;
 
 export type InterviewPlaybackStatus = "idle" | "playing" | "paused" | "complete";
 
-export interface RainWaterBarData {
+export interface InterviewBarData {
   id: string;
   index: number;
   height: number;
   waterLevel: number;
-  state: RainWaterBarState;
+  state: InterviewBarState;
+}
+
+/**
+ * @deprecated Use InterviewBarData instead. Kept for backwards compatibility.
+ */
+export type RainWaterBarData = InterviewBarData;
+
+/**
+ * Details of a rectangle for visualization (used in Largest Rectangle problem).
+ */
+export interface RectangleHighlight {
+  /** Left boundary index (inclusive) */
+  left: number;
+  /** Right boundary index (exclusive) */
+  right: number;
+  /** Height of the rectangle */
+  height: number;
 }
 
 export interface InterviewControllerState {
-  bars: RainWaterBarData[];
+  bars: InterviewBarData[];
   status: InterviewPlaybackStatus;
   currentStepIndex: number;
   currentStepType: InterviewStep["type"] | null;
   currentStep: InterviewStep | null;
+  speed: number;
+  /** Dynamic insight text based on current step */
+  insight: string;
+
+  // Rain Water (Two Pointers) specific state
   totalWater: number;
   maxLeft: number;
   maxRight: number;
   leftPointer: number;
   rightPointer: number;
-  speed: number;
-  /** Dynamic insight text based on current step */
-  insight: string;
+
+  // Largest Rectangle (Monotonic Stack) specific state
+  /** Current monotonic stack (array of bar indices) */
+  stack: number[];
+  /** Current iterator position */
+  histogramIndex: number;
+  /** Maximum area found so far */
+  maxArea: number;
+  /** Rectangle currently being calculated (for temporary highlight) */
+  calculatingRectangle: RectangleHighlight | null;
+  /** Rectangle with maximum area (for persistent highlight) */
+  maxRectangle: RectangleHighlight | null;
 }
 
 export interface InterviewControllerActions {
@@ -64,7 +119,7 @@ export type UseInterviewControllerReturn = InterviewControllerState & InterviewC
 
 const DEFAULT_SPEED = 400; // Slower for educational purposes
 
-function createBarsFromHeights(heights: number[]): RainWaterBarData[] {
+function createBarsFromHeights(heights: number[]): InterviewBarData[] {
   return heights.map((height, index) => ({
     id: `bar-${index}`,
     index,
@@ -84,6 +139,8 @@ function getGeneratorForProblem(
   switch (problem) {
     case "trapping-rain-water":
       return trappingRainWater({ heights });
+    case "largest-rectangle-histogram":
+      return largestRectangleHistogram({ heights });
     default:
       return trappingRainWater({ heights });
   }
@@ -93,27 +150,38 @@ export function useInterviewController(
   initialHeights: number[],
   problem: InterviewProblemType = "trapping-rain-water"
 ): UseInterviewControllerReturn {
-  const [bars, setBars] = useState<RainWaterBarData[]>(() => createBarsFromHeights(initialHeights));
+  const [bars, setBars] = useState<InterviewBarData[]>(() => createBarsFromHeights(initialHeights));
   const [status, setStatus] = useState<InterviewPlaybackStatus>("idle");
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [currentStepType, setCurrentStepType] = useState<InterviewStep["type"] | null>(null);
   const [currentStep, setCurrentStep] = useState<InterviewStep | null>(null);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
+  const [insight, setInsight] = useState("");
+
+  // Rain Water (Two Pointers) state
   const [totalWater, setTotalWater] = useState(0);
   const [maxLeft, setMaxLeft] = useState(0);
   const [maxRight, setMaxRight] = useState(0);
   const [leftPointer, setLeftPointer] = useState(-1);
   const [rightPointer, setRightPointer] = useState(-1);
-  const [insight, setInsight] = useState("");
+
+  // Largest Rectangle (Monotonic Stack) state
+  const [stack, setStack] = useState<number[]>([]);
+  const [histogramIndex, setHistogramIndex] = useState(-1);
+  const [maxArea, setMaxArea] = useState(0);
+  const [calculatingRectangle, setCalculatingRectangle] = useState<RectangleHighlight | null>(null);
+  const [maxRectangle, setMaxRectangle] = useState<RectangleHighlight | null>(null);
 
   const heightsRef = useRef<number[]>([...initialHeights]);
   const waterLevelsRef = useRef<number[]>(new Array(initialHeights.length).fill(0) as number[]);
+  const stackRef = useRef<number[]>([]);
   const iteratorRef = useRef<Generator<InterviewStep, void, unknown> | null>(null);
   const totalStepsRef = useRef(0);
 
   const initializeIterator = useCallback(() => {
     heightsRef.current = [...initialHeights];
     waterLevelsRef.current = new Array(initialHeights.length).fill(0) as number[];
+    stackRef.current = [];
     iteratorRef.current = getGeneratorForProblem(problem, heightsRef.current);
   }, [initialHeights, problem]);
 
@@ -150,7 +218,10 @@ export function useInterviewController(
     return len - 1;
   }, []);
 
-  const applyStep = useCallback(
+  /**
+   * Applies Rain Water step visualization to bars.
+   */
+  const applyRainWaterStep = useCallback(
     (
       step: InterviewStep,
       currentLeft: number,
@@ -198,6 +269,57 @@ export function useInterviewController(
     [findMaxLeftIndex, findMaxRightIndex]
   );
 
+  /**
+   * Applies Largest Rectangle step visualization to bars.
+   * Highlights bars based on their role in the monotonic stack algorithm.
+   */
+  const applyHistogramStep = useCallback(
+    (
+      step: InterviewStep,
+      currentStack: number[],
+      currentIdx: number,
+      currentCalcRect: RectangleHighlight | null,
+      currentMaxRect: RectangleHighlight | null
+    ) => {
+      setBars((prevBars) => {
+        return prevBars.map((bar) => {
+          // During calculate-area step, highlight bars in the rectangle being calculated
+          if (step.type === "calculate-area" && currentCalcRect) {
+            if (bar.index >= currentCalcRect.left && bar.index < currentCalcRect.right) {
+              return { ...bar, state: "calculating-area" as const };
+            }
+          }
+
+          // Highlight the popped bar
+          if (step.type === "stack-pop" && bar.index === step.poppedIndex) {
+            return { ...bar, state: "popped" as const };
+          }
+
+          // Highlight the current iterator position
+          if (bar.index === currentIdx && currentIdx < prevBars.length) {
+            return { ...bar, state: "current" as const };
+          }
+
+          // Mark bars currently in the stack
+          if (currentStack.includes(bar.index)) {
+            return { ...bar, state: "in-stack" as const };
+          }
+
+          // For update-max-area step, highlight the max rectangle
+          if (step.type === "update-max-area" && currentMaxRect) {
+            if (bar.index >= currentMaxRect.left && bar.index < currentMaxRect.right) {
+              return { ...bar, state: "max-rectangle" as const };
+            }
+          }
+
+          // Default: idle state
+          return { ...bar, state: "idle" as const };
+        });
+      });
+    },
+    []
+  );
+
   const processNextStep = useCallback((): boolean => {
     const iterator = iteratorRef.current;
     if (!iterator) return false;
@@ -207,12 +329,25 @@ export function useInterviewController(
     if (result.done) {
       setStatus("complete");
       setInsight(getStepInsight("complete"));
-      // Mark all bars as complete
+
+      // Clear temporary calculation state so max rectangle overlay shows
+      setCalculatingRectangle(null);
+
+      // For histogram problems, only highlight bars within the max rectangle
+      // For rain water problems, mark all bars as complete
+      const currentMaxRect = maxRectangle;
       setBars((prevBars) =>
-        prevBars.map((bar) => ({
-          ...bar,
-          state: "complete" as const,
-        }))
+        prevBars.map((bar) => {
+          // If we have a max rectangle (histogram problem), only highlight those bars
+          if (currentMaxRect) {
+            if (bar.index >= currentMaxRect.left && bar.index < currentMaxRect.right) {
+              return { ...bar, state: "max-rectangle" as const };
+            }
+            return { ...bar, state: "idle" as const };
+          }
+          // Rain water problem: mark all as complete
+          return { ...bar, state: "complete" as const };
+        })
       );
       return false;
     }
@@ -224,66 +359,146 @@ export function useInterviewController(
     setInsight(getStepInsight(step.type));
     totalStepsRef.current += 1;
 
-    // Track state variables
-    let newLeft = leftPointer;
-    let newRight = rightPointer;
-    let newMaxLeft = maxLeft;
-    let newMaxRight = maxRight;
+    // Determine which problem type based on step type
+    const isHistogramStep =
+      step.type === "stack-push" ||
+      step.type === "stack-pop" ||
+      step.type === "calculate-area" ||
+      step.type === "update-max-area";
 
-    switch (step.type) {
-      case "init":
-        newLeft = step.left;
-        newRight = step.right;
-        newMaxLeft = step.maxLeft;
-        newMaxRight = step.maxRight;
-        setLeftPointer(newLeft);
-        setRightPointer(newRight);
-        setMaxLeft(newMaxLeft);
-        setMaxRight(newMaxRight);
-        break;
+    if (isHistogramStep) {
+      // Process Largest Rectangle (Monotonic Stack) steps
+      let newStack = [...stackRef.current];
+      let newHistogramIdx = histogramIndex;
+      let newCalcRect: RectangleHighlight | null = calculatingRectangle;
+      let newMaxRect: RectangleHighlight | null = maxRectangle;
+      let newMaxAreaValue = maxArea;
 
-      case "move-left":
-        newLeft = step.to;
-        setLeftPointer(newLeft);
-        break;
+      switch (step.type) {
+        case "stack-push":
+          // Update stack with the new state from the generator
+          newStack = [...step.stack];
+          stackRef.current = newStack;
+          setStack(newStack);
+          // Update histogram index to the pushed index
+          newHistogramIdx = step.index;
+          setHistogramIndex(newHistogramIdx);
+          // Clear any calculation rectangle
+          newCalcRect = null;
+          setCalculatingRectangle(null);
+          break;
 
-      case "move-right":
-        newRight = step.to;
-        setRightPointer(newRight);
-        break;
+        case "stack-pop":
+          // Update stack with the state after pop
+          newStack = [...step.stack];
+          stackRef.current = newStack;
+          setStack(newStack);
+          // Track the current index that triggered the pop
+          newHistogramIdx = step.currentIndex;
+          setHistogramIndex(newHistogramIdx);
+          break;
 
-      case "update-max-left":
-        newMaxLeft = step.newMax;
-        setMaxLeft(newMaxLeft);
-        break;
+        case "calculate-area":
+          // Set the rectangle being calculated for visualization
+          newCalcRect = {
+            left: step.leftBound + 1, // leftBound is exclusive, so +1 for inclusive
+            right: step.rightBound,
+            height: step.height,
+          };
+          setCalculatingRectangle(newCalcRect);
+          break;
 
-      case "update-max-right":
-        newMaxRight = step.newMax;
-        setMaxRight(newMaxRight);
-        break;
+        case "update-max-area":
+          // Update max area and set the new max rectangle
+          newMaxAreaValue = step.newMax;
+          setMaxArea(newMaxAreaValue);
+          newMaxRect = {
+            left: step.rectangle.left,
+            right: step.rectangle.right,
+            height: step.rectangle.height,
+          };
+          setMaxRectangle(newMaxRect);
+          // Clear the calculation rectangle since we've now committed it as max
+          newCalcRect = null;
+          setCalculatingRectangle(null);
+          break;
+      }
 
-      case "fill-water":
-        // Update water levels ref
-        waterLevelsRef.current[step.index] = step.waterAmount;
-        setTotalWater(step.totalWater);
-        break;
+      // Apply histogram visualization
+      applyHistogramStep(step, newStack, newHistogramIdx, newCalcRect, newMaxRect);
+    } else {
+      // Process Rain Water (Two Pointers) steps
+      let newLeft = leftPointer;
+      let newRight = rightPointer;
+      let newMaxLeft = maxLeft;
+      let newMaxRight = maxRight;
 
-      case "complete":
-        setTotalWater(step.totalWater);
-        break;
+      switch (step.type) {
+        case "init":
+          newLeft = step.left;
+          newRight = step.right;
+          newMaxLeft = step.maxLeft;
+          newMaxRight = step.maxRight;
+          setLeftPointer(newLeft);
+          setRightPointer(newRight);
+          setMaxLeft(newMaxLeft);
+          setMaxRight(newMaxRight);
+          break;
+
+        case "move-left":
+          newLeft = step.to;
+          setLeftPointer(newLeft);
+          break;
+
+        case "move-right":
+          newRight = step.to;
+          setRightPointer(newRight);
+          break;
+
+        case "update-max-left":
+          newMaxLeft = step.newMax;
+          setMaxLeft(newMaxLeft);
+          break;
+
+        case "update-max-right":
+          newMaxRight = step.newMax;
+          setMaxRight(newMaxRight);
+          break;
+
+        case "fill-water":
+          // Update water levels ref
+          waterLevelsRef.current[step.index] = step.waterAmount;
+          setTotalWater(step.totalWater);
+          break;
+
+        case "complete":
+          setTotalWater(step.totalWater);
+          break;
+      }
+
+      // Apply rain water visualization
+      applyRainWaterStep(
+        step,
+        step.type === "move-left" ? step.to : newLeft,
+        step.type === "move-right" ? step.to : newRight,
+        newMaxLeft,
+        newMaxRight
+      );
     }
 
-    // Apply visual state
-    applyStep(
-      step,
-      step.type === "move-left" ? step.to : newLeft,
-      step.type === "move-right" ? step.to : newRight,
-      newMaxLeft,
-      newMaxRight
-    );
-
     return true;
-  }, [leftPointer, rightPointer, maxLeft, maxRight, applyStep]);
+  }, [
+    leftPointer,
+    rightPointer,
+    maxLeft,
+    maxRight,
+    histogramIndex,
+    maxArea,
+    calculatingRectangle,
+    maxRectangle,
+    applyRainWaterStep,
+    applyHistogramStep,
+  ]);
 
   useEffect(() => {
     if (status !== "playing") return;
@@ -328,14 +543,27 @@ export function useInterviewController(
     setCurrentStepIndex(0);
     setCurrentStepType(null);
     setCurrentStep(null);
+    setInsight("");
+
+    // Reset Rain Water state
     setTotalWater(0);
     setMaxLeft(0);
     setMaxRight(0);
     setLeftPointer(-1);
     setRightPointer(-1);
-    setInsight("");
+
+    // Reset Histogram state
+    setStack([]);
+    setHistogramIndex(-1);
+    setMaxArea(0);
+    setCalculatingRectangle(null);
+    setMaxRectangle(null);
+
+    // Reset refs
     totalStepsRef.current = 0;
     waterLevelsRef.current = new Array(initialHeights.length).fill(0) as number[];
+    stackRef.current = [];
+
     setBars(createBarsFromHeights(initialHeights));
     initializeIterator();
   }, [initialHeights, initializeIterator]);
@@ -346,15 +574,28 @@ export function useInterviewController(
       setCurrentStepIndex(0);
       setCurrentStepType(null);
       setCurrentStep(null);
+      setInsight("");
+
+      // Reset Rain Water state
       setTotalWater(0);
       setMaxLeft(0);
       setMaxRight(0);
       setLeftPointer(-1);
       setRightPointer(-1);
-      setInsight("");
+
+      // Reset Histogram state
+      setStack([]);
+      setHistogramIndex(-1);
+      setMaxArea(0);
+      setCalculatingRectangle(null);
+      setMaxRectangle(null);
+
+      // Reset refs
       totalStepsRef.current = 0;
       heightsRef.current = [...newHeights];
       waterLevelsRef.current = new Array(newHeights.length).fill(0) as number[];
+      stackRef.current = [];
+
       setBars(createBarsFromHeights(newHeights));
       iteratorRef.current = getGeneratorForProblem(problem, newHeights);
     },
@@ -371,13 +612,24 @@ export function useInterviewController(
     currentStepIndex,
     currentStepType,
     currentStep,
+    speed,
+    insight,
+
+    // Rain Water state
     totalWater,
     maxLeft,
     maxRight,
     leftPointer,
     rightPointer,
-    speed,
-    insight,
+
+    // Histogram state
+    stack,
+    histogramIndex,
+    maxArea,
+    calculatingRectangle,
+    maxRectangle,
+
+    // Actions
     play,
     pause,
     nextStep,

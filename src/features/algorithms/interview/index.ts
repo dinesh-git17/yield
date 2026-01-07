@@ -13,7 +13,10 @@ export {
   INTERVIEW_STEP_LABELS,
   RAIN_WATER_PRESETS,
 } from "./config";
-
+export {
+  computeLargestRectangle,
+  largestRectangleHistogram,
+} from "./largestRectangleHistogram";
 // Algorithms
 export { computeTrappedWater, trappingRainWater } from "./trappingRainWater";
 export type {
@@ -21,6 +24,7 @@ export type {
   InterviewGenerator,
   InterviewProblemType,
   InterviewStep,
+  LargestRectangleState,
   RainWaterState,
 } from "./types";
-export { createInitialRainWaterState } from "./types";
+export { createInitialLargestRectangleState, createInitialRainWaterState } from "./types";

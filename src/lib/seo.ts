@@ -69,7 +69,10 @@ export const VALID_GRAPH_ALGORITHMS: GraphAlgorithmType[] = ["prim", "kruskal", 
 /**
  * All valid interview problems.
  */
-export const VALID_INTERVIEW_PROBLEMS: InterviewProblemType[] = ["trapping-rain-water"];
+export const VALID_INTERVIEW_PROBLEMS: InterviewProblemType[] = [
+  "trapping-rain-water",
+  "largest-rectangle-histogram",
+];
 
 /**
  * All valid pattern problem slugs for learn pages.
