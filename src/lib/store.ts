@@ -4,6 +4,11 @@ import {
   INTERVIEW_CONFIG,
   type InterviewProblemType,
 } from "@/features/algorithms/interview";
+import {
+  DEFAULT_SLIDING_WINDOW_INPUT,
+  PATTERNS_CONFIG,
+  type PatternProblemType,
+} from "@/features/algorithms/patterns";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mode & Algorithm Types
@@ -11,6 +16,9 @@ import {
 
 // Re-export InterviewProblemType for convenience
 export type { InterviewProblemType } from "@/features/algorithms/interview";
+
+// Re-export PatternProblemType for convenience
+export type { PatternProblemType } from "@/features/algorithms/patterns";
 
 /**
  * The six visualization domains supported by Yield.
@@ -449,6 +457,56 @@ export function createDefaultInterviewState(heights: number[]): InterviewState {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Patterns State Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Window validity status for sliding window patterns.
+ */
+export type WindowStatus = "valid" | "invalid";
+
+/**
+ * State for pattern problem visualization.
+ * Tracks window boundaries, frequency map, and maximum values.
+ */
+export interface PatternState {
+  /** The input string as an array of characters */
+  data: string[];
+  /** Current window boundaries */
+  window: {
+    /** Left pointer (inclusive) */
+    start: number;
+    /** Right pointer (inclusive) */
+    end: number;
+  };
+  /** Character frequency count within the current window */
+  frequencyMap: Record<string, number>;
+  /** The running maximum length found so far */
+  globalMax: number;
+  /** The best substring found (for display) */
+  bestSubstring: string;
+  /** Current window validity status */
+  status: WindowStatus;
+}
+
+/**
+ * Creates a default pattern state with given input.
+ */
+export function createDefaultPatternState(input: string): PatternState {
+  return {
+    data: input.split(""),
+    window: {
+      start: 0,
+      end: -1,
+    },
+    frequencyMap: {},
+    globalMax: 0,
+    bestSubstring: "",
+    status: "valid",
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Store Interface
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -488,6 +546,12 @@ export interface YieldStore {
   // Interview state (preserved when switching modes)
   interviewProblem: InterviewProblemType;
   interviewState: InterviewState;
+
+  // Patterns state (preserved when switching modes)
+  patternProblem: PatternProblemType;
+  patternState: PatternState;
+  /** The raw input string for patterns (used to regenerate state) */
+  patternInput: string;
 
   // Global actions
   setMode: (mode: VisualizerMode) => void;
@@ -610,6 +674,24 @@ export interface YieldStore {
    * Resets the interview state to initial values based on current heights.
    */
   resetInterviewState: () => void;
+
+  // Patterns actions
+  /**
+   * Sets the current pattern problem.
+   */
+  setPatternProblem: (problem: PatternProblemType) => void;
+  /**
+   * Sets the input string for the pattern problem.
+   */
+  setPatternInput: (input: string) => void;
+  /**
+   * Updates the pattern state (called by the controller during visualization).
+   */
+  updatePatternState: (state: Partial<PatternState>) => void;
+  /**
+   * Resets the pattern state to initial values based on current input.
+   */
+  resetPatternState: () => void;
 }
 
 /**
@@ -1651,6 +1733,11 @@ export const useYieldStore = create<YieldStore>((set) => ({
   interviewProblem: INTERVIEW_CONFIG.DEFAULT_PROBLEM,
   interviewState: createDefaultInterviewState(DEFAULT_RAIN_WATER_HEIGHTS),
 
+  // Patterns initial state
+  patternProblem: PATTERNS_CONFIG.DEFAULT_PROBLEM,
+  patternInput: DEFAULT_SLIDING_WINDOW_INPUT,
+  patternState: createDefaultPatternState(DEFAULT_SLIDING_WINDOW_INPUT),
+
   // Global actions
   setMode: (mode) => set({ mode }),
 
@@ -2378,6 +2465,28 @@ export const useYieldStore = create<YieldStore>((set) => ({
   resetInterviewState: () =>
     set((state) => ({
       interviewState: createDefaultInterviewState(state.interviewState.heights),
+    })),
+
+  // Patterns actions
+  setPatternProblem: (problem) => set({ patternProblem: problem }),
+
+  setPatternInput: (input) =>
+    set({
+      patternInput: input,
+      patternState: createDefaultPatternState(input),
+    }),
+
+  updatePatternState: (partialState) =>
+    set((state) => ({
+      patternState: {
+        ...state.patternState,
+        ...partialState,
+      },
+    })),
+
+  resetPatternState: () =>
+    set((state) => ({
+      patternState: createDefaultPatternState(state.patternInput),
     })),
 }));
 
