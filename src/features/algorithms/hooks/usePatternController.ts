@@ -179,15 +179,16 @@ export function usePatternController(
   const targetRef = useRef(target);
   const iteratorRef = useRef<Generator<PatternStep, void, unknown> | null>(null);
 
+  // Lazy initialization for fresh page loads - called by play/nextStep when iterator is null.
+  // Subsequent changes (preset switches, input changes) are handled by resetWithInput.
+  // Note: We intentionally do NOT have an effect that auto-runs this on dependency changes,
+  // as that causes a race condition where it overwrites resetWithInput's correct values
+  // with stale initialInput (which is only set once during hydration in PatternContext).
   const initializeIterator = useCallback(() => {
     inputRef.current = initialInput;
     targetRef.current = target;
     iteratorRef.current = getGeneratorForProblem(problem, initialInput, target);
   }, [initialInput, problem, target]);
-
-  useEffect(() => {
-    initializeIterator();
-  }, [initializeIterator]);
 
   // Compute current substring based on window
   const currentSubstring =
