@@ -19,8 +19,9 @@ import type {
  * - in-window: Part of the current valid window
  * - entering: Just added to window (right pointer)
  * - leaving: About to be removed from window (left pointer)
- * - duplicate: The character that caused a duplicate
+ * - duplicate: The character that caused a duplicate/constraint violation
  * - best: Part of the best substring found
+ * - constraint-satisfied: Character that satisfied a constraint (for min-window)
  */
 export type CharacterBoxState =
   | "idle"
@@ -28,7 +29,8 @@ export type CharacterBoxState =
   | "entering"
   | "leaving"
   | "duplicate"
-  | "best";
+  | "best"
+  | "constraint-satisfied";
 
 export type PatternPlaybackStatus = "idle" | "playing" | "paused" | "complete";
 
@@ -153,6 +155,7 @@ export function usePatternController(
 
   /**
    * Updates character box states based on current window and step.
+   * Supports both deprecated (found-duplicate, update-max) and new generic step types.
    */
   const updateCharacterStates = useCallback(
     (
@@ -181,12 +184,32 @@ export function usePatternController(
             char.index === step.right
           ) {
             // Character just entered window
-            state = step.causesDuplicate ? "duplicate" : "entering";
+            if (step.causesDuplicate) {
+              state = "duplicate";
+            } else if (step.satisfiesConstraint) {
+              state = "constraint-satisfied";
+            } else {
+              state = "entering";
+            }
+          } else if (
+            stepType === "validity-check" &&
+            step?.type === "validity-check" &&
+            char.char === step.char
+          ) {
+            // Generic validity check - handle both valid and invalid states
+            if (!step.isValid && step.reason === "duplicate") {
+              state = isInWindow ? "duplicate" : "idle";
+            } else if (step.isValid && step.reason === "constraint-satisfied") {
+              state = isInWindow ? "constraint-satisfied" : "idle";
+            } else {
+              state = isInWindow ? "in-window" : "idle";
+            }
           } else if (
             stepType === "found-duplicate" &&
             step?.type === "found-duplicate" &&
             char.char === step.char
           ) {
+            // @deprecated - kept for backward compatibility
             // Highlight all instances of the duplicate character
             state = isInWindow ? "duplicate" : "idle";
           } else if (
@@ -261,13 +284,30 @@ export function usePatternController(
         if (step.causesDuplicate) {
           setWindowStatus("invalid");
           setDuplicateChar(step.char);
+        } else if (step.satisfiesConstraint) {
+          setWindowStatus("valid");
+          setDuplicateChar(null);
         } else {
           setWindowStatus("valid");
           setDuplicateChar(null);
         }
         break;
 
+      case "validity-check":
+        // Generic validity check - handles both duplicate and constraint satisfaction
+        if (step.isValid) {
+          setWindowStatus("valid");
+          setDuplicateChar(null);
+        } else {
+          setWindowStatus("invalid");
+          if (step.reason === "duplicate") {
+            setDuplicateChar(step.char);
+          }
+        }
+        break;
+
       case "found-duplicate":
+        // @deprecated - kept for backward compatibility
         setWindowStatus("invalid");
         setDuplicateChar(step.char);
         break;
@@ -282,19 +322,30 @@ export function usePatternController(
         }
         break;
 
+      case "update-best":
+        // Generic update-best - works for both min and max objectives
+        setGlobalMax(step.bestLength);
+        setBestSubstring(step.substring);
+        newBestStart = step.windowStart;
+        newBestLength = step.bestLength;
+        break;
+
       case "update-max":
+        // @deprecated - kept for backward compatibility
         setGlobalMax(step.maxLength);
         setBestSubstring(step.substring);
         newBestStart = step.windowStart;
         newBestLength = step.maxLength;
         break;
 
-      case "complete":
-        setGlobalMax(step.maxLength);
+      case "complete": {
+        const finalLength = step.bestLength ?? step.maxLength ?? 0;
+        setGlobalMax(finalLength);
         setBestSubstring(step.bestSubstring);
         newBestStart = inputRef.current.indexOf(step.bestSubstring);
-        newBestLength = step.maxLength;
+        newBestLength = finalLength;
         break;
+      }
     }
 
     // Update character visual states

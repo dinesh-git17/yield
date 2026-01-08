@@ -98,14 +98,16 @@ export interface PatternArticle {
 /**
  * Pattern problem slugs for URL mapping.
  * Maps from URL-friendly slug to internal PatternProblemType.
+ * Extended to support min-window-substring (STORY-105).
  */
-export type PatternSlug = "longest-substring";
+export type PatternSlug = "longest-substring" | "min-window";
 
 /**
  * Maps URL slugs to internal problem types.
  */
 export const PATTERN_SLUG_MAP: Record<PatternSlug, PatternProblemType> = {
   "longest-substring": "longest-substring-norepeat",
+  "min-window": "min-window-substring",
 };
 
 /**
@@ -113,6 +115,7 @@ export const PATTERN_SLUG_MAP: Record<PatternSlug, PatternProblemType> = {
  */
 export const PATTERN_TYPE_TO_SLUG: Record<PatternProblemType, PatternSlug> = {
   "longest-substring-norepeat": "longest-substring",
+  "min-window-substring": "min-window",
 };
 
 /**
@@ -304,6 +307,154 @@ This ensures:
         label: "Mixed",
         description: 'Multiple valid windows — "wke" or "kew"',
         input: "pwwkew",
+      },
+    ],
+  },
+
+  // Placeholder for min-window - will be completed in STORY-105
+  "min-window": {
+    title: "Minimum Window Substring",
+    tagline: "The Treasure Hunter",
+    difficulty: "Hard",
+    pattern: "Sliding Window + Hash Map",
+
+    history: `This problem extends the Sliding Window pattern from longest-substring to a different objective: finding the minimum valid window instead of the maximum.
+
+Where longest-substring focuses on **validity maintenance** (shrinking to remove duplicates), this problem focuses on **optimization** (expanding to find a valid set, then shrinking to minimize length).`,
+
+    problemDefinition: `Given strings $s$ and $t$, find the minimum window substring in $s$ that contains **all characters** of $t$ (including duplicates).
+
+If no such substring exists, return an empty string.`,
+
+    coreIdea: `We want the **smallest window** that contains all required characters.
+
+Instead of tracking uniqueness, we:
+- Track character **frequencies** against a target
+- Expand until all requirements are met
+- Shrink to minimize while maintaining validity`,
+
+    windowRule: `At all times during the shrink phase, the window $[left, right]$ must satisfy:
+
+**All characters in target appear with at least their required frequency**
+
+This rule determines when the window is valid and can be considered as a potential answer.`,
+
+    mechanics: `We scan the string using two pointers with a different strategy than longest-substring.
+
+- $right$ expands until the window contains all required characters
+- $left$ shrinks to minimize length while maintaining validity
+- Two hash maps track **required** vs **current** frequencies
+
+**The Algorithm Step-by-Step:**
+
+1. Initialize:
+   - Build $need$ map from target string
+   - $have = 0$, $required = |need|$
+   - $left = 0$, track minimum window
+
+2. Expand $right$ pointer
+
+3. If current window satisfies all requirements ($have == required$):
+   - Update minimum if current window is smaller
+   - Shrink from left until invalid
+
+4. Repeat until string ends`,
+
+    whyMaxMatters: `The key insight is tracking **when** the window becomes valid:
+
+$have$ counts how many characters have reached their required frequency.
+
+When $have == required$, the window is valid and we can try to shrink it.`,
+
+    approaches: [
+      {
+        name: "Brute Force",
+        description: "Check every possible substring and verify it contains all target characters.",
+        timeComplexity: "O(n² × m)",
+        spaceComplexity: "O(m)",
+      },
+      {
+        name: "Sliding Window",
+        description: "Expand to find valid window, then shrink to minimize.",
+        timeComplexity: "O(n)",
+        spaceComplexity: "O(m)",
+        isOptimal: true,
+      },
+    ],
+
+    timeComplexity: {
+      complexity: "O(n + m)",
+      explanation:
+        "Each character is visited at most twice (once by right, once by left). Building the target map takes O(m).",
+    },
+    spaceComplexity: {
+      complexity: "O(m)",
+      explanation: "We store frequency maps proportional to the target string size.",
+    },
+
+    useCases: [
+      "**Search engines** — Finding shortest snippets containing all query terms",
+      "**Text editors** — Find-and-replace with minimum context",
+      "**Data pipelines** — Minimum window containing required events",
+      "**Genome analysis** — Finding shortest sequences with required nucleotides",
+    ],
+
+    keyInsights: [
+      "Unlike longest-substring, we want to **minimize** instead of maximize.",
+      "The window starts invalid and becomes valid when all requirements are met.",
+      "Shrinking continues as long as the window remains valid.",
+      "The 'have' counter avoids rechecking the entire frequency map each step.",
+    ],
+
+    pitfalls: [
+      "Forgetting to handle duplicate characters in the target",
+      "Shrinking too aggressively and missing valid windows",
+      "Not tracking when requirements are first satisfied",
+      "Off-by-one errors in window boundaries",
+    ],
+
+    interviewQA: [
+      {
+        question: "How does this differ from Longest Substring Without Repeating Characters?",
+        answer:
+          "Longest Substring maintains validity by shrinking on violations. Min Window expands to achieve validity, then shrinks to optimize.",
+      },
+      {
+        question: "Why use two counters (have/required)?",
+        answer:
+          "To avoid iterating the entire frequency map on every step. We only check when a character reaches its required count.",
+      },
+    ],
+
+    whenToUse:
+      "Use when you need the smallest contiguous range that satisfies a set of requirements.",
+
+    whenNotToUse:
+      "Avoid when the constraint cannot be checked incrementally or when gaps are allowed in the result.",
+
+    relatedAlgorithms: [
+      {
+        algorithm: "longest-substring-norepeat",
+        mode: "patterns",
+        relationship: "both use Sliding Window but with different objectives (min vs max)",
+      },
+    ],
+
+    demos: [
+      {
+        label: "Classic",
+        description: 'Find minimum window in "ADOBECODEBANC" containing "ABC"',
+        input: "ADOBECODEBANC",
+      },
+      {
+        label: "Overlap",
+        description: "Target has overlapping requirements",
+        input: "AAABBB",
+      },
+      {
+        label: "No Match",
+        description: "Target cannot be found",
+        input: "ABC",
       },
     ],
   },

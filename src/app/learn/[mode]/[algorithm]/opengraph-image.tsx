@@ -56,7 +56,7 @@ const VALID_PATHFINDING_ALGORITHMS = [
 const VALID_TREE_STRUCTURES = ["bst", "avl", "max-heap", "splay"] as const;
 const VALID_GRAPH_ALGORITHMS = ["prim", "kruskal", "kahn"] as const;
 const VALID_INTERVIEW_PROBLEMS = ["trapping-rain-water", "largest-rectangle-histogram"] as const;
-const VALID_PATTERN_SLUGS = ["longest-substring"] as const;
+const VALID_PATTERN_SLUGS = ["longest-substring", "min-window"] as const;
 
 function isValidMode(mode: string): mode is LearnableMode {
   return VALID_MODES.includes(mode as LearnableMode);

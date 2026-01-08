@@ -281,6 +281,7 @@ function DifficultyBadge({ difficulty }: DifficultyBadgeProps) {
 
 /**
  * Maps step types to their visual styling configuration.
+ * Extended to support new generic step types (validity-check, update-best).
  */
 const STEP_BANNER_CONFIG: Record<
   PatternStep["type"],
@@ -309,7 +310,18 @@ const STEP_BANNER_CONFIG: Record<
     iconTextClass: "text-emerald-400",
     labelClass: "text-emerald-300",
   },
+  "validity-check": {
+    // Generic validity check - can be valid (teal) or invalid (rose)
+    // Default to teal, the component can adjust based on step.isValid
+    icon: <AlertTriangle className="h-4 w-4" />,
+    bgClass: "bg-teal-500/10",
+    borderClass: "border-teal-500/30",
+    iconBgClass: "bg-teal-500/20",
+    iconTextClass: "text-teal-400",
+    labelClass: "text-teal-300",
+  },
   "found-duplicate": {
+    // @deprecated - kept for backward compatibility
     icon: <AlertTriangle className="h-4 w-4" />,
     bgClass: "bg-rose-500/10",
     borderClass: "border-rose-500/30",
@@ -325,7 +337,17 @@ const STEP_BANNER_CONFIG: Record<
     iconTextClass: "text-amber-400",
     labelClass: "text-amber-300",
   },
+  "update-best": {
+    // Generic update-best for both min and max objectives
+    icon: <Trophy className="h-4 w-4" />,
+    bgClass: "bg-violet-500/10",
+    borderClass: "border-violet-500/30",
+    iconBgClass: "bg-violet-500/20",
+    iconTextClass: "text-violet-400",
+    labelClass: "text-violet-300",
+  },
   "update-max": {
+    // @deprecated - kept for backward compatibility
     icon: <Trophy className="h-4 w-4" />,
     bgClass: "bg-violet-500/10",
     borderClass: "border-violet-500/30",

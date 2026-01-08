@@ -17,6 +17,7 @@ export interface WindowArrayProps {
 
 /**
  * Maps character box states to their visual styles.
+ * Extended to support constraint-satisfied state for min-window problems.
  */
 const STATE_STYLES: Record<CharacterBoxState, string> = {
   idle: "bg-zinc-800/50 text-zinc-400 border-zinc-700",
@@ -25,6 +26,7 @@ const STATE_STYLES: Record<CharacterBoxState, string> = {
   leaving: "bg-amber-500/30 text-amber-200 border-amber-400",
   duplicate: "bg-rose-500/30 text-rose-200 border-rose-400",
   best: "bg-violet-500/30 text-violet-200 border-violet-400",
+  "constraint-satisfied": "bg-teal-500/30 text-teal-200 border-teal-400",
 };
 
 /**

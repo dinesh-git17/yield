@@ -18,11 +18,14 @@ export {
 // Algorithms
 export { computeLongestSubstring, slidingWindow } from "./slidingWindow";
 export type {
+  CreateSlidingWindowStateOptions,
+  OptimizationObjective,
   PatternContext,
   PatternGenerator,
   PatternProblemType,
   PatternStep,
   SlidingWindowState,
+  ValidityReason,
   WindowStatus,
 } from "./types";
 export { createInitialSlidingWindowState } from "./types";

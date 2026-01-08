@@ -65,8 +65,9 @@ export function* slidingWindow(context: PatternContext): Generator<PatternStep, 
   if (n === 0) {
     yield {
       type: "complete",
-      maxLength: 0,
+      bestLength: 0,
       bestSubstring: "",
+      maxLength: 0, // @deprecated - kept for backward compatibility
     };
     return;
   }
@@ -105,12 +106,14 @@ export function* slidingWindow(context: PatternContext): Generator<PatternStep, 
       causesDuplicate: isDuplicate,
     };
 
-    // If duplicate found, signal the invalid state
+    // If duplicate found, signal the invalid state using generic validity-check
     if (isDuplicate) {
       yield {
-        type: "found-duplicate",
+        type: "validity-check",
+        isValid: false,
         char,
         index: right,
+        reason: "duplicate",
         frequency: frequencyMap[char] ?? 2,
       };
 
@@ -146,14 +149,14 @@ export function* slidingWindow(context: PatternContext): Generator<PatternStep, 
     // Calculate current window length
     const currentLength = right - left + 1;
 
-    // Update maximum if current window is larger
+    // Update maximum if current window is larger using generic update-best
     if (currentLength > maxLength) {
       maxLength = currentLength;
       maxStart = left;
 
       yield {
-        type: "update-max",
-        maxLength,
+        type: "update-best",
+        bestLength: maxLength,
         windowStart: left,
         windowEnd: right,
         substring: chars.slice(left, right + 1).join(""),
@@ -164,7 +167,8 @@ export function* slidingWindow(context: PatternContext): Generator<PatternStep, 
   // Algorithm complete
   yield {
     type: "complete",
-    maxLength,
+    bestLength: maxLength,
     bestSubstring: chars.slice(maxStart, maxStart + maxLength).join(""),
+    maxLength, // @deprecated - kept for backward compatibility
   };
 }
