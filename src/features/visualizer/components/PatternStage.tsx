@@ -11,6 +11,7 @@ import {
   Pause,
   Play,
   RotateCcw,
+  Search,
   StepForward,
   Trophy,
   Zap,
@@ -18,6 +19,8 @@ import {
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   getPatternProblemMetadata,
+  getPresetOptionsForProblem,
+  MIN_WINDOW_PRESETS,
   PATTERN_STEP_LABELS,
   SLIDING_WINDOW_PRESETS,
 } from "@/features/algorithms/patterns/config";
@@ -50,13 +53,6 @@ const SPEED_OPTIONS: { value: PlaybackSpeedMultiplier; label: string }[] = [
   { value: 4, label: "4x" },
 ];
 
-const PRESET_OPTIONS = [
-  { value: "classic", label: "Classic", hint: "abcabcbb" },
-  { value: "allUnique", label: "Unique", hint: "abcdefgh" },
-  { value: "allSame", label: "Same", hint: "bbbbb" },
-  { value: "twoChars", label: "Two", hint: "pwwkew" },
-];
-
 function PatternStageContent({ className }: { className?: string }) {
   const {
     characters,
@@ -73,6 +69,7 @@ function PatternStageContent({ className }: { className?: string }) {
     speed,
     dynamicInsight,
     duplicateChar,
+    target,
     play,
     pause,
     nextStep,
@@ -89,6 +86,9 @@ function PatternStageContent({ className }: { className?: string }) {
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
   const setPlaybackSpeed = useYieldStore((state) => state.setPlaybackSpeed);
   const { incrementCompletion } = useSponsorship();
+
+  // Get problem-specific preset options
+  const presetOptions = useMemo(() => getPresetOptionsForProblem(patternProblem), [patternProblem]);
 
   const problemMetadata = useMemo(
     () => getPatternProblemMetadata(patternProblem),
@@ -117,12 +117,21 @@ function PatternStageContent({ className }: { className?: string }) {
 
   const handlePresetChange = useCallback(
     (preset: string) => {
-      const presetInput = SLIDING_WINDOW_PRESETS[preset];
-      if (presetInput !== undefined) {
-        resetWithInput(presetInput);
+      if (patternProblem === "min-window-substring") {
+        // Min-window presets have input + target - pass both atomically
+        const minWindowPreset = MIN_WINDOW_PRESETS[preset];
+        if (minWindowPreset !== undefined) {
+          resetWithInput(minWindowPreset.input, minWindowPreset.target);
+        }
+      } else {
+        // Longest substring presets are just input strings
+        const presetInput = SLIDING_WINDOW_PRESETS[preset];
+        if (presetInput !== undefined) {
+          resetWithInput(presetInput);
+        }
       }
     },
-    [resetWithInput]
+    [patternProblem, resetWithInput]
   );
 
   if (!isReady) {
@@ -204,8 +213,24 @@ function PatternStageContent({ className }: { className?: string }) {
           objective={objective}
         />
 
-        {/* Main Visualization */}
-        <div className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pb-24 pt-48 md:gap-12 md:px-6 md:pt-52">
+        {/* Target Indicator - positioned at top-right for min-window problems */}
+        {isMinObjective && target && (
+          <div className="absolute top-4 right-4 z-10">
+            <TargetIndicator target={target} />
+          </div>
+        )}
+
+        {/* Main Visualization - different layouts for min vs max objective */}
+        <div
+          className={cn(
+            "flex flex-1 flex-col items-center px-4 md:px-6",
+            isMinObjective
+              ? // Min-window: centered with scroll fallback for large frequency tables
+                "min-h-0 justify-center gap-6 overflow-y-auto pb-32 pt-32 md:gap-8 md:pb-36 md:pt-36"
+              : // Longest-substring: centered layout
+                "justify-center gap-8 pb-24 pt-48 md:gap-12 md:pt-52"
+          )}
+        >
           {/* Window Array */}
           <WindowArray
             characters={characters}
@@ -243,6 +268,7 @@ function PatternStageContent({ className }: { className?: string }) {
         <div className="absolute inset-x-0 bottom-3 z-30 flex justify-center px-2 md:bottom-6 md:px-0">
           <PatternControlBar
             playbackSpeed={playbackSpeed}
+            presetOptions={presetOptions}
             onSpeedChange={handleSpeedChange}
             onPresetChange={handlePresetChange}
             disabled={isPlaying}
@@ -405,8 +431,45 @@ const InsightBanner = memo(function InsightBanner({
     isMinObjective && globalBest === Number.POSITIVE_INFINITY ? "—" : globalBest;
   const hasResult = bestSubstring.length > 0;
 
-  // Show completion summary with Linear Time highlight when done
+  // Show completion summary
   if (isComplete) {
+    // Min-window: compact banner that doesn't obstruct the visualization
+    if (isMinObjective) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: -10, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
+          className="absolute top-4 left-4 z-10 flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 shadow-lg backdrop-blur-sm"
+        >
+          {/* Success icon */}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
+            <BadgeCheck className="h-4 w-4 text-emerald-400" />
+          </div>
+          {/* Result info */}
+          <div className="flex flex-col">
+            <span className="text-primary text-sm font-semibold">Complete!</span>
+            <span className="text-muted text-xs">
+              Min: <span className="font-bold text-emerald-400">{displayLength}</span>
+              {hasResult && (
+                <>
+                  {" · "}
+                  <span className="font-mono text-violet-400">"{bestSubstring}"</span>
+                </>
+              )}
+              {!hasResult && <span className="text-muted/70 ml-1">(no match)</span>}
+            </span>
+          </div>
+          {/* Complexity badge - compact */}
+          <div className="ml-2 hidden items-center gap-1 rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 md:flex">
+            <Zap className="h-3 w-3 text-cyan-400" />
+            <span className="text-xs font-medium text-cyan-300">O(n)</span>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // Longest-substring: full banner with educational content
     return (
       <motion.div
         initial={{ opacity: 0, y: -10, scale: 0.98 }}
@@ -422,16 +485,12 @@ const InsightBanner = memo(function InsightBanner({
           <div className="flex flex-col">
             <span className="text-primary text-base font-semibold">Algorithm Complete!</span>
             <span className="text-muted text-sm">
-              {isMinObjective ? "Min length" : "Max length"}:{" "}
-              <span className="font-bold text-emerald-400">{displayLength}</span>
+              Max length: <span className="font-bold text-emerald-400">{displayLength}</span>
               {hasResult && (
                 <>
                   {" · "}
                   <span className="font-mono text-violet-400">"{bestSubstring}"</span>
                 </>
-              )}
-              {isMinObjective && !hasResult && (
-                <span className="text-muted ml-2 text-xs">(no valid window found)</span>
               )}
             </span>
           </div>
@@ -647,6 +706,7 @@ const HighScoreBadge = memo(function HighScoreBadge({ value }: HighScoreBadgePro
 
 interface PatternControlBarProps {
   playbackSpeed: PlaybackSpeedMultiplier;
+  presetOptions: { value: string; label: string; hint: string }[];
   onSpeedChange: (value: string) => void;
   onPresetChange: (preset: string) => void;
   disabled?: boolean;
@@ -654,6 +714,7 @@ interface PatternControlBarProps {
 
 const PatternControlBar = memo(function PatternControlBar({
   playbackSpeed,
+  presetOptions,
   onSpeedChange,
   onPresetChange,
   disabled,
@@ -668,7 +729,7 @@ const PatternControlBar = memo(function PatternControlBar({
       {/* Preset Selector */}
       <ControlSection label="Input">
         <div className="flex gap-1">
-          {PRESET_OPTIONS.map((option) => {
+          {presetOptions.map((option) => {
             const interactionProps = disabled
               ? {}
               : { whileHover: buttonInteraction.hover, whileTap: buttonInteraction.tap };
@@ -763,6 +824,53 @@ function LegendItem({ color, label }: LegendItemProps) {
     </div>
   );
 }
+
+interface TargetIndicatorProps {
+  target: string;
+}
+
+/**
+ * Displays the target string that the user needs to find in the input.
+ * Positioned at top-right corner, compact horizontal layout.
+ */
+const TargetIndicator = memo(function TargetIndicator({ target }: TargetIndicatorProps) {
+  // Create stable character data with unique IDs to avoid index-as-key warnings
+  const targetChars = useMemo(
+    () =>
+      target.split("").map((char, idx) => ({ id: `target-char-${idx}`, char, delay: idx * 0.03 })),
+    [target]
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 10 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="flex items-center gap-3 rounded-xl border border-teal-500/30 bg-teal-500/10 px-3 py-2 shadow-lg backdrop-blur-sm"
+    >
+      <div className="flex items-center gap-1.5">
+        <Search className="h-3.5 w-3.5 text-teal-400" />
+        <span className="text-muted text-xs font-medium uppercase tracking-wider">Find</span>
+      </div>
+      <div className="flex items-center gap-1">
+        {targetChars.map((item) => (
+          <motion.span
+            key={item.id}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: item.delay }}
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-md",
+              "border border-teal-500/50 bg-teal-500/20",
+              "text-sm font-bold text-teal-300"
+            )}
+          >
+            {item.char}
+          </motion.span>
+        ))}
+      </div>
+    </motion.div>
+  );
+});
 
 interface ControlButtonProps {
   label: string;

@@ -180,7 +180,7 @@ export function getPatternStepLabel(stepType: PatternStep["type"]): string {
 export const DEFAULT_SLIDING_WINDOW_INPUT = "abcabcbb";
 
 /**
- * Preset input strings for variety.
+ * Preset input strings for Longest Substring Without Repeating Characters.
  */
 export const SLIDING_WINDOW_PRESETS: Record<string, string> = {
   classic: "abcabcbb", // max = 3 ("abc")
@@ -191,6 +191,89 @@ export const SLIDING_WINDOW_PRESETS: Record<string, string> = {
   empty: "", // max = 0
   single: "a", // max = 1
 };
+
+/**
+ * Preset configuration for Minimum Window Substring.
+ * Each preset includes both the input string and the target string.
+ */
+export interface MinWindowPreset {
+  /** The input string to search in */
+  input: string;
+  /** The target string containing required characters */
+  target: string;
+  /** Brief description of the test case */
+  description: string;
+}
+
+/**
+ * Presets for Minimum Window Substring algorithm.
+ */
+export const MIN_WINDOW_PRESETS: Record<string, MinWindowPreset> = {
+  classic: {
+    input: "ADOBECODEBANC",
+    target: "ABC",
+    description: 'Classic LeetCode example → "BANC"',
+  },
+  overlap: {
+    input: "AAABBB",
+    target: "AB",
+    description: 'Overlapping chars → "AB"',
+  },
+  duplicate: {
+    input: "ADOBECODEBANCABC",
+    target: "AABC",
+    description: 'Multiple of same char needed → "BANCABC"',
+  },
+  fail: {
+    input: "ABC",
+    target: "Z",
+    description: "No valid window exists → empty",
+  },
+};
+
+/**
+ * Preset option for UI display.
+ */
+export interface PresetOption {
+  /** Unique identifier for the preset */
+  value: string;
+  /** Display label in the UI */
+  label: string;
+  /** Tooltip hint showing the input */
+  hint: string;
+}
+
+/**
+ * UI preset options for Longest Substring Without Repeating Characters.
+ */
+export const LONGEST_SUBSTRING_PRESET_OPTIONS: PresetOption[] = [
+  { value: "classic", label: "Classic", hint: "abcabcbb" },
+  { value: "allUnique", label: "Unique", hint: "abcdefgh" },
+  { value: "allSame", label: "Same", hint: "bbbbb" },
+  { value: "twoChars", label: "Two", hint: "pwwkew" },
+];
+
+/**
+ * UI preset options for Minimum Window Substring.
+ */
+export const MIN_WINDOW_PRESET_OPTIONS: PresetOption[] = [
+  { value: "classic", label: "Classic", hint: 'ABC in "ADOBECODEBANC"' },
+  { value: "overlap", label: "Overlap", hint: 'AB in "AAABBB"' },
+  { value: "duplicate", label: "Multi", hint: "AABC in string" },
+  { value: "fail", label: "No Match", hint: 'Z in "ABC"' },
+];
+
+/**
+ * Returns the appropriate preset options for a given pattern problem.
+ */
+export function getPresetOptionsForProblem(problem: PatternProblemType): PresetOption[] {
+  switch (problem) {
+    case "min-window-substring":
+      return MIN_WINDOW_PRESET_OPTIONS;
+    default:
+      return LONGEST_SUBSTRING_PRESET_OPTIONS;
+  }
+}
 
 /**
  * Configuration constants for Patterns Mode.

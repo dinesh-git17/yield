@@ -1,13 +1,17 @@
 // Types
 
 // Config & Metadata
-export type { PatternProblemMetadata } from "./config";
+export type { MinWindowPreset, PatternProblemMetadata, PresetOption } from "./config";
 export {
   DEFAULT_SLIDING_WINDOW_INPUT,
   getDynamicPatternInsight,
   getPatternProblemMetadata,
   getPatternStepInsight,
   getPatternStepLabel,
+  getPresetOptionsForProblem,
+  LONGEST_SUBSTRING_PRESET_OPTIONS,
+  MIN_WINDOW_PRESET_OPTIONS,
+  MIN_WINDOW_PRESETS,
   PATTERN_INSIGHTS,
   PATTERN_METADATA,
   PATTERN_STEP_LABELS,

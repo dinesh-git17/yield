@@ -6,6 +6,7 @@ import {
 } from "@/features/algorithms/interview";
 import {
   DEFAULT_SLIDING_WINDOW_INPUT,
+  MIN_WINDOW_PRESETS,
   type OptimizationObjective,
   PATTERNS_CONFIG,
   type PatternProblemType,
@@ -2524,12 +2525,27 @@ export const useYieldStore = create<YieldStore>((set) => ({
     set((state) => {
       // Determine objective based on problem type
       const objective = problem === "min-window-substring" ? "min" : "max";
-      // Reset target for longest-substring (no target needed)
-      const target = problem === "min-window-substring" ? state.patternTarget : "";
+
+      if (problem === "min-window-substring") {
+        // When switching to min-window-substring, apply the classic preset
+        // to ensure users see a working example with matching input/target
+        const classicPreset = MIN_WINDOW_PRESETS.classic;
+        // classicPreset is guaranteed to exist per config definition
+        const input = classicPreset?.input ?? "ADOBECODEBANC";
+        const target = classicPreset?.target ?? "ABC";
+        return {
+          patternProblem: problem,
+          patternInput: input,
+          patternTarget: target,
+          patternState: createDefaultPatternState(input, { target, objective }),
+        };
+      }
+
+      // For longest-substring, keep existing input and clear target
       return {
         patternProblem: problem,
-        patternTarget: target,
-        patternState: createDefaultPatternState(state.patternInput, { target, objective }),
+        patternTarget: "",
+        patternState: createDefaultPatternState(state.patternInput, { target: "", objective }),
       };
     }),
 

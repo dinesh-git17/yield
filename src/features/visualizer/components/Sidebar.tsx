@@ -101,7 +101,10 @@ const PATTERN_PROBLEMS: {
   id: PatternProblemType;
   label: string;
   enabled: boolean;
-}[] = [{ id: "longest-substring-norepeat", label: "Longest Substring (No Repeat)", enabled: true }];
+}[] = [
+  { id: "longest-substring-norepeat", label: "Longest Substring (No Repeat)", enabled: true },
+  { id: "min-window-substring", label: "Minimum Window Substring", enabled: true },
+];
 
 export function Sidebar({ className, onCollapse, hideHeader }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);

@@ -26,6 +26,8 @@ function speedMultiplierToInterval(multiplier: number): number {
 
 export interface PatternContextValue extends UsePatternControllerReturn {
   isReady: boolean;
+  /** The target string for min-window problems (empty for longest-substring) */
+  target: string;
 }
 
 const PatternContext = createContext<PatternContextValue | null>(null);
@@ -82,6 +84,7 @@ function PatternProviderLoading({ children }: { children: React.ReactNode }) {
       stepLabel: "",
       duplicateChar: null,
       isReady: false,
+      target: "",
       play: () => {},
       pause: () => {},
       nextStep: () => {},
@@ -104,8 +107,10 @@ function PatternProviderReady({
 }) {
   const patternProblem = useYieldStore((state) => state.patternProblem);
   const patternTarget = useYieldStore((state) => state.patternTarget);
+  const patternInput = useYieldStore((state) => state.patternInput);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
   const setPatternInput = useYieldStore((state) => state.setPatternInput);
+  const setPatternTarget = useYieldStore((state) => state.setPatternTarget);
   const updatePatternState = useYieldStore((state) => state.updatePatternState);
 
   const controller = usePatternController(initialInput, patternProblem, patternTarget);
@@ -136,21 +141,26 @@ function PatternProviderReady({
     updatePatternState,
   ]);
 
-  // Handle problem type change - reset with current input
+  // Handle problem type change - reset with CURRENT input from store (not stale initialInput)
   useEffect(() => {
     if (prevProblemRef.current !== patternProblem) {
-      controller.reset();
+      // Use resetWithInput with current store values to avoid stale initialInput
+      const currentInput = patternInput || initialInput;
+      controller.resetWithInput(currentInput, patternTarget);
       prevProblemRef.current = patternProblem;
     }
-  }, [patternProblem, controller.reset]);
+  }, [patternProblem, patternInput, patternTarget, initialInput, controller.resetWithInput]);
 
-  // Handle target change - reset with current input and new target
+  // Handle target change from external sources (e.g., URL sync)
+  // Skip if we're handling it atomically via resetWithFreshInput
   useEffect(() => {
     if (prevTargetRef.current !== patternTarget) {
-      controller.reset();
+      // Use resetWithInput with current store values
+      const currentInput = patternInput || initialInput;
+      controller.resetWithInput(currentInput, patternTarget);
       prevTargetRef.current = patternTarget;
     }
-  }, [patternTarget, controller.reset]);
+  }, [patternTarget, patternInput, initialInput, controller.resetWithInput]);
 
   // Sync store's playback speed to controller
   useEffect(() => {
@@ -158,13 +168,19 @@ function PatternProviderReady({
     controller.setSpeed(intervalMs);
   }, [playbackSpeed, controller.setSpeed]);
 
-  // Enhanced reset that also updates store
+  // Enhanced reset that also updates store - supports optional target for atomic updates
   const resetWithFreshInput = useCallback(
-    (newInput: string) => {
+    (newInput: string, newTarget?: string) => {
+      // Update refs immediately to prevent effect from re-running with old values
+      if (newTarget !== undefined) {
+        prevTargetRef.current = newTarget;
+        setPatternTarget(newTarget);
+      }
       setPatternInput(newInput);
-      controller.resetWithInput(newInput);
+      // Call controller with the new values directly
+      controller.resetWithInput(newInput, newTarget ?? patternTarget);
     },
-    [setPatternInput, controller.resetWithInput]
+    [setPatternInput, setPatternTarget, controller.resetWithInput, patternTarget]
   );
 
   const value: PatternContextValue = useMemo(
@@ -172,8 +188,9 @@ function PatternProviderReady({
       ...controller,
       resetWithInput: resetWithFreshInput,
       isReady: true,
+      target: patternTarget,
     }),
-    [controller, resetWithFreshInput]
+    [controller, resetWithFreshInput, patternTarget]
   );
 
   return <PatternContext.Provider value={value}>{children}</PatternContext.Provider>;
