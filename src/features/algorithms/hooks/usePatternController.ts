@@ -6,8 +6,10 @@ import {
   getPatternStepInsight,
   getPatternStepLabel,
 } from "@/features/algorithms/patterns/config";
+import { minWindowSubstring } from "@/features/algorithms/patterns/minWindow";
 import { slidingWindow } from "@/features/algorithms/patterns/slidingWindow";
 import type {
+  OptimizationObjective,
   PatternProblemType,
   PatternStep,
   WindowStatus,
@@ -57,9 +59,21 @@ export interface PatternControllerState {
   window: { start: number; end: number };
   /** Character frequency map */
   frequencyMap: Record<string, number>;
+  /** Target frequency map for constraint-based problems (e.g., min-window-substring) */
+  targetFrequencyMap: Record<string, number>;
   /** Window validity status */
   windowStatus: WindowStatus;
-  /** Current maximum length found */
+  /** Optimization objective for the current problem */
+  objective: OptimizationObjective;
+  /**
+   * Current best length found.
+   * For max objectives: the maximum window size found.
+   * For min objectives: the minimum valid window size found.
+   */
+  globalBest: number;
+  /**
+   * @deprecated Use globalBest instead. Kept for backward compatibility.
+   */
   globalMax: number;
   /** Best substring found */
   bestSubstring: string;
@@ -82,7 +96,7 @@ export interface PatternControllerActions {
   pause: () => void;
   nextStep: () => void;
   reset: () => void;
-  resetWithInput: (input: string) => void;
+  resetWithInput: (input: string, target?: string) => void;
   setSpeed: (speed: number) => void;
 }
 
@@ -105,20 +119,40 @@ function createCharactersFromInput(input: string): CharacterBoxData[] {
  */
 function getGeneratorForProblem(
   problem: PatternProblemType,
-  input: string
+  input: string,
+  target?: string
 ): Generator<PatternStep, void, unknown> {
   switch (problem) {
     case "longest-substring-norepeat":
       return slidingWindow({ input });
+    case "min-window-substring":
+      // Only include target if defined to satisfy exactOptionalPropertyTypes
+      return minWindowSubstring(target ? { input, target } : { input });
     default:
       return slidingWindow({ input });
   }
 }
 
+/**
+ * Returns the optimization objective for a pattern problem.
+ */
+function getObjectiveForProblem(problem: PatternProblemType): OptimizationObjective {
+  switch (problem) {
+    case "min-window-substring":
+      return "min";
+    default:
+      return "max";
+  }
+}
+
 export function usePatternController(
   initialInput: string,
-  problem: PatternProblemType = "longest-substring-norepeat"
+  problem: PatternProblemType = "longest-substring-norepeat",
+  target?: string
 ): UsePatternControllerReturn {
+  // Derive objective from problem type
+  const objective = getObjectiveForProblem(problem);
+
   const [characters, setCharacters] = useState<CharacterBoxData[]>(() =>
     createCharactersFromInput(initialInput)
   );
@@ -129,8 +163,12 @@ export function usePatternController(
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [window, setWindow] = useState({ start: 0, end: -1 });
   const [frequencyMap, setFrequencyMap] = useState<Record<string, number>>({});
-  const [windowStatus, setWindowStatus] = useState<WindowStatus>("valid");
-  const [globalMax, setGlobalMax] = useState(0);
+  const [targetFrequencyMap, setTargetFrequencyMap] = useState<Record<string, number>>({});
+  const [windowStatus, setWindowStatus] = useState<WindowStatus>(
+    objective === "max" ? "valid" : "invalid"
+  );
+  // For min objectives, start with Infinity; for max, start with 0
+  const [globalBest, setGlobalBest] = useState(objective === "max" ? 0 : Number.POSITIVE_INFINITY);
   const [bestSubstring, setBestSubstring] = useState("");
   const [insight, setInsight] = useState("");
   const [dynamicInsight, setDynamicInsight] = useState("");
@@ -138,12 +176,14 @@ export function usePatternController(
   const [duplicateChar, setDuplicateChar] = useState<string | null>(null);
 
   const inputRef = useRef(initialInput);
+  const targetRef = useRef(target);
   const iteratorRef = useRef<Generator<PatternStep, void, unknown> | null>(null);
 
   const initializeIterator = useCallback(() => {
     inputRef.current = initialInput;
-    iteratorRef.current = getGeneratorForProblem(problem, initialInput);
-  }, [initialInput, problem]);
+    targetRef.current = target;
+    iteratorRef.current = getGeneratorForProblem(problem, initialInput, target);
+  }, [initialInput, problem, target]);
 
   useEffect(() => {
     initializeIterator();
@@ -243,8 +283,13 @@ export function usePatternController(
     if (result.done) {
       setStatus("complete");
       setInsight(getPatternStepInsight("complete"));
-      // Generate completion message with Linear Time highlight
-      const completeInsight = `Algorithm complete! The longest substring without repeating characters is "${bestSubstring}" with length ${bestSubstring.length}. Total time: O(n) — each character was visited at most twice.`;
+      // Generate problem-aware completion message
+      const completeInsight =
+        objective === "min"
+          ? bestSubstring
+            ? `Algorithm complete! The minimum window containing all target characters is "${bestSubstring}" with length ${bestSubstring.length}. Total time: O(n) — each character was visited at most twice.`
+            : `Algorithm complete! No valid window found containing all target characters. Total time: O(n).`
+          : `Algorithm complete! The longest substring without repeating characters is "${bestSubstring}" with length ${bestSubstring.length}. Total time: O(n) — each character was visited at most twice.`;
       setDynamicInsight(completeInsight);
       setStepLabel(getPatternStepLabel("complete"));
       // Mark best substring characters
@@ -265,7 +310,7 @@ export function usePatternController(
     let newWindowStart = window.start;
     let newWindowEnd = window.end;
     let newBestStart = 0;
-    let newBestLength = globalMax;
+    let newBestLength = globalBest;
 
     switch (step.type) {
       case "init":
@@ -273,7 +318,12 @@ export function usePatternController(
         newWindowEnd = step.right;
         setWindow({ start: step.left, end: step.right });
         setFrequencyMap(step.frequencyMap);
-        setWindowStatus("valid");
+        // Set target frequency map if present (for min-window problems)
+        if (step.targetFrequencyMap) {
+          setTargetFrequencyMap(step.targetFrequencyMap);
+        }
+        // Initial window status depends on objective
+        setWindowStatus(objective === "max" ? "valid" : "invalid");
         setDuplicateChar(null);
         break;
 
@@ -287,10 +337,12 @@ export function usePatternController(
         } else if (step.satisfiesConstraint) {
           setWindowStatus("valid");
           setDuplicateChar(null);
-        } else {
+        } else if (objective === "max") {
+          // For max objective, no duplicate means valid
           setWindowStatus("valid");
           setDuplicateChar(null);
         }
+        // For min objective, keep current status until validity-check
         break;
 
       case "validity-check":
@@ -319,12 +371,14 @@ export function usePatternController(
         if (step.windowValid) {
           setWindowStatus("valid");
           setDuplicateChar(null);
+        } else {
+          setWindowStatus("invalid");
         }
         break;
 
       case "update-best":
         // Generic update-best - works for both min and max objectives
-        setGlobalMax(step.bestLength);
+        setGlobalBest(step.bestLength);
         setBestSubstring(step.substring);
         newBestStart = step.windowStart;
         newBestLength = step.bestLength;
@@ -332,7 +386,7 @@ export function usePatternController(
 
       case "update-max":
         // @deprecated - kept for backward compatibility
-        setGlobalMax(step.maxLength);
+        setGlobalBest(step.maxLength);
         setBestSubstring(step.substring);
         newBestStart = step.windowStart;
         newBestLength = step.maxLength;
@@ -340,7 +394,7 @@ export function usePatternController(
 
       case "complete": {
         const finalLength = step.bestLength ?? step.maxLength ?? 0;
-        setGlobalMax(finalLength);
+        setGlobalBest(finalLength);
         setBestSubstring(step.bestSubstring);
         newBestStart = inputRef.current.indexOf(step.bestSubstring);
         newBestLength = finalLength;
@@ -359,7 +413,7 @@ export function usePatternController(
     );
 
     return true;
-  }, [window.start, window.end, globalMax, bestSubstring, updateCharacterStates]);
+  }, [window.start, window.end, globalBest, bestSubstring, objective, updateCharacterStates]);
 
   // Playback loop
   useEffect(() => {
@@ -407,8 +461,9 @@ export function usePatternController(
     setCurrentStep(null);
     setWindow({ start: 0, end: -1 });
     setFrequencyMap({});
-    setWindowStatus("valid");
-    setGlobalMax(0);
+    setTargetFrequencyMap({});
+    setWindowStatus(objective === "max" ? "valid" : "invalid");
+    setGlobalBest(objective === "max" ? 0 : Number.POSITIVE_INFINITY);
     setBestSubstring("");
     setInsight("");
     setDynamicInsight("");
@@ -416,33 +471,38 @@ export function usePatternController(
     setDuplicateChar(null);
     setCharacters(createCharactersFromInput(initialInput));
     initializeIterator();
-  }, [initialInput, initializeIterator]);
+  }, [initialInput, objective, initializeIterator]);
 
   const resetWithInput = useCallback(
-    (newInput: string) => {
+    (newInput: string, newTarget?: string) => {
       setStatus("idle");
       setCurrentStepIndex(0);
       setCurrentStepType(null);
       setCurrentStep(null);
       setWindow({ start: 0, end: -1 });
       setFrequencyMap({});
-      setWindowStatus("valid");
-      setGlobalMax(0);
+      setTargetFrequencyMap({});
+      setWindowStatus(objective === "max" ? "valid" : "invalid");
+      setGlobalBest(objective === "max" ? 0 : Number.POSITIVE_INFINITY);
       setBestSubstring("");
       setInsight("");
       setDynamicInsight("");
       setStepLabel("");
       setDuplicateChar(null);
       inputRef.current = newInput;
+      targetRef.current = newTarget ?? target;
       setCharacters(createCharactersFromInput(newInput));
-      iteratorRef.current = getGeneratorForProblem(problem, newInput);
+      iteratorRef.current = getGeneratorForProblem(problem, newInput, newTarget ?? target);
     },
-    [problem]
+    [problem, objective, target]
   );
 
   const updateSpeed = useCallback((newSpeed: number) => {
     setSpeed(newSpeed);
   }, []);
+
+  // For backward compatibility, also expose globalMax as an alias for globalBest
+  const globalMax = globalBest === Number.POSITIVE_INFINITY ? 0 : globalBest;
 
   return {
     characters,
@@ -452,8 +512,11 @@ export function usePatternController(
     currentStep,
     window,
     frequencyMap,
+    targetFrequencyMap,
     windowStatus,
-    globalMax,
+    objective,
+    globalBest,
+    globalMax, // @deprecated - use globalBest instead
     bestSubstring,
     currentSubstring,
     speed,

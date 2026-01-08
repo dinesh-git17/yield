@@ -69,8 +69,11 @@ function PatternProviderLoading({ children }: { children: React.ReactNode }) {
       currentStep: null,
       window: { start: 0, end: -1 },
       frequencyMap: {},
+      targetFrequencyMap: {},
       windowStatus: "valid" as const,
-      globalMax: 0,
+      objective: "max" as const,
+      globalBest: 0,
+      globalMax: 0, // @deprecated
       bestSubstring: "",
       currentSubstring: "",
       speed: 500,
@@ -100,28 +103,36 @@ function PatternProviderReady({
   initialInput: string;
 }) {
   const patternProblem = useYieldStore((state) => state.patternProblem);
+  const patternTarget = useYieldStore((state) => state.patternTarget);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
   const setPatternInput = useYieldStore((state) => state.setPatternInput);
   const updatePatternState = useYieldStore((state) => state.updatePatternState);
 
-  const controller = usePatternController(initialInput, patternProblem);
+  const controller = usePatternController(initialInput, patternProblem, patternTarget);
   const prevProblemRef = useRef(patternProblem);
+  const prevTargetRef = useRef(patternTarget);
 
   // Sync controller state to store for persistence
   useEffect(() => {
     updatePatternState({
       window: controller.window,
       frequencyMap: controller.frequencyMap,
-      globalMax: controller.globalMax,
+      targetFrequencyMap: controller.targetFrequencyMap,
+      globalBest: controller.globalBest,
+      globalMax: controller.globalMax, // @deprecated - kept for backward compatibility
       bestSubstring: controller.bestSubstring,
       status: controller.windowStatus,
+      objective: controller.objective,
     });
   }, [
     controller.window,
     controller.frequencyMap,
+    controller.targetFrequencyMap,
+    controller.globalBest,
     controller.globalMax,
     controller.bestSubstring,
     controller.windowStatus,
+    controller.objective,
     updatePatternState,
   ]);
 
@@ -132,6 +143,14 @@ function PatternProviderReady({
       prevProblemRef.current = patternProblem;
     }
   }, [patternProblem, controller.reset]);
+
+  // Handle target change - reset with current input and new target
+  useEffect(() => {
+    if (prevTargetRef.current !== patternTarget) {
+      controller.reset();
+      prevTargetRef.current = patternTarget;
+    }
+  }, [patternTarget, controller.reset]);
 
   // Sync store's playback speed to controller
   useEffect(() => {
