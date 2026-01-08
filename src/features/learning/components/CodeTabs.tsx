@@ -71,6 +71,7 @@ export interface CodeTabsProps {
 /** Maps URL slugs to internal pattern problem types */
 const PATTERN_SLUG_TO_TYPE: Record<string, PatternProblemType> = {
   "longest-substring": "longest-substring-norepeat",
+  "min-window": "min-window-substring",
 };
 
 /**
