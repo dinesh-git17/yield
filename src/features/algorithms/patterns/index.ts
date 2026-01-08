@@ -14,7 +14,7 @@ export {
   PATTERNS_CONFIG,
   SLIDING_WINDOW_PRESETS,
 } from "./config";
-
+export { computeMinWindow, minWindowSubstring } from "./minWindow";
 // Algorithms
 export { computeLongestSubstring, slidingWindow } from "./slidingWindow";
 export type {
