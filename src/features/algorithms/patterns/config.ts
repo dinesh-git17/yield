@@ -26,7 +26,8 @@ export const PATTERN_INSIGHTS: Record<PatternStep["type"], string> = {
   "validity-check": "Checking if the current window satisfies all constraints.",
   "found-duplicate":
     "A duplicate character was detected! The window is now invalid and must shrink.", // @deprecated
-  shrink: "Shrinking from the left to remove characters until constraints are satisfied.",
+  shrink:
+    "Shrinking from the left to adjust the window — either to fix a violation or to optimize.",
   "update-best": "This window is the best valid result seen so far!",
   "update-max": "This window is the longest valid substring seen so far!", // @deprecated
   complete: "The right pointer has reached the end. The result was found in linear time!",
@@ -259,10 +260,20 @@ export function getDynamicPatternInsight(step: PatternStep | null): string {
       return `Duplicate '${step.char}' detected (count: ${step.frequency})! We must shrink the window from the left until the duplicate is removed.`;
 
     case "shrink": {
-      const statusText = step.windowValid
-        ? "Window is now valid again."
-        : "Still invalid — continuing to shrink.";
-      return `Removing '${step.char}' from window by moving left pointer. ${statusText}`;
+      // windowValid indicates the state AFTER shrinking
+      // The context differs based on algorithm:
+      // - Max-window (longest substring): shrinks when invalid to fix duplicates
+      // - Min-window: shrinks when valid to optimize (find smaller window)
+      //
+      // Heuristic: if window is valid after shrink, we're either:
+      // 1. Min-window: optimizing (window still valid, keep shrinking)
+      // 2. Max-window: just fixed the violation (window became valid)
+      //
+      // We use neutral language that works for both cases.
+      if (step.windowValid) {
+        return `Removing '${step.char}' from window. Window is valid — can continue shrinking to find better solutions.`;
+      }
+      return `Removing '${step.char}' from window. Window is now invalid — will expand to find next valid window.`;
     }
 
     case "update-best":

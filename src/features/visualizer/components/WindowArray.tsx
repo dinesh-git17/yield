@@ -1,9 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { memo, useMemo } from "react";
 import type { CharacterBoxData, CharacterBoxState } from "@/features/algorithms/hooks";
-import type { WindowStatus } from "@/features/algorithms/patterns/types";
+import type { OptimizationObjective, WindowStatus } from "@/features/algorithms/patterns/types";
 import { SPRING_PRESETS } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,10 @@ export interface WindowArrayProps {
   windowStatus: WindowStatus;
   duplicateChar: string | null;
   speed: number;
+  /** Optimization objective - affects visual styling */
+  objective?: OptimizationObjective;
+  /** Whether a new best was just found - triggers celebration animation */
+  isOptimized?: boolean;
 }
 
 /**
@@ -48,6 +52,8 @@ export const WindowArray = memo(function WindowArray({
   windowStatus,
   duplicateChar,
   speed,
+  objective = "max",
+  isOptimized = false,
 }: WindowArrayProps) {
   // Calculate window overlay position and width
   const windowStyle = useMemo(() => {
@@ -61,11 +67,16 @@ export const WindowArray = memo(function WindowArray({
     return { width, x, visible: true };
   }, [window.start, window.end]);
 
-  // Determine window overlay color based on status
+  // Determine window overlay color based on status and objective
+  // For min objective: valid window = all constraints satisfied = green
+  // For max objective: valid window = no duplicates = green
   const windowColor =
     windowStatus === "valid"
       ? "border-emerald-400/60 bg-emerald-500/5"
       : "border-rose-400/60 bg-rose-500/5";
+
+  // Extra strong valid indicator for min-window when all constraints satisfied
+  const validHighlight = windowStatus === "valid" && objective === "min";
 
   return (
     <div className="relative flex flex-col items-center gap-8">
@@ -90,7 +101,9 @@ export const WindowArray = memo(function WindowArray({
           <motion.div
             className={cn(
               "pointer-events-none absolute -top-2 -bottom-2 rounded-lg border-2 backdrop-blur-[1px]",
-              windowColor
+              windowColor,
+              validHighlight &&
+                "border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-500/20"
             )}
             initial={{ width: 0, x: 0, opacity: 0 }}
             animate={{
@@ -104,6 +117,49 @@ export const WindowArray = memo(function WindowArray({
               damping: 30,
             }}
           >
+            {/* Optimized Flash Animation - Gold burst when new best found */}
+            <AnimatePresence>
+              {isOptimized && (
+                <>
+                  {/* Gold glow pulse */}
+                  <motion.div
+                    className="absolute inset-0 rounded-lg border-2 border-amber-400"
+                    initial={{ opacity: 0.9, scale: 1 }}
+                    animate={{ opacity: 0, scale: 1.15 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  />
+                  {/* Inner gold flash */}
+                  <motion.div
+                    className="absolute inset-0 rounded-lg bg-amber-400/30"
+                    initial={{ opacity: 0.8 }}
+                    animate={{ opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                </>
+              )}
+            </AnimatePresence>
+
+            {/* Valid Window Glow for min-window */}
+            {validHighlight && (
+              <motion.div
+                className="absolute inset-0 rounded-lg"
+                animate={{
+                  boxShadow: [
+                    "0 0 0 0 rgba(16, 185, 129, 0)",
+                    "0 0 20px 4px rgba(16, 185, 129, 0.3)",
+                    "0 0 0 0 rgba(16, 185, 129, 0)",
+                  ],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                }}
+              />
+            )}
+
             {/* Left Pointer Label */}
             <motion.div
               className="absolute -top-7 left-0 flex flex-col items-center"

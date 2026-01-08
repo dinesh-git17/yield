@@ -64,8 +64,10 @@ function PatternStageContent({ className }: { className?: string }) {
     currentStepType,
     window,
     frequencyMap,
+    targetFrequencyMap,
     windowStatus,
-    globalMax,
+    objective,
+    globalBest,
     bestSubstring,
     currentSubstring,
     speed,
@@ -78,6 +80,10 @@ function PatternStageContent({ className }: { className?: string }) {
     resetWithInput,
     isReady,
   } = usePattern();
+
+  // Determine if we just found a new best (for animation trigger)
+  const isOptimized = currentStepType === "update-best";
+  const isMinObjective = objective === "min";
 
   const patternProblem = useYieldStore((state) => state.patternProblem);
   const playbackSpeed = useYieldStore((state) => state.playbackSpeed);
@@ -193,8 +199,9 @@ function PatternStageContent({ className }: { className?: string }) {
           currentStepType={currentStepType}
           dynamicInsight={dynamicInsight}
           isComplete={isComplete}
-          globalMax={globalMax}
+          globalBest={globalBest}
           bestSubstring={bestSubstring}
+          objective={objective}
         />
 
         {/* Main Visualization */}
@@ -206,6 +213,8 @@ function PatternStageContent({ className }: { className?: string }) {
             windowStatus={windowStatus}
             duplicateChar={duplicateChar}
             speed={speed}
+            objective={objective}
+            isOptimized={isOptimized}
           />
 
           {/* Stats Row */}
@@ -215,14 +224,17 @@ function PatternStageContent({ className }: { className?: string }) {
               frequencyMap={frequencyMap}
               windowStatus={windowStatus}
               duplicateChar={duplicateChar}
+              targetFrequencyMap={targetFrequencyMap}
+              objective={objective}
             />
 
             {/* Current Window Info */}
             <WindowInfo
               currentSubstring={currentSubstring}
-              globalMax={globalMax}
+              globalBest={globalBest}
               bestSubstring={bestSubstring}
               windowStatus={windowStatus}
+              objective={objective}
             />
           </div>
         </div>
@@ -237,12 +249,17 @@ function PatternStageContent({ className }: { className?: string }) {
           />
         </div>
 
-        {/* Legend */}
+        {/* Legend - shows problem-specific states */}
         <div className="absolute bottom-4 left-4 hidden flex-col gap-1 md:bottom-6 md:flex">
           <LegendItem color="bg-emerald-500/30" label="In Window" />
           <LegendItem color="bg-sky-500/30" label="Entering (R)" />
           <LegendItem color="bg-amber-500/30" label="Leaving (L)" />
-          <LegendItem color="bg-rose-500/30" label="Duplicate" />
+          {isMinObjective ? (
+            <LegendItem color="bg-teal-500/30" label="Constraint Met" />
+          ) : (
+            <LegendItem color="bg-rose-500/30" label="Duplicate" />
+          )}
+          <LegendItem color="bg-violet-500/30" label="Best Result" />
         </div>
       </div>
     </div>
@@ -369,17 +386,25 @@ interface InsightBannerProps {
   currentStepType: PatternStep["type"] | null;
   dynamicInsight: string;
   isComplete: boolean;
-  globalMax: number;
+  globalBest: number;
   bestSubstring: string;
+  objective: "min" | "max";
 }
 
 const InsightBanner = memo(function InsightBanner({
   currentStepType,
   dynamicInsight,
   isComplete,
-  globalMax,
+  globalBest,
   bestSubstring,
+  objective,
 }: InsightBannerProps) {
+  const isMinObjective = objective === "min";
+  // Display value: for min objective with no result, show "—"
+  const displayLength =
+    isMinObjective && globalBest === Number.POSITIVE_INFINITY ? "—" : globalBest;
+  const hasResult = bestSubstring.length > 0;
+
   // Show completion summary with Linear Time highlight when done
   if (isComplete) {
     return (
@@ -397,12 +422,16 @@ const InsightBanner = memo(function InsightBanner({
           <div className="flex flex-col">
             <span className="text-primary text-base font-semibold">Algorithm Complete!</span>
             <span className="text-muted text-sm">
-              Max length: <span className="font-bold text-emerald-400">{globalMax}</span>
-              {bestSubstring && (
+              {isMinObjective ? "Min length" : "Max length"}:{" "}
+              <span className="font-bold text-emerald-400">{displayLength}</span>
+              {hasResult && (
                 <>
                   {" · "}
                   <span className="font-mono text-violet-400">"{bestSubstring}"</span>
                 </>
+              )}
+              {isMinObjective && !hasResult && (
+                <span className="text-muted ml-2 text-xs">(no valid window found)</span>
               )}
             </span>
           </div>
@@ -491,12 +520,24 @@ const InsightBanner = memo(function InsightBanner({
 
 interface WindowInfoProps {
   currentSubstring: string;
-  globalMax: number;
+  globalBest: number;
   bestSubstring: string;
   windowStatus: "valid" | "invalid";
+  objective: "min" | "max";
 }
 
-function WindowInfo({ currentSubstring, globalMax, bestSubstring, windowStatus }: WindowInfoProps) {
+function WindowInfo({
+  currentSubstring,
+  globalBest,
+  bestSubstring,
+  windowStatus,
+  objective,
+}: WindowInfoProps) {
+  const isMinObjective = objective === "min";
+  // For min objective with no result yet, show "—" instead of Infinity
+  const displayBest = isMinObjective && globalBest === Number.POSITIVE_INFINITY ? "—" : globalBest;
+  const hasResult = bestSubstring.length > 0;
+
   return (
     <div className="flex flex-col gap-2">
       <h3 className="text-muted text-xs font-medium uppercase tracking-wider">Window Stats</h3>
@@ -524,7 +565,7 @@ function WindowInfo({ currentSubstring, globalMax, bestSubstring, windowStatus }
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-1.5">
             <Trophy className="h-3.5 w-3.5 text-amber-400" />
-            <span className="text-muted text-sm">Best:</span>
+            <span className="text-muted text-sm">{isMinObjective ? "Min:" : "Max:"}</span>
           </div>
           <div className="flex items-center gap-2">
             <AnimatePresence mode="wait">
@@ -536,10 +577,10 @@ function WindowInfo({ currentSubstring, globalMax, bestSubstring, windowStatus }
                 transition={{ duration: 0.2 }}
                 className="font-mono text-sm text-violet-400"
               >
-                {bestSubstring ? `"${bestSubstring}"` : "—"}
+                {hasResult ? `"${bestSubstring}"` : "—"}
               </motion.span>
             </AnimatePresence>
-            <HighScoreBadge value={globalMax} />
+            <HighScoreBadge value={displayBest} />
           </div>
         </div>
       </div>
@@ -548,35 +589,50 @@ function WindowInfo({ currentSubstring, globalMax, bestSubstring, windowStatus }
 }
 
 interface HighScoreBadgeProps {
-  value: number;
+  value: number | string;
 }
 
 /**
  * High Score Badge with pop animation.
- * Shows the maximum window length found with a celebratory animation on updates.
+ * Shows the best window length found with a celebratory animation on updates.
  */
 const HighScoreBadge = memo(function HighScoreBadge({ value }: HighScoreBadgeProps) {
+  const isPlaceholder = value === "—";
+
   return (
-    <motion.div key={value} className="relative">
-      {/* Background glow pulse on update */}
-      <motion.div
-        className="absolute inset-0 rounded bg-violet-500/40"
-        initial={{ scale: 1.8, opacity: 0.8 }}
-        animate={{ scale: 1, opacity: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      />
-      {/* Ring pulse animation */}
-      <motion.div
-        className="absolute inset-0 rounded border-2 border-violet-400"
-        initial={{ scale: 1, opacity: 0.8 }}
-        animate={{ scale: 1.5, opacity: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-      />
+    <motion.div key={String(value)} className="relative">
+      {/* Background glow pulse on update - skip for placeholder */}
+      {!isPlaceholder && (
+        <motion.div
+          className="absolute inset-0 rounded bg-violet-500/40"
+          initial={{ scale: 1.8, opacity: 0.8 }}
+          animate={{ scale: 1, opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        />
+      )}
+      {/* Ring pulse animation - skip for placeholder */}
+      {!isPlaceholder && (
+        <motion.div
+          className="absolute inset-0 rounded border-2 border-violet-400"
+          initial={{ scale: 1, opacity: 0.8 }}
+          animate={{ scale: 1.5, opacity: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        />
+      )}
       {/* Main badge with pop */}
       <motion.span
-        className="relative z-10 inline-flex items-center justify-center rounded bg-violet-500/30 px-2 py-0.5 text-sm font-bold text-violet-200 shadow-lg shadow-violet-500/20"
-        initial={{ scale: 1.5, y: -8 }}
-        animate={{ scale: 1, y: 0 }}
+        className={cn(
+          "relative z-10 inline-flex items-center justify-center rounded px-2 py-0.5 text-sm font-bold shadow-lg",
+          isPlaceholder
+            ? "bg-zinc-500/30 text-zinc-400 shadow-zinc-500/10"
+            : "bg-violet-500/30 text-violet-200 shadow-violet-500/20"
+        )}
+        {...(isPlaceholder
+          ? { animate: { scale: 1, y: 0 } }
+          : {
+              initial: { scale: 1.5, y: -8 },
+              animate: { scale: 1, y: 0 },
+            })}
         transition={{
           type: "spring",
           stiffness: 500,
