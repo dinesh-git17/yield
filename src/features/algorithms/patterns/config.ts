@@ -26,8 +26,7 @@ export const PATTERN_INSIGHTS: Record<PatternStep["type"], string> = {
   "validity-check": "Checking if the current window satisfies all constraints.",
   "found-duplicate":
     "A duplicate character was detected! The window is now invalid and must shrink.", // @deprecated
-  shrink:
-    "Shrinking from the left to adjust the window — either to fix a violation or to optimize.",
+  shrink: "Shrinking from the left to adjust the window, either to fix a violation or to optimize.",
   "update-best": "This window is the best valid result seen so far!",
   "update-max": "This window is the longest valid substring seen so far!", // @deprecated
   complete: "The right pointer has reached the end. The result was found in linear time!",
@@ -307,10 +306,10 @@ export function getDynamicPatternInsight(step: PatternStep | null): string {
 
     case "expand":
       if (step.causesDuplicate) {
-        return `Adding '${step.char}' to window — but this creates a duplicate! Window is now invalid.`;
+        return `Adding '${step.char}' to window, but this creates a duplicate! Window is now invalid.`;
       }
       if (step.satisfiesConstraint) {
-        return `Adding '${step.char}' to window — all required characters are now present! Window is valid.`;
+        return `Adding '${step.char}' to window. All required characters are now present! Window is valid.`;
       }
       return `Expanding window to include '${step.char}'. The window remains valid with all unique characters.`;
 
@@ -354,9 +353,9 @@ export function getDynamicPatternInsight(step: PatternStep | null): string {
       //
       // We use neutral language that works for both cases.
       if (step.windowValid) {
-        return `Removing '${step.char}' from window. Window is valid — can continue shrinking to find better solutions.`;
+        return `Removing '${step.char}' from window. Window is still valid, so we can continue shrinking to find better solutions.`;
       }
-      return `Removing '${step.char}' from window. Window is now invalid — will expand to find next valid window.`;
+      return `Removing '${step.char}' from window. Window is now invalid and will expand to find next valid window.`;
     }
 
     case "update-best":
@@ -368,7 +367,7 @@ export function getDynamicPatternInsight(step: PatternStep | null): string {
 
     case "complete": {
       const lengthValue = step.bestLength ?? step.maxLength ?? 0;
-      return `Algorithm complete! The best result is "${step.bestSubstring}" with length ${lengthValue}. Total time: O(n) — each character was visited at most twice.`;
+      return `Algorithm complete! The best result is "${step.bestSubstring}" with length ${lengthValue}. Total time: O(n) since each character was visited at most twice.`;
     }
 
     default:

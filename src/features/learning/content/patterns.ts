@@ -311,85 +311,87 @@ This ensures:
     ],
   },
 
-  // Placeholder for min-window - will be completed in STORY-105
   "min-window": {
     title: "Minimum Window Substring",
-    tagline: "The Treasure Hunter",
+    tagline: "The Bouncer With a Checklist",
     difficulty: "Hard",
-    pattern: "Sliding Window + Hash Map",
+    pattern: "Sliding Window + Frequency Map",
 
-    history: `This problem extends the Sliding Window pattern from longest-substring to a different objective: finding the minimum valid window instead of the maximum.
+    history: `This problem is infamous for a reason.
 
-Where longest-substring focuses on **validity maintenance** (shrinking to remove duplicates), this problem focuses on **optimization** (expanding to find a valid set, then shrinking to minimize length).`,
+It looks like a normal substring question until you realize you are not just avoiding duplicates anymore. Now you are matching **requirements**.
 
-    problemDefinition: `Given strings $s$ and $t$, find the minimum window substring in $s$ that contains **all characters** of $t$ (including duplicates).
+Minimum Window Substring is a classic interview filter because it tests whether you truly understand Sliding Window invariants, when a window is **valid** vs **optimal**, how to track constraints without re-scanning, and how to shrink aggressively without breaking correctness.
 
-If no such substring exists, return an empty string.`,
+If Longest Substring is about freedom, this one is about discipline.`,
 
-    coreIdea: `We want the **smallest window** that contains all required characters.
+    problemDefinition: `Given two strings $s$ (the source) and $t$ (the target), find the **smallest substring** of $s$ that contains **all characters** of $t$, including duplicates.
 
-Instead of tracking uniqueness, we:
-- Track character **frequencies** against a target
-- Expand until all requirements are met
-- Shrink to minimize while maintaining validity`,
+If no such substring exists, return an empty string.
 
-    windowRule: `At all times during the shrink phase, the window $[left, right]$ must satisfy:
+A substring must be contiguous.`,
 
-**All characters in target appear with at least their required frequency**
+    coreIdea: `We want the **smallest valid window**, not just any valid window.
 
-This rule determines when the window is valid and can be considered as a potential answer.`,
+A window is considered **valid** when it contains every character in $t$, and each character appears **at least as many times** as required.
 
-    mechanics: `We scan the string using two pointers with a different strategy than longest-substring.
+The moment the window becomes valid, we try to shrink it from the left. We keep shrinking until it breaks. The smallest valid version is a candidate answer.
 
-- $right$ expands until the window contains all required characters
-- $left$ shrinks to minimize length while maintaining validity
-- Two hash maps track **required** vs **current** frequencies
+This is why the algorithm feels harder than it looks.`,
+
+    windowRule: `At all times, the window $[left, right]$ must track **whether it satisfies all required character counts**.
+
+This is the invariant.
+
+Everything in the algorithm exists to answer one question efficiently:
+
+**"Is my current window valid?"**`,
+
+    mechanics: `We scan the string using two pointers: $right$ expands the window, and $left$ shrinks the window once it becomes valid.
+
+We use a frequency map for characters in $t$ and a running count of how many required characters are satisfied.
+
+The key idea is that we do **not** re-check the entire window. We update validity incrementally as characters enter and leave.
 
 **The Algorithm Step-by-Step:**
 
-1. Initialize:
-   - Build $need$ map from target string
-   - $have = 0$, $required = |need|$
-   - $left = 0$, track minimum window
+1. Build a frequency map of characters needed from $t$
+2. Initialize $left = 0$, $right = 0$, $formed = 0$ (how many requirements are satisfied)
+3. Expand $right$ to include characters
+4. When all requirements are satisfied, shrink $left$ as much as possible and update the best (minimum) window
+5. Continue until $right$ reaches the end
 
-2. Expand $right$ pointer
+Every character enters and leaves the window at most once.`,
 
-3. If current window satisfies all requirements ($have == required$):
-   - Update minimum if current window is smaller
-   - Shrink from left until invalid
+    whyMaxMatters: `Unlike longest-substring problems, a character leaving the window might invalidate it. Not all characters are equally important, and some characters are required multiple times.
 
-4. Repeat until string ends`,
+Shrinking too aggressively breaks correctness. Shrinking too cautiously misses optimal answers.
 
-    whyMaxMatters: `The key insight is tracking **when** the window becomes valid:
-
-$have$ counts how many characters have reached their required frequency.
-
-When $have == required$, the window is valid and we can try to shrink it.`,
+This problem forces you to think in **counts**, not presence.`,
 
     approaches: [
       {
         name: "Brute Force",
-        description: "Check every possible substring and verify it contains all target characters.",
-        timeComplexity: "O(n² × m)",
-        spaceComplexity: "O(m)",
+        description: "Check every possible substring and test for duplicates.",
+        timeComplexity: "O(n²)",
+        spaceComplexity: "O(1)",
       },
       {
         name: "Sliding Window",
-        description: "Expand to find valid window, then shrink to minimize.",
+        description: "Track uniqueness dynamically while expanding and shrinking the window.",
         timeComplexity: "O(n)",
-        spaceComplexity: "O(m)",
+        spaceComplexity: "O(alphabet)",
         isOptimal: true,
       },
     ],
 
     timeComplexity: {
-      complexity: "O(n + m)",
-      explanation:
-        "Each character is visited at most twice (once by right, once by left). Building the target map takes O(m).",
+      complexity: "O(n)",
+      explanation: "Both pointers move forward only. No nested scans. No resets.",
     },
     spaceComplexity: {
-      complexity: "O(m)",
-      explanation: "We store frequency maps proportional to the target string size.",
+      complexity: "O(alphabet)",
+      explanation: "We store frequency counts for required characters only.",
     },
 
     useCases: [
@@ -397,20 +399,22 @@ When $have == required$, the window is valid and we can try to shrink it.`,
       "**Text editors** — Find-and-replace with minimum context",
       "**Data pipelines** — Minimum window containing required events",
       "**Genome analysis** — Finding shortest sequences with required nucleotides",
+      "**Gateway problem** — Teaches patterns used in Permutation in String, Minimum Size Subarray Sum, and Subarrays with At Most K Distinct Characters",
     ],
 
     keyInsights: [
-      "Unlike longest-substring, we want to **minimize** instead of maximize.",
-      "The window starts invalid and becomes valid when all requirements are met.",
-      "Shrinking continues as long as the window remains valid.",
-      "The 'have' counter avoids rechecking the entire frequency map each step.",
+      "This problem is not about substrings. It is about tracking requirements, knowing exactly *when* a window becomes valid, and knowing exactly *how far* you can shrink it.",
+      "Once that clicks, the solution becomes systematic.",
+      "The $have$ counter avoids rechecking the entire frequency map each step.",
+      "Think of this as a bouncer with a clipboard: every required character is on the checklist, some guests need to appear multiple times, and the smallest moment when everyone was present is the answer.",
     ],
 
     pitfalls: [
-      "Forgetting to handle duplicate characters in the target",
-      "Shrinking too aggressively and missing valid windows",
-      "Not tracking when requirements are first satisfied",
-      "Off-by-one errors in window boundaries",
+      "Treating this like a 'unique characters' problem",
+      "Forgetting that duplicates in $t$ matter",
+      "Re-checking the entire window repeatedly",
+      "Shrinking the window before it is valid",
+      "Returning the first valid window instead of the smallest",
     ],
 
     interviewQA: [
@@ -424,19 +428,33 @@ When $have == required$, the window is valid and we can try to shrink it.`,
         answer:
           "To avoid iterating the entire frequency map on every step. We only check when a character reaches its required count.",
       },
+      {
+        question: "What changes if the alphabet is fixed (ASCII)?",
+        answer: "Space becomes O(1). Time stays O(n).",
+      },
+      {
+        question: 'How would you modify this for "Permutation in String"?',
+        answer:
+          "Keep the window size fixed to len(t) and check if have equals required at each step.",
+      },
     ],
 
     whenToUse:
-      "Use when you need the smallest contiguous range that satisfies a set of requirements.",
+      "Use Minimum Window Sliding Window when you need the **smallest contiguous range**, the constraint involves **counts or frequencies**, validity can be tracked incrementally, and you want linear time.",
 
     whenNotToUse:
-      "Avoid when the constraint cannot be checked incrementally or when gaps are allowed in the result.",
+      "Avoid when the constraint is non-monotonic or you need to consider skipping elements arbitrarily.",
 
     relatedAlgorithms: [
       {
         algorithm: "longest-substring-norepeat",
         mode: "patterns",
         relationship: "both use Sliding Window but with different objectives (min vs max)",
+      },
+      {
+        algorithm: "trapping-rain-water",
+        mode: "interview",
+        relationship: "uses Two Pointers, a cousin of Sliding Window",
       },
     ],
 
