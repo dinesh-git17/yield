@@ -22,7 +22,7 @@ const ContentSecurityPolicy = `
   font-src 'self' https://fonts.gstatic.com;
   connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://*.ingest.sentry.io https://*.sentry.io;
   frame-src 'self' https://www.googletagmanager.com;
-  frame-ancestors 'self';
+  frame-ancestors 'self' https://dineshd.dev https://*.dineshd.dev http://localhost:3000 http://localhost:3001;
   base-uri 'self';
   form-action 'self';
   object-src 'none';
@@ -57,7 +57,7 @@ const PermissionsPolicy = [
  * - CSP: Prevents XSS and injection attacks
  * - HSTS: Enforces HTTPS connections
  * - X-Content-Type-Options: Prevents MIME type sniffing
- * - X-Frame-Options: Prevents clickjacking (backup for CSP frame-ancestors)
+ * - CSP frame-ancestors: Prevents clickjacking (allows embedding from portfolio)
  * - X-XSS-Protection: Legacy XSS filter (deprecated but still useful for older browsers)
  * - Referrer-Policy: Controls referrer information sent with requests
  * - Permissions-Policy: Restricts browser feature access
@@ -74,10 +74,6 @@ const securityHeaders = [
 	{
 		key: "X-Content-Type-Options",
 		value: "nosniff",
-	},
-	{
-		key: "X-Frame-Options",
-		value: "SAMEORIGIN",
 	},
 	{
 		key: "X-XSS-Protection",
