@@ -147,11 +147,200 @@ const LONGEST_SUBSTRING_RUST = `fn length_of_longest_substring(s: String) -> i32
 }`;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Minimum Window Substring - Sliding Window (Optimal)
+// Placeholder implementations - will be completed in STORY-105
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MIN_WINDOW_PYTHON = `def min_window(s: str, t: str) -> str:
+    """Find minimum window substring containing all characters of t."""
+    from collections import Counter
+
+    need = Counter(t)
+    window: dict[str, int] = {}
+    have, required = 0, len(need)
+    result, result_len = [-1, -1], float('inf')
+    left = 0
+
+    for right, char in enumerate(s):
+        window[char] = window.get(char, 0) + 1
+
+        if char in need and window[char] == need[char]:
+            have += 1
+
+        while have == required:
+            if (right - left + 1) < result_len:
+                result = [left, right]
+                result_len = right - left + 1
+
+            window[s[left]] -= 1
+            if s[left] in need and window[s[left]] < need[s[left]]:
+                have -= 1
+            left += 1
+
+    return "" if result_len == float('inf') else s[result[0]:result[1]+1]`;
+
+const MIN_WINDOW_CPP = `std::string minWindow(std::string s, std::string t) {
+    std::unordered_map<char, int> need, window;
+    for (char c : t) need[c]++;
+
+    int have = 0, required = need.size();
+    int left = 0, minLen = INT_MAX, minStart = 0;
+
+    for (int right = 0; right < s.size(); right++) {
+        char c = s[right];
+        window[c]++;
+
+        if (need.count(c) && window[c] == need[c]) have++;
+
+        while (have == required) {
+            if (right - left + 1 < minLen) {
+                minLen = right - left + 1;
+                minStart = left;
+            }
+            char lc = s[left];
+            window[lc]--;
+            if (need.count(lc) && window[lc] < need[lc]) have--;
+            left++;
+        }
+    }
+    return minLen == INT_MAX ? "" : s.substr(minStart, minLen);
+}`;
+
+const MIN_WINDOW_JAVA = `public String minWindow(String s, String t) {
+    Map<Character, Integer> need = new HashMap<>();
+    Map<Character, Integer> window = new HashMap<>();
+    for (char c : t.toCharArray()) need.merge(c, 1, Integer::sum);
+
+    int have = 0, required = need.size();
+    int left = 0, minLen = Integer.MAX_VALUE, minStart = 0;
+
+    for (int right = 0; right < s.length(); right++) {
+        char c = s.charAt(right);
+        window.merge(c, 1, Integer::sum);
+
+        if (need.containsKey(c) && window.get(c).equals(need.get(c))) have++;
+
+        while (have == required) {
+            if (right - left + 1 < minLen) {
+                minLen = right - left + 1;
+                minStart = left;
+            }
+            char lc = s.charAt(left);
+            window.merge(lc, -1, Integer::sum);
+            if (need.containsKey(lc) && window.get(lc) < need.get(lc)) have--;
+            left++;
+        }
+    }
+    return minLen == Integer.MAX_VALUE ? "" : s.substring(minStart, minStart + minLen);
+}`;
+
+const MIN_WINDOW_JS = `function minWindow(s: string, t: string): string {
+  const need: Record<string, number> = {};
+  for (const c of t) need[c] = (need[c] ?? 0) + 1;
+
+  let have = 0, required = Object.keys(need).length;
+  const window: Record<string, number> = {};
+  let left = 0, minLen = Infinity, minStart = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    const c = s[right];
+    window[c] = (window[c] ?? 0) + 1;
+    if (need[c] && window[c] === need[c]) have++;
+
+    while (have === required) {
+      if (right - left + 1 < minLen) {
+        minLen = right - left + 1;
+        minStart = left;
+      }
+      const lc = s[left];
+      window[lc]--;
+      if (need[lc] && window[lc] < need[lc]) have--;
+      left++;
+    }
+  }
+  return minLen === Infinity ? "" : s.slice(minStart, minStart + minLen);
+}`;
+
+const MIN_WINDOW_GO = `func minWindow(s string, t string) string {
+    need := make(map[byte]int)
+    for i := 0; i < len(t); i++ {
+        need[t[i]]++
+    }
+
+    window := make(map[byte]int)
+    have, required := 0, len(need)
+    left, minLen, minStart := 0, len(s)+1, 0
+
+    for right := 0; right < len(s); right++ {
+        c := s[right]
+        window[c]++
+        if need[c] > 0 && window[c] == need[c] {
+            have++
+        }
+
+        for have == required {
+            if right-left+1 < minLen {
+                minLen = right - left + 1
+                minStart = left
+            }
+            lc := s[left]
+            window[lc]--
+            if need[lc] > 0 && window[lc] < need[lc] {
+                have--
+            }
+            left++
+        }
+    }
+    if minLen > len(s) {
+        return ""
+    }
+    return s[minStart : minStart+minLen]
+}`;
+
+const MIN_WINDOW_RUST = `pub fn min_window(s: String, t: String) -> String {
+    use std::collections::HashMap;
+
+    let s: Vec<char> = s.chars().collect();
+    let mut need: HashMap<char, i32> = HashMap::new();
+    for c in t.chars() {
+        *need.entry(c).or_insert(0) += 1;
+    }
+
+    let mut window: HashMap<char, i32> = HashMap::new();
+    let (mut have, required) = (0, need.len());
+    let (mut left, mut min_len, mut min_start) = (0, usize::MAX, 0);
+
+    for right in 0..s.len() {
+        let c = s[right];
+        *window.entry(c).or_insert(0) += 1;
+        if need.get(&c) == window.get(&c) {
+            have += 1;
+        }
+
+        while have == required {
+            if right - left + 1 < min_len {
+                min_len = right - left + 1;
+                min_start = left;
+            }
+            let lc = s[left];
+            *window.get_mut(&lc).unwrap() -= 1;
+            if need.contains_key(&lc) && window[&lc] < need[&lc] {
+                have -= 1;
+            }
+            left += 1;
+        }
+    }
+    if min_len == usize::MAX { String::new() }
+    else { s[min_start..min_start+min_len].iter().collect() }
+}`;
+
 // Implementation Registry
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Registry of all pattern problem implementations by language.
+ * Extended to support min-window-substring (STORY-105).
  */
 const PATTERN_IMPLEMENTATIONS: Record<PatternProblemType, Record<Language, string>> = {
   "longest-substring-norepeat": {
@@ -161,6 +350,14 @@ const PATTERN_IMPLEMENTATIONS: Record<PatternProblemType, Record<Language, strin
     javascript: LONGEST_SUBSTRING_JS,
     go: LONGEST_SUBSTRING_GO,
     rust: LONGEST_SUBSTRING_RUST,
+  },
+  "min-window-substring": {
+    python: MIN_WINDOW_PYTHON,
+    cpp: MIN_WINDOW_CPP,
+    java: MIN_WINDOW_JAVA,
+    javascript: MIN_WINDOW_JS,
+    go: MIN_WINDOW_GO,
+    rust: MIN_WINDOW_RUST,
   },
 };
 

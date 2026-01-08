@@ -11,12 +11,13 @@ function collectSteps(input: string): PatternStep[] {
 
 /**
  * Helper function to get the final max length from the generator.
+ * Uses bestLength (new generic field) with maxLength fallback for compatibility.
  */
 function getMaxFromGenerator(input: string): number {
   const steps = collectSteps(input);
   const completeStep = steps.find((s) => s.type === "complete");
   if (completeStep?.type === "complete") {
-    return completeStep.maxLength;
+    return completeStep.bestLength ?? completeStep.maxLength ?? 0;
   }
   return 0;
 }
@@ -89,7 +90,12 @@ describe("slidingWindow", () => {
       expect(computeLongestSubstring(input)).toBe(0);
       const steps = collectSteps(input);
       expect(steps).toHaveLength(1);
-      expect(steps[0]).toEqual({ type: "complete", maxLength: 0, bestSubstring: "" });
+      expect(steps[0]).toEqual({
+        type: "complete",
+        bestLength: 0,
+        bestSubstring: "",
+        maxLength: 0, // @deprecated - kept for backward compatibility
+      });
     });
 
     it("handles single character", () => {
@@ -143,13 +149,15 @@ describe("slidingWindow", () => {
       expect(expandSteps.length).toBe(3); // One for each character
     });
 
-    it("yields found-duplicate step when duplicate detected", () => {
+    it("yields validity-check step when duplicate detected", () => {
       const input = "abca";
       const steps = collectSteps(input);
-      const duplicateSteps = steps.filter((s) => s.type === "found-duplicate");
-      expect(duplicateSteps.length).toBe(1);
-      if (duplicateSteps[0]?.type === "found-duplicate") {
-        expect(duplicateSteps[0].char).toBe("a");
+      const validityCheckSteps = steps.filter((s) => s.type === "validity-check");
+      expect(validityCheckSteps.length).toBe(1);
+      if (validityCheckSteps[0]?.type === "validity-check") {
+        expect(validityCheckSteps[0].char).toBe("a");
+        expect(validityCheckSteps[0].isValid).toBe(false);
+        expect(validityCheckSteps[0].reason).toBe("duplicate");
       }
     });
 
@@ -160,23 +168,23 @@ describe("slidingWindow", () => {
       expect(shrinkSteps.length).toBeGreaterThan(0);
     });
 
-    it("yields update-max steps when new maximum found", () => {
+    it("yields update-best steps when new maximum found", () => {
       const input = "abc";
       const steps = collectSteps(input);
-      const updateMaxSteps = steps.filter((s) => s.type === "update-max");
-      expect(updateMaxSteps.length).toBeGreaterThan(0);
+      const updateBestSteps = steps.filter((s) => s.type === "update-best");
+      expect(updateBestSteps.length).toBeGreaterThan(0);
     });
 
-    it("update-max steps have increasing maxLength values", () => {
+    it("update-best steps have increasing bestLength values", () => {
       const input = "abcdef";
       const steps = collectSteps(input);
-      const updateMaxSteps = steps.filter((s) => s.type === "update-max");
+      const updateBestSteps = steps.filter((s) => s.type === "update-best");
 
-      let lastMax = 0;
-      for (const step of updateMaxSteps) {
-        if (step.type === "update-max") {
-          expect(step.maxLength).toBeGreaterThan(lastMax);
-          lastMax = step.maxLength;
+      let lastBest = 0;
+      for (const step of updateBestSteps) {
+        if (step.type === "update-best") {
+          expect(step.bestLength).toBeGreaterThan(lastBest);
+          lastBest = step.bestLength;
         }
       }
     });
@@ -283,12 +291,13 @@ describe("slidingWindow", () => {
       expect(charSet.size).toBe(bestSubstring.length);
     });
 
-    it("best substring length equals maxLength", () => {
+    it("best substring length equals bestLength", () => {
       const input = "pwwkew";
       const steps = collectSteps(input);
       const completeStep = steps.find((s) => s.type === "complete");
       if (completeStep?.type === "complete") {
-        expect(completeStep.bestSubstring.length).toBe(completeStep.maxLength);
+        const length = completeStep.bestLength ?? completeStep.maxLength ?? 0;
+        expect(completeStep.bestSubstring.length).toBe(length);
       }
     });
   });

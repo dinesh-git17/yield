@@ -6,6 +6,8 @@ import {
 } from "@/features/algorithms/interview";
 import {
   DEFAULT_SLIDING_WINDOW_INPUT,
+  MIN_WINDOW_PRESETS,
+  type OptimizationObjective,
   PATTERNS_CONFIG,
   type PatternProblemType,
 } from "@/features/algorithms/patterns";
@@ -467,7 +469,8 @@ export type WindowStatus = "valid" | "invalid";
 
 /**
  * State for pattern problem visualization.
- * Tracks window boundaries, frequency map, and maximum values.
+ * Tracks window boundaries, frequency map, and best values.
+ * Supports both max (longest substring) and min (minimum window) objectives.
  */
 export interface PatternState {
   /** The input string as an array of characters */
@@ -481,29 +484,67 @@ export interface PatternState {
   };
   /** Character frequency count within the current window */
   frequencyMap: Record<string, number>;
-  /** The running maximum length found so far */
+  /** Target frequency map for constraint-based problems (e.g., min-window-substring) */
+  targetFrequencyMap?: Record<string, number>;
+  /** The running best length found so far (max for longest, min for minimum window) */
+  globalBest: number;
+  /**
+   * @deprecated Use globalBest instead. Kept for backward compatibility.
+   */
   globalMax: number;
   /** The best substring found (for display) */
   bestSubstring: string;
   /** Current window validity status */
   status: WindowStatus;
+  /** Optimization objective for the current problem */
+  objective: OptimizationObjective;
+}
+
+/**
+ * Options for creating default pattern state.
+ */
+export interface CreatePatternStateOptions {
+  /** Target string for constraint-based problems */
+  target?: string;
+  /** Optimization objective (defaults to "max") */
+  objective?: OptimizationObjective;
 }
 
 /**
  * Creates a default pattern state with given input.
  */
-export function createDefaultPatternState(input: string): PatternState {
-  return {
+export function createDefaultPatternState(
+  input: string,
+  options: CreatePatternStateOptions = {}
+): PatternState {
+  const { target, objective = "max" } = options;
+
+  const baseState: PatternState = {
     data: input.split(""),
     window: {
       start: 0,
       end: -1,
     },
     frequencyMap: {},
-    globalMax: 0,
+    globalBest: objective === "max" ? 0 : Number.POSITIVE_INFINITY,
+    globalMax: 0, // @deprecated - kept for backward compatibility
     bestSubstring: "",
-    status: "valid",
+    status: objective === "max" ? "valid" : "invalid", // Min starts invalid (missing chars)
+    objective,
   };
+
+  // Add target frequency map if target is provided
+  if (target) {
+    baseState.targetFrequencyMap = target.split("").reduce(
+      (acc, char) => {
+        acc[char] = (acc[char] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+  }
+
+  return baseState;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -552,6 +593,8 @@ export interface YieldStore {
   patternState: PatternState;
   /** The raw input string for patterns (used to regenerate state) */
   patternInput: string;
+  /** The target string for constraint-based patterns (e.g., min-window-substring) */
+  patternTarget: string;
 
   // Global actions
   setMode: (mode: VisualizerMode) => void;
@@ -684,6 +727,10 @@ export interface YieldStore {
    * Sets the input string for the pattern problem.
    */
   setPatternInput: (input: string) => void;
+  /**
+   * Sets the target string for constraint-based patterns.
+   */
+  setPatternTarget: (target: string) => void;
   /**
    * Updates the pattern state (called by the controller during visualization).
    */
@@ -1736,6 +1783,7 @@ export const useYieldStore = create<YieldStore>((set) => ({
   // Patterns initial state
   patternProblem: PATTERNS_CONFIG.DEFAULT_PROBLEM,
   patternInput: DEFAULT_SLIDING_WINDOW_INPUT,
+  patternTarget: "", // Empty for longest-substring, set for min-window
   patternState: createDefaultPatternState(DEFAULT_SLIDING_WINDOW_INPUT),
 
   // Global actions
@@ -2473,12 +2521,53 @@ export const useYieldStore = create<YieldStore>((set) => ({
     })),
 
   // Patterns actions
-  setPatternProblem: (problem) => set({ patternProblem: problem }),
+  setPatternProblem: (problem) =>
+    set((state) => {
+      // Determine objective based on problem type
+      const objective = problem === "min-window-substring" ? "min" : "max";
+
+      if (problem === "min-window-substring") {
+        // When switching to min-window-substring, apply the classic preset
+        // to ensure users see a working example with matching input/target
+        const classicPreset = MIN_WINDOW_PRESETS.classic;
+        // classicPreset is guaranteed to exist per config definition
+        const input = classicPreset?.input ?? "ADOBECODEBANC";
+        const target = classicPreset?.target ?? "ABC";
+        return {
+          patternProblem: problem,
+          patternInput: input,
+          patternTarget: target,
+          patternState: createDefaultPatternState(input, { target, objective }),
+        };
+      }
+
+      // For longest-substring, keep existing input and clear target
+      return {
+        patternProblem: problem,
+        patternTarget: "",
+        patternState: createDefaultPatternState(state.patternInput, { target: "", objective }),
+      };
+    }),
 
   setPatternInput: (input) =>
-    set({
-      patternInput: input,
-      patternState: createDefaultPatternState(input),
+    set((state) => {
+      const objective = state.patternProblem === "min-window-substring" ? "min" : "max";
+      return {
+        patternInput: input,
+        patternState: createDefaultPatternState(input, {
+          target: state.patternTarget,
+          objective,
+        }),
+      };
+    }),
+
+  setPatternTarget: (target) =>
+    set((state) => {
+      const objective = state.patternProblem === "min-window-substring" ? "min" : "max";
+      return {
+        patternTarget: target,
+        patternState: createDefaultPatternState(state.patternInput, { target, objective }),
+      };
     }),
 
   updatePatternState: (partialState) =>
@@ -2490,9 +2579,15 @@ export const useYieldStore = create<YieldStore>((set) => ({
     })),
 
   resetPatternState: () =>
-    set((state) => ({
-      patternState: createDefaultPatternState(state.patternInput),
-    })),
+    set((state) => {
+      const objective = state.patternProblem === "min-window-substring" ? "min" : "max";
+      return {
+        patternState: createDefaultPatternState(state.patternInput, {
+          target: state.patternTarget,
+          objective,
+        }),
+      };
+    }),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
