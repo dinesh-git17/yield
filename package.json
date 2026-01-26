@@ -42,9 +42,9 @@
     ]
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.11",
-    "@commitlint/cli": "^20.3.0",
-    "@commitlint/config-conventional": "^20.3.0",
+    "@biomejs/biome": "^2.3.12",
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
     "@tailwindcss/postcss": "^4",
     "@types/katex": "^0.16.7",
     "@types/node": "^25",
@@ -55,6 +55,6 @@
     "lint-staged": "^16.2.7",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.18"
   }
 }
